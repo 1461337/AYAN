@@ -1,0 +1,108 @@
+import { useMemo, useState } from 'react'
+import { useGame } from '../../store/gameStore'
+import { ALL_JOBS, EDU_BY_AGE, MAJORS, validateName } from '../../data/static'
+import { fitOf } from '../../domain/selectors'
+import { randomName } from '../../domain/newGame'
+import type { Job, Sex } from '../../domain/types'
+import styles from './Setup.module.css'
+
+export function Setup() {
+  const start = useGame((s) => s.start)
+  const [name, setName] = useState('陆承宇')
+  const [sex, setSex] = useState<Sex>('男')
+  const [ageStr, setAgeStr] = useState('24')
+  const [major, setMajor] = useState('法学')
+  const [job, setJob] = useState<Job | ''>('')
+  const [err, setErr] = useState('')
+
+  const age = Math.max(18, Math.min(38, parseInt(ageStr || '24', 10) || 24))
+  const edu = EDU_BY_AGE(age)
+  const options = useMemo(
+    () => ALL_JOBS.map((j) => ({ j, f: fitOf(major, j) })).filter((x) => x.f > 80),
+    [major],
+  )
+  const curJob: Job = (job && options.some((o) => o.j === job) ? job : options[0]?.j) as Job
+  const fit = fitOf(major, curJob)
+
+  const groups = Object.entries(MAJORS)
+
+  const onStart = () => {
+    const e = validateName(name)
+    if (e) { setErr(e); return }
+    setErr('')
+    start({ name: name.trim(), sex, age, major, job: curJob })
+  }
+
+  return (
+    <div className={styles.overlay}>
+      <div className={styles.wrap}>
+        <div className={styles.title}>人民的名义</div>
+        <div className={styles.sub}>高 自 由 度 人 生 模 拟 器 · 汉 东 省</div>
+        <div className={styles.setupCard}>
+          <div className={styles.gridForm}>
+            <div className={`${styles.field} ${styles.fieldName}`}>
+              <label>姓名<span className={styles.subLabel}>2—4 个汉字，须为常见姓氏</span></label>
+              <div className={styles.nameRow}>
+                <input value={name} maxLength={4} placeholder="如：陆承宇" onChange={(e) => { setName(e.target.value); setErr('') }} />
+                <button type="button" onClick={() => { setName(randomName(sex)); setErr('') }}>随机姓名</button>
+              </div>
+              <div className={styles.fieldErr}>{err}</div>
+            </div>
+            <div className={styles.field}>
+              <label>性别</label>
+              <select value={sex} onChange={(e) => setSex(e.target.value as Sex)}>
+                <option>男</option><option>女</option>
+              </select>
+            </div>
+            <div className={styles.field}>
+              <label>年龄<span className={styles.subLabel}>限 18—38 周岁</span></label>
+              <input
+                type="number"
+                value={ageStr}
+                min={18}
+                max={38}
+                onChange={(e) => setAgeStr(e.target.value)}
+                onBlur={() => setAgeStr(String(age))}
+              />
+            </div>
+            <div className={styles.field}>
+              <label>所学专业</label>
+              <select value={major} onChange={(e) => setMajor(e.target.value)}>
+                {groups.map(([grp, list]) => (
+                  <optgroup label={grp} key={grp}>
+                    {list.map((m) => <option key={m}>{m}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+            <div className={`${styles.field} ${styles.fieldJob}`}>
+              <label>初始职业<span className={styles.subLabel}>仅显示专业匹配度高于 80% 的职业</span></label>
+              <select value={curJob} onChange={(e) => setJob(e.target.value as Job)}>
+                {options.map((o) => <option key={o.j} value={o.j}>{o.j}（匹配度 {o.f}%）</option>)}
+              </select>
+            </div>
+          </div>
+          <div className={styles.match}>
+            <div className={styles.mt}>系 统 匹 配 结 果</div>
+            <div className={styles.row}>
+              <span>匹配学历 <b>{edu}</b></span>
+              <span>专业—职业匹配度 <b>{fit}%</b></span>
+              <span className={styles.ok}>应届 · 无工作经历</span>
+            </div>
+            <div className={styles.sm}>
+              专业与职业匹配度须高于 80% 方可选择该职业；匹配度越高，入职后的路也越顺。{fit >= 90 ? '你的专业与这一职业高度对口。' : ''}<br />
+              学历由年龄按国民教育序列自动匹配，出生地、所在地与家庭背景由系统随机匹配；<br />
+              进入体制后（公务员 / 事业单位 / 国企）可在「🎓 进修」页在职、在编、在岗提升学历。
+            </div>
+          </div>
+          <div className="hint">
+            所有人均为应届初入社会，无工作经历。出生地、所在地与家庭背景由系统随机匹配；
+            学历由年龄按国民教育序列自动匹配。是否成为<span className="hl">选调生</span>（仅公务员）及职级起点，
+            由系统依规则判定，结果在你入职当天自然揭晓。学历可在进入体制后通过「🎓 进修」在职在编在岗提升。
+          </div>
+          <button className="btn-main" onClick={onStart}>开 始 人 生</button>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,53 @@
+.overlay {
+  position: fixed; inset: 0; z-index: 100; overflow: auto;
+  background: linear-gradient(170deg, #5e0b0c, #8c1313 45%, #6f0d0e);
+  padding: 26px 14px calc(30px + var(--safe-b));
+}
+.wrap { max-width: 760px; margin: 0 auto; }
+.title {
+  text-align: center; color: #ffe9b8; font-size: 26px; font-weight: 800; letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .5); margin: 8px 0 4px;
+}
+.sub { text-align: center; color: #e6c98f; font-size: 12.5px; letter-spacing: 1px; margin-bottom: 20px; opacity: .85; }
+.setupCard {
+  background: var(--card); border-radius: 14px; padding: 18px 16px 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35); border: 1px solid #d8c9a6;
+}
+.field { margin-bottom: 13px; }
+.field label { display: block; font-size: 12.5px; color: var(--muted); font-weight: 700; margin-bottom: 5px; letter-spacing: .5px; }
+.field input, .field select {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px;
+  background: var(--paper); font-size: 15px; color: var(--ink); font-family: inherit; outline: none;
+}
+.field input:focus, .field select:focus { border-color: var(--gold-dim); box-shadow: 0 0 0 3px rgba(232, 197, 106, .25); }
+.gridForm { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+.fieldName { grid-column: 1 / -1; }
+.fieldJob { grid-column: 1 / -1; }
+.subLabel { font-weight: 600; color: #a99b86; font-size: 11px; margin-left: 6px; letter-spacing: 0; }
+.nameRow { display: flex; gap: 8px; }
+.nameRow input { flex: 1; min-width: 0; }
+.nameRow button {
+  padding: 0 16px; border-radius: 9px; white-space: nowrap; font-weight: 700; font-size: 13.5px;
+  color: #fff6dd; background: linear-gradient(180deg, #b8201d, #8f1414); box-shadow: 0 3px 0 #5e0b0c;
+}
+.nameRow button:active { transform: translateY(2px); box-shadow: 0 1px 0 #5e0b0c; }
+.fieldErr { font-size: 12px; color: #a51c1c; font-weight: 700; margin-top: 5px; }
+.match { background: #f6f1e2; border: 1px dashed #d8c48d; border-radius: 11px; padding: 11px 13px; margin: 2px 0 12px; }
+.mt { font-size: 12px; font-weight: 800; color: #9a7a24; letter-spacing: 1px; margin-bottom: 7px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.row span { font-size: 12px; padding: 3px 9px; border-radius: 20px; background: #fffdf7; border: 1px solid #e2d6b6; color: #5d5147; }
+.row span b { color: var(--red-700); }
+.row span.ok { background: #eff8f2; border-color: #bfe0cb; color: #2f7a4f; }
+.sm { font-size: 12px; color: #7a6a4e; line-height: 1.6; }
+
+@media (min-width: 1024px) {
+  .title { font-size: 32px; }
+  .setupCard { padding: 22px 22px 24px; }
+  .gridForm { grid-template-columns: repeat(3, 1fr); }
+  .fieldName { grid-column: span 2; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .setupCard { padding: 22px; }
+  .gridForm { grid-template-columns: 1fr 1fr; }
+  .fieldName, .fieldJob { grid-column: 1 / -1; }
+}

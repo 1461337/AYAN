@@ -1,0 +1,4695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#8f1414">
+<title>人民的名义 · 高自由度人生模拟器</title>
+<style>
+:root{
+  --red-900:#6f0d0e; --red-800:#8c1313; --red-700:#a51c1c; --red-600:#b8201d;
+  --gold:#e8c56a; --gold-2:#f2d98c; --gold-dim:#b9963f;
+  --cream:#f6efe0; --paper:#fffdf7; --card:#fdf8ee;
+  --ink:#3b3129; --ink-2:#5d5147; --muted:#8d8175;
+  --green:#2f7a4f; --blue:#5b8fd0; --blue-bg:#eef4fb;
+  --line:#e6dcc8; --shadow:0 2px 10px rgba(90,60,20,.08);
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC",sans-serif;
+  background:#efe7d7;color:var(--ink);font-size:15px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.hidden{display:none !important}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#cbbfa5;border-radius:8px}
+
+/* ============ 角色创建 ============ */
+.overlay{
+  position:fixed;inset:0;z-index:100;overflow:auto;
+  background:linear-gradient(170deg,#5e0b0c,#8c1313 45%,#6f0d0e);
+  padding:26px 14px calc(30px + var(--safe-b));
+}
+.setup-wrap{max-width:760px;margin:0 auto}
+.setup-title{
+  text-align:center;color:#ffe9b8;font-size:26px;font-weight:800;letter-spacing:2px;
+  text-shadow:0 2px 8px rgba(0,0,0,.5);margin:8px 0 4px;
+}
+.setup-sub{text-align:center;color:#e6c98f;font-size:12.5px;letter-spacing:1px;margin-bottom:20px;opacity:.85}
+.setup-card{
+  background:var(--card);border-radius:14px;padding:18px 16px 20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);border:1px solid #d8c9a6;
+}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:12.5px;color:var(--muted);font-weight:700;margin-bottom:5px;letter-spacing:.5px}
+.field input,.field select{
+  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;
+  background:var(--paper);font-size:15px;color:var(--ink);font-family:inherit;outline:none;
+}
+.field input:focus,.field select:focus{border-color:var(--gold-dim);box-shadow:0 0 0 3px rgba(232,197,106,.25)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px}
+.grid-form{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.grid-form .field-name{grid-column:1/-1}
+.grid-form .field-job{grid-column:1/-1}
+.field label .sub{font-weight:600;color:#a99b86;font-size:11px;margin-left:6px;letter-spacing:0}
+.name-row button{
+  padding:0 16px;border-radius:9px;white-space:nowrap;font-weight:700;font-size:13.5px;
+  color:#fff6dd;background:linear-gradient(180deg,#b8201d,#8f1414);box-shadow:0 3px 0 #5e0b0c
+}
+.name-row button:active{transform:translateY(2px);box-shadow:0 1px 0 #5e0b0c}
+.hint{font-size:12px;color:var(--muted);margin:-6px 0 12px}
+.hint .hl{color:var(--red-700);font-weight:800}
+.name-row{display:flex;gap:8px}
+.name-row input{flex:1;min-width:0}
+.field-err{font-size:12px;color:#a51c1c;font-weight:700;margin-top:5px;min-height:0}
+.field-err:not(:empty){margin-top:5px}
+.match{background:#f6f1e2;border:1px dashed #d8c48d;border-radius:11px;padding:11px 13px;margin:2px 0 12px}
+.match .mt{font-size:12px;font-weight:800;color:#9a7a24;letter-spacing:1px;margin-bottom:7px}
+.match .row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.match .row span{font-size:12px;padding:3px 9px;border-radius:20px;background:#fffdf7;border:1px solid #e2d6b6;color:#5d5147}
+.match .row span b{color:var(--red-700)}
+.match .row span.ok{background:#eff8f2;border-color:#bfe0cb;color:#2f7a4f}
+.match .row span.no{background:#f6f2ec;border-color:#e6dfd2;color:#9a9088}
+.match .bar{height:7px;border-radius:5px;background:#e6ddc8;overflow:hidden;margin:4px 0 6px}
+.match .bar i{display:block;height:100%;background:linear-gradient(90deg,#c02623,#8f1414)}
+.match .sm{font-size:12px;color:#7a6a4e;line-height:1.6}
+.btn-main{
+  width:100%;padding:14px;border-radius:11px;font-size:16px;font-weight:800;letter-spacing:2px;
+  color:#fff6dd;background:linear-gradient(180deg,#c02623,#8f1414);
+  box-shadow:0 6px 0 #5e0b0c,0 8px 18px rgba(0,0,0,.3);
+}
+.btn-main:active{transform:translateY(2px);box-shadow:0 4px 0 #5e0b0c}
+.btn-ghost{
+  padding:9px 14px;border-radius:9px;border:1px solid var(--gold-dim);color:#f0d99a;
+  background:rgba(255,255,255,.06);font-size:13px;font-weight:700
+}
+
+/* ============ 顶栏 ============ */
+.hdr{
+  background:linear-gradient(160deg,#6f0d0e,#a51c1c 55%,#8c1313);
+  color:#fff;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 0;
+  position:relative;box-shadow:0 3px 14px rgba(80,10,10,.4);
+}
+.hdr::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 88% 12%,rgba(255,215,140,.22),transparent 42%);pointer-events:none}
+.hdr-inner{max-width:1180px;margin:0 auto;position:relative}
+.hdr-top{display:flex;align-items:flex-start;gap:10px}
+.hdr-title{flex:1;min-width:0}
+.rank-name{font-size:19px;font-weight:800;letter-spacing:1px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.35);
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.rank-name small{font-size:11px;font-weight:600;color:#f7d99a;background:rgba(0,0,0,.22);
+  padding:2px 7px;border-radius:20px;letter-spacing:.5px}
+.rank-meta{font-size:12.5px;color:#f2d7a5;margin-top:3px;letter-spacing:.3px;line-height:1.5}
+.rank-meta b{color:#fff}
+.rank-next{
+  font-size:12px;color:#ffe0a3;margin-top:5px;letter-spacing:.3px;line-height:1.5;
+  background:rgba(0,0,0,.18);border:1px solid rgba(232,197,106,.32);
+  border-radius:8px;padding:4px 9px;display:inline-block;max-width:100%
+}
+.rank-next b{color:#fff;font-weight:800}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.icon-btn{
+  width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:17px;
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22)
+}
+.avatar{
+  width:44px;height:44px;border-radius:11px;display:grid;place-items:center;font-size:22px;
+  background:linear-gradient(180deg,#f5e4b8,#d9bd7e);border:1px solid #fff3d0;
+}
+.zhiji{font-size:12px;color:#ffe9b8;white-space:nowrap;text-align:right;font-weight:700}
+.zhiji b{font-size:16px;display:block;color:#fff;letter-spacing:.5px}
+.stats{display:flex;gap:6px;overflow-x:auto;padding:10px 0 9px;scrollbar-width:none}
+.stats::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;background:rgba(0,0,0,.26);border:1px solid rgba(232,197,106,.5);
+  border-radius:8px;padding:4px 9px;font-size:11.5px;color:#ffe6b4;white-space:nowrap;letter-spacing:.5px
+}
+.chip b{font-size:14.5px;color:#fff;margin-left:4px;font-weight:800}
+.chip.warn{border-color:#ffb46b}
+.chip.bad{border-color:#ff8a8a}
+.gold-line{height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.85}
+
+/* ============ 布局 ============ */
+.layout{max-width:1180px;margin:0 auto;padding:14px 12px 12px}
+main.view{padding-bottom:12px}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden
+}
+.card-hd{
+  padding:14px 14px 12px;border-bottom:1px solid #f0e7d4;
+  display:flex;align-items:center;gap:9px;background:linear-gradient(180deg,#fffdf6,#fbf5e7)
+}
+.card-hd .ic{font-size:19px}
+.card-hd h2{margin:0;font-size:16.5px;font-weight:800;color:var(--red-700);letter-spacing:1px}
+.card-bd{padding:15px 15px 16px}
+.card-bd>.sec-title:first-child{margin-top:0}
+.sec-title+.box{margin-top:0}
+.tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tag{font-size:12px;padding:4px 11px;border-radius:8px;font-weight:700;letter-spacing:.5px}
+.tag.green{color:var(--green);border:1.5px solid #9ecfb0;background:#f0f9f2}
+.tag.gold{color:#9a7a24;border:1.5px dashed #dcc27a;background:#fdf8e8}
+.tag.red{color:var(--red-700);border:1.5px solid #e2a9a9;background:#fdf1f1}
+.tag.gray{color:var(--muted);border:1.5px solid var(--line);background:#f7f3ea}
+.sec-title{font-size:15.5px;font-weight:800;color:#1f6b45;letter-spacing:.5px;margin:16px 0 10px;
+  padding-left:9px;border-left:3px solid #9ecfb0;line-height:1.35}
+.sec-title:first-child{margin-top:0}
+.note{
+  background:var(--blue-bg);border-left:4px solid #8fb6e0;border-radius:0 10px 10px 0;
+  padding:11px 13px;font-size:13.5px;color:#33526f;margin-bottom:13px
+}
+.note .big{color:var(--red-700);font-weight:800;font-size:15px}
+.bars{display:flex;gap:5px;margin:10px 0}
+.bars i{flex:1;height:8px;border-radius:5px;background:#d9e2ec;display:block}
+.bars i.on{background:linear-gradient(180deg,#8fb6e0,#5b8fd0)}
+.txt p{margin:0 0 9px;line-height:1.75}
+.txt .hl{color:var(--red-700);font-weight:800}
+.txt .gm{color:var(--green);font-weight:800}
+.box{background:#fdf6e6;border-radius:10px;padding:11px 13px;font-size:13.5px;line-height:1.7;
+  color:#6c5a3d;margin-bottom:12px;word-break:break-word}
+.box b{color:#4a3d28}
+.ap-row{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:14px;flex-wrap:wrap}
+.dots{display:flex;gap:5px}
+.dots i{width:11px;height:11px;border-radius:50%;background:#e0d6c0;display:block}
+.dots i.on{background:linear-gradient(180deg,#c02623,#8f1414)}
+.btn-red{
+  display:block;width:100%;text-align:center;padding:14px;border-radius:11px;
+  color:#fff6dd;font-weight:800;letter-spacing:1.5px;font-size:15.5px;
+  background:linear-gradient(180deg,#c02623,#8f1414);box-shadow:0 7px 0 #5e0b0c;
+  margin-bottom:8px
+}
+.btn-red:active{transform:translateY(3px);box-shadow:0 4px 0 #5e0b0c}
+.btn-red.gray{background:linear-gradient(180deg,#9c9184,#6f665c);box-shadow:0 7px 0 #4e463e}
+.btn-red:disabled{opacity:.45;box-shadow:0 4px 0 #5e0b0c;transform:none}
+.btn-line{
+  display:block;width:100%;text-align:left;padding:12px 13px;border-radius:11px;
+  border:1px solid var(--line);background:var(--paper);margin-bottom:9px;font-size:14.5px;
+  color:var(--ink);font-weight:600;line-height:1.5;overflow-wrap:anywhere
+}
+.btn-line small{display:block;color:var(--muted);font-weight:500;font-size:12.5px;margin-top:3px}
+.btn-line:active{background:#f4ecda}
+.btn-line:disabled{opacity:.5}
+.btn-line .cost{float:right;font-size:12px;color:var(--red-700);font-weight:800}
+
+/* 数据小格 */
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.kv .k{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 11px}
+.kv .k span{display:block;font-size:11.5px;color:var(--muted);letter-spacing:.5px}
+.kv .k b{font-size:16px;color:var(--ink);font-weight:800}
+.kv .k b.up{color:var(--green)}
+.kv .k b.dn{color:var(--red-700)}
+.kv2{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.kv2>div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  border-bottom:1px dashed #e6dcc8;padding-bottom:5px}
+.kv2 span{font-size:12px;color:var(--muted)}
+.kv2 b{font-size:14px;font-weight:800;color:var(--ink);text-align:right}
+.kv2 b em.mini{font-style:normal;font-size:10.5px;font-weight:700;color:var(--muted);
+  background:#f2ece0;border-radius:20px;padding:1px 6px;margin-left:4px;white-space:nowrap}
+.kv2 b.ok-txt em.mini{background:#e8f5ec;color:#2f7a4f}
+.kv2 b.bad-txt em.mini{background:#fbe9e8;color:#a51c1c}
+.ind-list{margin:4px 0 8px}
+.ind{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px dashed #e8dfcd}
+.ind:last-child{border-bottom:none}
+.ind-name{flex:0 0 62px;font-size:13px;font-weight:700;color:#7c7266}
+.ind-val{flex:1;font-size:14.5px;font-weight:800;color:var(--ink);letter-spacing:.3px}
+.ind-val em{font-style:normal;font-size:11.5px;font-weight:600;color:#a99b86;letter-spacing:0}
+.ind-tag{flex:0 0 auto;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;
+  background:#f4efe4;color:#8d8175;white-space:nowrap}
+.ind-tag.ok{background:#e8f5ec;color:#2f7a4f}
+.ind-tag.bad{background:#fbe9e8;color:#a51c1c}
+.ind-tag.top{background:#fdf3e0;color:#9a7a24;box-shadow:inset 0 0 0 1px #e8d5a8}
+.bar{height:8px;border-radius:6px;background:#e6ddc8;overflow:hidden;margin:5px 0}
+.bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#c02623,#8f1414)}
+.bar-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--muted)}
+.bar-row b{color:var(--red-700);font-weight:800;font-size:14px}
+.idx{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:6px;
+  background:#f0e6cf;color:#8a6b1f;font-size:11.5px;font-weight:800;margin-right:7px;vertical-align:1px}
+.bad-txt{color:#a51c1c;font-weight:800}
+.ok-txt{color:#2f7a4f;font-weight:800}
+.warn-box{background:#fdeceb;border-color:#f0c3c0}
+.fr{float:right;margin:0}
+.right{margin-left:auto;text-align:right}
+.tag-xd{background:rgba(255,215,120,.3);color:#fff5d8}
+.mt6{margin-top:6px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt14{margin-top:14px}
+.mb8{margin-bottom:8px}.mb9{margin-bottom:9px}.mb12{margin-bottom:12px}
+.sm{font-size:12.5px}
+.btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.over-t{color:#a51c1c}
+.npc-main{flex:1;min-width:0}
+.npc-score{text-align:center;flex-shrink:0}
+.npc-score b{display:block;font-size:17px;color:var(--red-700);font-weight:800;line-height:1.1}
+.npc-score span{font-size:10.5px;color:var(--muted);letter-spacing:.5px}
+.npc .hint{margin:0;line-height:1.65}
+.npc .rel{margin:8px 0}
+.npc .npc-act button{line-height:1.3}
+.npc .npc-act button small{display:block;font-size:10.5px;font-weight:600;color:var(--muted);margin-top:2px}
+.npc .box.sm{padding:8px 10px;font-size:12.5px}
+
+/* NPC */
+.npc{border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:12px;margin-bottom:10px}
+.npc-top{display:flex;align-items:center;gap:10px}
+.npc-face{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:19px;background:#f0e6cf;flex-shrink:0}
+.npc-name{font-weight:800;font-size:15px}
+.npc-name em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:600;margin-left:6px}
+.rel{display:flex;flex-wrap:wrap;gap:5px;margin:9px 0 8px}
+.rel span{font-size:11px;padding:2px 8px;border-radius:20px;background:#f2ece0;color:#6c6155;border:1px solid #e8dfcd}
+.rel span.pos{background:#eff8f2;color:#2f7a4f;border-color:#bfe0cb}
+.rel span.neg{background:#fdf0f0;color:#a51c1c;border-color:#eec3c3}
+.npc-act{display:flex;gap:7px;flex-wrap:wrap}
+.npc-act button{
+  flex:1;min-width:74px;padding:8px 6px;border-radius:9px;border:1px solid var(--line);
+  background:#fbf6ea;font-size:12.5px;font-weight:700;color:#5d5147
+}
+.npc-act button:active{background:#f0e7d4}
+
+/* 日志 */
+.log-item{border-left:3px solid #e2d7c0;padding:0 0 12px 12px;margin-left:4px;position:relative}
+.log-item::before{content:"";position:absolute;left:-7px;top:6px;width:11px;height:11px;border-radius:50%;
+  background:#fff;border:3px solid var(--gold-dim)}
+.log-item .t{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.5px}
+.log-item .h{font-weight:800;font-size:14px;margin:2px 0 3px}
+.log-item .d{font-size:13px;color:var(--ink-2);white-space:pre-wrap}
+.log-item.good::before{border-color:var(--green)}
+.log-item.bad::before{border-color:var(--red-700)}
+
+/* 导航 */
+.nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  background:rgba(255,253,247,.97);backdrop-filter:blur(8px);
+  border-top:1px solid var(--line);box-shadow:0 -3px 16px rgba(90,60,20,.1);
+  display:grid;grid-template-columns:repeat(3,1fr);
+  padding:7px 4px calc(6px + var(--safe-b));
+}
+.nav button{padding:6px 2px;border-radius:10px;text-align:center;color:#7c7266}
+.nav button .ni{font-size:22px;line-height:1.15;display:block}
+.nav button .nl{font-size:11.5px;font-weight:700;letter-spacing:.5px}
+.nav button.on{color:var(--red-700);background:#fdf1e2}
+.nav button.on .nl{color:var(--red-700)}
+
+/* 弹窗 */
+.modal{position:fixed;inset:0;z-index:150;overflow:auto}
+.modal-mask{
+  min-height:100%;background:rgba(40,20,10,.55);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;padding:18px 12px calc(18px + var(--safe-b))
+}
+.modal-box{
+  background:var(--card);border:1px solid #d8c9a6;border-radius:15px;width:100%;max-width:560px;
+  box-shadow:0 18px 50px rgba(0,0,0,.45);overflow:hidden;max-height:88vh;overflow-y:auto
+}
+.modal-box .card-hd{margin:0}
+/* 年度总结的紧凑行 */
+.sumbox{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px dashed #e8dfcd;
+  font-size:13.5px;line-height:1.7;color:#4a3d28;word-break:break-word}
+.sumbox:last-of-type{border-bottom:none}
+.sumbox>span{flex:0 0 62px;font-size:12px;font-weight:800;color:#9a7a24;letter-spacing:.5px;padding-top:2px}
+.sumbox.next{background:#eef4fb;border:1px solid #c9dcef;border-radius:9px;padding:9px 11px;margin-top:10px}
+.sumbox.next>span{color:#3d6ea8}
+/* 提示 */
+#toast{
+  position:fixed;left:50%;bottom:calc(96px + var(--safe-b));transform:translateX(-50%);
+  background:rgba(45,32,25,.94);color:#ffeec9;padding:10px 18px;border-radius:24px
+  ;font-size:13.5px;font-weight:700;z-index:200;max-width:90vw;text-align:center;
+  opacity:0;pointer-events:none;transition:.28s
+}
+#toast.show{opacity:1;bottom:calc(108px + var(--safe-b))}
+
+/* 桌面 */
+@media (min-width:1024px){
+  .ind-list{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}
+  .ind{border-bottom:1px dashed #e8dfcd}
+  .npc-act button{min-width:0}
+  body{font-size:15px}
+  .layout{display:grid;grid-template-columns:1fr 232px;gap:20px;align-items:start;padding:20px 18px 40px}
+  main.view{padding-bottom:0}
+  .nav{
+    position:sticky;top:18px;left:auto;right:auto;bottom:auto;display:grid;grid-template-columns:1fr;
+    gap:4px;border-radius:14px;border:1px solid var(--line);padding:8px;box-shadow:var(--shadow);
+    background:var(--card)
+  }
+  .nav button{display:flex;align-items:center;gap:10px;text-align:left;padding:9px 12px}
+  .nav button .ni{font-size:19px;width:24px;text-align:center}
+  .nav button .nl{font-size:14px}
+  .hdr{padding-left:0;padding-right:0}
+  .stats{flex-wrap:wrap;overflow:visible}
+  .setup-title{font-size:32px}
+  .kv{grid-template-columns:repeat(4,1fr)}
+  .grid-form{grid-template-columns:repeat(3,1fr)}
+  .grid-form .field-name{grid-column:span 2}
+  .setup-card{padding:22px 22px 24px}
+}
+@media (min-width:768px) and (max-width:1023px){
+  .layout{max-width:900px;margin:0 auto;padding:16px 18px 12px}
+  main.view{padding-bottom:96px}
+  .nav{grid-template-columns:repeat(9,1fr);padding:6px 6px calc(4px + var(--safe-b))}
+  .nav button .ni{font-size:20px}
+  .nav button .nl{font-size:10.5px;letter-spacing:0}
+  .nav button{padding:5px 1px}
+  .kv{grid-template-columns:repeat(4,1fr)}
+  .ind-list{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}
+  .kv2{grid-template-columns:1fr 1fr}
+  .card-bd{padding:16px 18px 18px}
+  .setup-card{padding:22px}
+  .grid-form{grid-template-columns:1fr 1fr}
+  .grid-form .field-name{grid-column:1/-1}
+  .grid-form .field-job{grid-column:1/-1}
+  .modal-box{max-width:600px}
+}
+@media (min-width:640px) and (max-width:979px){
+  .kv{grid-template-columns:repeat(3,1fr)}
+  .ind-list{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}
+}
+/* 移动端内容底部留白 */
+@media (max-width:767px){
+  main.view{padding-bottom:110px}
+  .sumbox{display:block}
+  .sumbox>span{display:block;margin-bottom:2px;flex:none}
+}
+@media (max-width:979px){
+  main.view{padding-bottom:110px}
+  .ind-name{flex:0 0 56px;font-size:12.5px}
+  .ind-val{font-size:14px}
+  .ind-tag{font-size:10.5px;padding:3px 8px}
+  .kv2{grid-template-columns:1fr}
+  .kv .k b{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= 角色创建 ================= -->
+<div id="setup" class="overlay">
+  <div class="setup-wrap">
+    <div class="setup-title">人民的名义</div>
+    <div class="setup-sub">高 自 由 度 人 生 模 拟 器 · 汉 东 省</div>
+    <div class="setup-card">
+      <div class="grid-form">
+        <div class="field field-name">
+          <label>姓名<span class="sub">2—4 个汉字，须为常见姓氏</span></label>
+          <div class="name-row">
+            <input id="f-name" value="陆承宇" maxlength="4" placeholder="如：陆承宇">
+            <button type="button" id="btn-rand">随机姓名</button>
+          </div>
+          <div class="field-err" id="f-name-err"></div>
+        </div>
+        <div class="field"><label>性别</label>
+          <select id="f-sex"><option>男</option><option>女</option></select></div>
+        <div class="field"><label>年龄<span class="sub">限 18—38 周岁</span></label>
+          <input id="f-age" type="number" value="24" min="18" max="38"></div>
+        <div class="field"><label>所学专业</label><select id="f-major"></select></div>
+        <div class="field field-job"><label>初始职业<span class="sub">仅显示专业匹配度高于 80% 的职业</span></label>
+          <select id="f-job"></select></div>
+      </div>
+      <div class="match" id="match-box"></div>
+      <div class="hint">所有人均为应届初入社会，无工作经历。出生地、所在地与家庭背景由系统随机匹配；
+        学历由年龄按国民教育序列自动匹配。是否成为<span class="hl">选调生</span>（仅公务员）及职级起点，
+        由系统依规则判定，结果在你入职当天自然揭晓。学历可在进入体制后通过「🎓 进修」在职在编在岗提升。</div>
+      <button class="btn-main" id="btn-start">开 始 人 生</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 主界面 ================= -->
+<div id="app" class="hidden">
+  <header class="hdr">
+    <div class="hdr-inner">
+      <div class="hdr-top">
+        <div class="hdr-title">
+          <div class="rank-name" id="h-rank">—<small id="h-rankTag"></small></div>
+          <div class="rank-meta" id="h-meta"></div>
+          <div class="rank-next" id="h-next"></div>
+        </div>
+        <div class="hdr-right">
+          <button class="icon-btn" id="btn-help" title="说明">?</button>
+          <div class="avatar" id="h-avatar">🧑‍💼</div>
+          <div class="zhiji"><b id="h-zhengji">0</b>政绩点</div>
+        </div>
+      </div>
+      <div class="stats" id="h-stats"></div>
+    </div>
+    <div class="gold-line"></div>
+  </header>
+
+  <div class="layout">
+    <main class="view" id="view"></main>
+    <nav class="nav" id="nav"></nav>
+  </div>
+</div>
+
+<div id="modal" class="modal hidden"></div>
+<div id="toast"></div>
+
+<script>/* =========================================================
+   基础工具
+========================================================= */
+const $ = id => document.getElementById(id);
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const fmt = n => (n||0).toLocaleString('zh-CN');
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=rnd(0,i); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+const ACTIONS_PER_YEAR = 5;
+const SHIXI = [
+ {
+  "名": "下基层调研检查",
+  "desc": "去了两个社区，群众说的和材料上写的不太一样。",
+  "e": {
+   "政绩": 18,
+   "道德": 1,
+   "声望": 2
+  },
+  "asks": [
+   [
+    {
+     "q": "群众反映的实际困难，与街道报上来的数据明显不一致，你怎么办？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "重新逐户核实，按核实结果调整材料并说明口径",
+       "e": {
+        "政绩": 18,
+        "能力": 1,
+        "道德": 2,
+        "上司": 2
+       },
+       "fb": "你带人重新核了一遍，材料改了七处。分管领导在会上说：「这才叫摸底。」"
+      },
+      {
+       "判": "模糊",
+       "文": "先把矛盾点记下来，回去研究后再说",
+       "e": {
+        "政绩": 4
+       },
+       "fb": "你记了满满两页，材料照旧报了上去。事情没有错，也没有解决。"
+      },
+      {
+       "判": "错误",
+       "文": "按原数据上报，注明以街道口径为准",
+       "e": {
+        "政绩": -6,
+        "道德": -2,
+        "廉政风险": 5,
+        "声望": -2
+       },
+       "fb": "你把责任推给了街道。数字被翻出来那天，第一个被叫去说明情况的是你。"
+      }
+     ]
+    },
+    {
+     "q": "你挂点的村反映饮水管网改造后水压不足，村干部说早就上报过了，你怎么处理？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "到现场拧开水龙头看水压，把问题写进督办清单",
+       "e": {
+        "政绩": 16,
+        "能力": 1,
+        "道德": 2,
+        "声望": 3
+       },
+       "fb": "你在三户人家拧开了水龙头。两周后管网重新调压，村里给你送了面锦旗。"
+      },
+      {
+       "判": "模糊",
+       "文": "转给水利站，让他们按程序处理",
+       "e": {
+        "政绩": 4
+       },
+       "fb": "程序走了，水压没变。一个月后村民又来了。"
+      },
+      {
+       "判": "错误",
+       "文": "提醒村干部不要越级反映",
+       "e": {
+        "政绩": -6,
+        "道德": -3,
+        "声望": -4,
+        "廉政风险": 4
+       },
+       "fb": "村干部不说了，村民把视频直接发到了网上。"
+      }
+     ]
+    },
+    {
+     "q": "调研中一位老上访户拉着你不让走，说问题反映了七年都没解决，你怎么办？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "当场记录诉求，承诺七日内书面答复并留下本人电话",
+       "e": {
+        "政绩": 16,
+        "能力": 1,
+        "道德": 2,
+        "声望": 3
+       },
+       "fb": "你把手机号写在了纸上。第七天，他真的收到了书面答复。"
+      },
+      {
+       "判": "模糊",
+       "文": "请他先回去，按程序由信访部门受理",
+       "e": {
+        "政绩": 4
+       },
+       "fb": "程序上没有错，但老人走出门时回头看了你一眼。"
+      },
+      {
+       "判": "错误",
+       "文": "劝他不要影响调研，让随行人员处理",
+       "e": {
+        "政绩": -8,
+        "道德": -4,
+        "声望": -5,
+        "廉政风险": 4
+       },
+       "fb": "老人被带走了。这段视频当晚就传开了。"
+      }
+     ]
+    }
+   ],
+   [
+    {
+     "q": "你分管的两个乡镇对同一项惠民政策执行口径不一，群众意见很大，你如何处置？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "组织联合培训，统一操作口径并公开监督电话",
+       "e": {
+        "政绩": 22,
+        "能力": 2,
+        "道德": 2,
+        "声望": 3,
+        "上司": 1
+       },
+       "fb": "两个乡镇的经办人坐在一起对了三天台账。口径统一后，同类信访量下降七成。"
+      },
+      {
+       "判": "模糊",
+       "文": "分别打招呼，让两边自己协调",
+       "e": {
+        "政绩": 5
+       },
+       "fb": "两边都答应了，也都按自己的理解办。问题只是从台面下挪到了台面下。"
+      },
+      {
+       "判": "错误",
+       "文": "以属地管理为由，让矛盾留在基层",
+       "e": {
+        "政绩": -8,
+        "道德": -3,
+        "声望": -4,
+        "廉政风险": 4
+       },
+       "fb": "乡镇把责任又推回给村。年底考核时，这件事写进了群众满意度扣分项。"
+      }
+     ]
+    },
+    {
+     "q": "蹲点一周后发现，基层填表报数占用了大量精力，你准备怎么处理？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "梳理报表清单，能并的并、能免的免，报请上级清理",
+       "e": {
+        "政绩": 24,
+        "能力": 2,
+        "道德": 3,
+        "声望": 4
+       },
+       "fb": "你把十七张表并成了四张。基层干部说：「今年第一次能腾出时间下田。」"
+      },
+      {
+       "判": "模糊",
+       "文": "在调研报告里写一段，建议逐步改进",
+       "e": {
+        "政绩": 6
+       },
+       "fb": "报告交上去了，写得很好，没有人动真格。"
+      },
+      {
+       "判": "错误",
+       "文": "要求基层提高填报效率，加强培训",
+       "e": {
+        "政绩": -5,
+        "道德": -3,
+        "声望": -3
+       },
+       "fb": "培训开了三场，表格又多了两张。基层说：「还是别来调研了。」"
+      }
+     ]
+    }
+   ],
+   [
+    {
+     "q": "全省基层普遍反映这项改革政策最后一公里卡壳，你负责督查，怎么办？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "先摸清卡点分类，再推动修订配套细则并明确时限",
+       "e": {
+        "政绩": 30,
+        "能力": 3,
+        "道德": 2,
+        "上司": 3,
+        "声望": 4
+       },
+       "fb": "你没有急着通报批评，而是先拿出了三张卡点清单。细则修订后，全省落地率两个月内从 41% 升到 86%。"
+      },
+      {
+       "判": "模糊",
+       "文": "召开视频会通报进度，要求各地自查",
+       "e": {
+        "政绩": 8
+       },
+       "fb": "会上各地表态很好。三个月后再看数据，只有两个市有实质变化。"
+      },
+      {
+       "判": "错误",
+       "文": "抓两个典型通报批评，先把态度立起来",
+       "e": {
+        "政绩": -6,
+        "道德": -3,
+        "人脉": -4,
+        "声望": -3
+       },
+       "fb": "典型抓了，基层却开始报好看的数。你没有解决问题，只是让问题藏得更深。"
+      }
+     ]
+    },
+    {
+     "q": "多地反映督查检查过多过频，基层疲于应付，你作为分管领导如何处置？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "统筹年度督查计划，同类事项合并开展、结果互认",
+       "e": {
+        "政绩": 28,
+        "能力": 3,
+        "道德": 3,
+        "上司": 2,
+        "声望": 5
+       },
+       "fb": "你把全年 19 次督查合并为 6 次，并明确结果互认。基层减负的经验被省里推广。"
+      },
+      {
+       "判": "模糊",
+       "文": "发个通知，要求各地控制频次",
+       "e": {
+        "政绩": 8
+       },
+       "fb": "通知发了，频次没降。因为每个部门都认为自己那次是必要的。"
+      },
+      {
+       "判": "错误",
+       "文": "强调督查是政治任务，不得讨价还价",
+       "e": {
+        "政绩": 6,
+        "道德": -4,
+        "人脉": -6,
+        "声望": -5
+       },
+       "fb": "话很硬，基层的怨气也很实。年底民主评议时，你的得分很难看。"
+      }
+     ]
+    }
+   ]
+  ]
+ },
+ {
+  "名": "推进重点项目",
+  "desc": "盯着一个卡在审批环节的项目往前挪。",
+  "e": {
+   "政绩": 26,
+   "能力": 1
+  },
+  "asks": [
+   [
+    {
+     "q": "重点项目卡在两个部门之间的职责交叉地带，谁也不肯先签，你怎么推？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "召集联席协调会，以纪要形式明确牵头单位与时限",
+       "e": {
+        "政绩": 26,
+        "能力": 2,
+        "人脉": 2,
+        "上司": 2
+       },
+       "fb": "会开了两个小时，纪要签了字。项目两周内过了审批——不是因为谁让步，而是因为有了白纸黑字。"
+      },
+      {
+       "判": "模糊",
+       "文": "让企业自己去跑，你帮忙打个电话",
+       "e": {
+        "政绩": 5
+       },
+       "fb": "企业跑了一个月，跑通了。但下一个项目，他们不会再来找你。"
+      },
+      {
+       "判": "错误",
+       "文": "先把开工仪式办了，手续随后补",
+       "e": {
+        "政绩": -10,
+        "道德": -4,
+        "廉政风险": 10,
+        "声望": -3
+       },
+       "fb": "仪式很热闹，照片上了本地新闻。两个月后审计发现手续不全，项目被叫停。"
+      }
+     ]
+    },
+    {
+     "q": "项目工地因补偿标准争议被群众围堵，分管领导在外地，你如何处置？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "先到场听完诉求，明确答复时限并留下联系方式",
+       "e": {
+        "政绩": 20,
+        "能力": 2,
+        "道德": 2,
+        "声望": 4
+       },
+       "fb": "你到场后没有先讲政策，先让人把话说完。三天后问题解决了七成，现场视频也没传出去。"
+      },
+      {
+       "判": "模糊",
+       "文": "电话请示，等领导回来再定",
+       "e": {
+        "政绩": 3,
+        "声望": -3
+       },
+       "fb": "你在办公室打了四个电话。人群中午散了，但那条视频发了出去。"
+      },
+      {
+       "判": "错误",
+       "文": "让施工方自己处理，你暂不露面",
+       "e": {
+        "政绩": -8,
+        "道德": -6,
+        "声望": -5
+       },
+       "fb": "施工方和群众发生了推搡。你的名字出现在季度矛盾排查报告的牵头责任人一栏。"
+      }
+     ]
+    },
+    {
+     "q": "项目推进中，有村干部提出希望把工程交给本村施工队，你怎么回应？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "告知必须依法招标，同时支持村里依法参与投标",
+       "e": {
+        "政绩": 14,
+        "道德": 3,
+        "声望": 2
+       },
+       "fb": "村里最终参与了投标。虽然没中标，但没人再说你不给面子。"
+      },
+      {
+       "判": "模糊",
+       "文": "不表态，让他们按程序报名",
+       "e": {
+        "政绩": 6
+       },
+       "fb": "话说得含糊，对方当成了默许。"
+      },
+      {
+       "判": "错误",
+       "文": "口头答应帮忙协调",
+       "e": {
+        "政绩": 12,
+        "道德": -7,
+        "廉政风险": 20
+       },
+       "fb": "工程交给了村里。三个月后，一封举报信寄到了纪委。"
+      }
+     ]
+    }
+   ],
+   [
+    {
+     "q": "重点项目资金缺口较大，社会资本方要求政府出具兜底承诺函才肯进场，你怎么办？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "依法依规调整合作架构，用合规补助机制解决",
+       "e": {
+        "政绩": 26,
+        "能力": 3,
+        "道德": 2,
+        "上司": 2
+       },
+       "fb": "你和法律顾问改了三版方案，用合规的可行性缺口补助锁定了投资人，没有出任何一纸承诺函。"
+      },
+      {
+       "判": "模糊",
+       "文": "先口头答应下来，等签约再研究",
+       "e": {
+        "政绩": 6,
+        "廉政风险": 6
+       },
+       "fb": "投资人进场了，但那份口头承诺一直悬着。"
+      },
+      {
+       "判": "错误",
+       "文": "直接出具承诺函，先把项目签下来",
+       "e": {
+        "政绩": 20,
+        "道德": -5,
+        "廉政风险": 22,
+        "声望": -4
+       },
+       "fb": "项目落地了，你也被记住了。三年后财政吃紧，这份承诺函成了重大风险隐患。"
+      }
+     ]
+    },
+    {
+     "q": "项目用地指标缺口较大，有关方面建议先建后批，你怎么定？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "暂停开工，向省里申请指标或调整选址，绝不未批先建",
+       "e": {
+        "政绩": 22,
+        "能力": 2,
+        "道德": 3,
+        "上司": 2
+       },
+       "fb": "项目推迟了四个月，但手续干干净净。后来省里专项检查，你这里是唯一没有问题的。"
+      },
+      {
+       "判": "模糊",
+       "文": "边报边建，把手续办在前面",
+       "e": {
+        "政绩": 12,
+        "廉政风险": 12
+       },
+       "fb": "工程推进很快，但每一天都在走钢丝。"
+      },
+      {
+       "判": "错误",
+       "文": "同意先建后批，认为这是惯例",
+       "e": {
+        "政绩": 18,
+        "道德": -6,
+        "廉政风险": 24,
+        "声望": -4
+       },
+       "fb": "楼起来了，卫星照片也拍到了。整改通知书比你预想的先到。"
+      }
+     ]
+    }
+   ],
+   [
+    {
+     "q": "重大项目涉及跨市协调与收益分配，两市僵持不下，你怎么处理？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "提请省级层面建立利益共享与指标统筹机制",
+       "e": {
+        "政绩": 34,
+        "能力": 3,
+        "人脉": 3,
+        "上司": 3
+       },
+       "fb": "你把两市的诉求算成了一本明白账。省里据此定了分成比例，项目当年开工。"
+      },
+      {
+       "判": "模糊",
+       "文": "分别找两市领导沟通，先让项目动起来",
+       "e": {
+        "政绩": 10,
+        "人脉": 3
+       },
+       "fb": "项目动了，但分配问题挂着，每隔几个月就要重新谈一次。"
+      },
+      {
+       "判": "错误",
+       "文": "按谁的地谁说了算处理，先照顾一方",
+       "e": {
+        "政绩": -8,
+        "人脉": -5,
+        "道德": -3,
+        "声望": -4
+       },
+       "fb": "一方满意了，另一方在所有环节上卡你。项目拖了两年。"
+      }
+     ]
+    },
+    {
+     "q": "重大项目面临环保容量与经济增长的取舍，投资方希望放宽排放指标，你怎么定？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "坚持环境容量底线，推动企业技改并同步申请置换指标",
+       "e": {
+        "政绩": 30,
+        "能力": 3,
+        "道德": 4,
+        "声望": 5,
+        "上司": 2
+       },
+       "fb": "你没有开口子，而是帮企业找到了技改方案。项目落地了，排放反而降了。"
+      },
+      {
+       "判": "模糊",
+       "文": "先按现行标准批，后续再逐步收紧",
+       "e": {
+        "政绩": 12,
+        "廉政风险": 8
+       },
+       "fb": "项目批了，环境欠账留给下一任。"
+      },
+      {
+       "判": "错误",
+       "文": "特事特办，先让投资落地再说",
+       "e": {
+        "政绩": 22,
+        "道德": -7,
+        "廉政风险": 22,
+        "声望": -6
+       },
+       "fb": "投资来了，环保督察也来了。整改费用比投资还高。"
+      }
+     ]
+    }
+   ]
+  ]
+ },
+ {
+  "名": "协调跨部门事项",
+  "desc": "打了七个电话，终于约到一个能说话的人。",
+  "e": {
+   "政绩": 18,
+   "人脉": 3
+  },
+  "asks": [
+   [
+    {
+     "q": "兄弟单位在配合事项上态度消极，反复强调这不是我们的职责，你怎么处理？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "以正式函件明确责任分工，同步报分管领导",
+       "e": {
+        "政绩": 20,
+        "能力": 1,
+        "上司": 2,
+        "人脉": 2
+       },
+       "fb": "函件发出当天对方就回了。有些事不能靠人情，得靠程序。"
+      },
+      {
+       "判": "模糊",
+       "文": "私下请对方吃个饭，把事办了",
+       "e": {
+        "政绩": 6,
+        "人脉": 2,
+        "廉政风险": 3
+       },
+       "fb": "事是办了。但从此你们的往来，多了一层说不清的东西。"
+      },
+      {
+       "判": "错误",
+       "文": "直接向上一级反映对方不配合",
+       "e": {
+        "政绩": -6,
+        "人脉": -4,
+        "上司": -2,
+        "声望": -2
+       },
+       "fb": "上级把两边都批评了一顿。你赢了道理，输了以后所有需要配合的事。"
+      }
+     ]
+    },
+    {
+     "q": "两个部门的数据不共享，同一条信息要群众交两遍，你怎么推动解决？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "推动建立数据共享清单，明确交换范围与安全责任",
+       "e": {
+        "政绩": 22,
+        "能力": 2,
+        "声望": 3,
+        "人脉": 2
+       },
+       "fb": "清单定了之后，群众只交一次材料。有企业说：「这才叫办事。」"
+      },
+      {
+       "判": "模糊",
+       "文": "建议双方加强沟通，互相支持",
+       "e": {
+        "政绩": 4
+       },
+       "fb": "文件转了两圈，数据还是各存各的。"
+      },
+      {
+       "判": "错误",
+       "文": "要求对方无条件提供数据",
+       "e": {
+        "政绩": 2,
+        "人脉": -5
+       },
+       "fb": "对方以涉密为由拒绝了。事没办成，关系也僵了。"
+      }
+     ]
+    },
+    {
+     "q": "协调会上，对方科室负责人当面说你们的事排不上号，场面尴尬，你怎么接？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "请对方说明实际困难，共同商定可执行的时间节点",
+       "e": {
+        "政绩": 14,
+        "能力": 1,
+        "人脉": 3,
+        "上司": 1
+       },
+       "fb": "对方说了实话：人手不够。你们把时间往后挪了两周，事情办成了。"
+      },
+      {
+       "判": "模糊",
+       "文": "先记下意见，会后单独再沟通",
+       "e": {
+        "政绩": 5
+       },
+       "fb": "会后沟通了三轮，还是没有时间表。"
+      },
+      {
+       "判": "错误",
+       "文": "当场顶回去，强调这是领导交办的任务",
+       "e": {
+        "政绩": -4,
+        "人脉": -5,
+        "声望": -3
+       },
+       "fb": "对方当场没再说话，此后所有需要配合的事都变得很难。"
+      }
+     ]
+    }
+   ],
+   [
+    {
+     "q": "两个部门对同一事项各有文件依据，互不认账，事情僵住了，你如何处置？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "提请法制机构出具合法性审查意见，按意见执行",
+       "e": {
+        "政绩": 26,
+        "能力": 2,
+        "道德": 2,
+        "上司": 2
+       },
+       "fb": "法制机构出具了意见，两边都没话说。你只用十天换来了一个可复用的规则。"
+      },
+      {
+       "判": "模糊",
+       "文": "请双方各让一步，先按惯例办",
+       "e": {
+        "政绩": 7
+       },
+       "fb": "事情办完了，但下次遇到同一情况，还要再吵一遍。"
+      },
+      {
+       "判": "错误",
+       "文": "支持自己熟悉的部门，把另一方意见压下去",
+       "e": {
+        "政绩": 8,
+        "道德": -5,
+        "人脉": -6,
+        "廉政风险": 8
+       },
+       "fb": "你这边省了事，那边从此对你处处设防。"
+      }
+     ]
+    },
+    {
+     "q": "财政部门与业务部门在资金使用方式上分歧较大，影响资金拨付进度，你怎么协调？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "组织三方会商，明确资金用途、绩效目标和拨付节点",
+       "e": {
+        "政绩": 24,
+        "能力": 2,
+        "道德": 2,
+        "人脉": 3,
+        "上司": 2
+       },
+       "fb": "会商纪要签订后，资金两周内到位。财政的同志说：难得见到把绩效写清楚的。"
+      },
+      {
+       "判": "模糊",
+       "文": "让两个部门私下商量好再报",
+       "e": {
+        "政绩": 6
+       },
+       "fb": "私下商量了两个月，还是没结果。"
+      },
+      {
+       "判": "错误",
+       "文": "以工作紧急为由，要求财政先付款",
+       "e": {
+        "政绩": 6,
+        "人脉": -5,
+        "廉政风险": 8
+       },
+       "fb": "钱付了，程序欠着。审计时这笔资金被单独列了出来。"
+      }
+     ]
+    }
+   ],
+   [
+    {
+     "q": "改革事项触碰了兄弟部门的既有权限和利益，对方明确反对，你怎么办？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "把改革依据、权责清单和风险评估摆到桌面上，争取主要领导支持",
+       "e": {
+        "政绩": 34,
+        "能力": 3,
+        "道德": 2,
+        "上司": 4,
+        "人脉": 2
+       },
+       "fb": "你在会上把权责清单逐条读完，方案顺利通过。反对的一方保留了意见，也保留了体面。"
+      },
+      {
+       "判": "模糊",
+       "文": "暂缓推进，先做通个别领导的工作",
+       "e": {
+        "政绩": 8,
+        "人脉": 3
+       },
+       "fb": "推后了半年，事情还在原地。"
+      },
+      {
+       "判": "错误",
+       "文": "绕开对方，直接以领导小组名义发文件",
+       "e": {
+        "政绩": 16,
+        "人脉": -8,
+        "道德": -3,
+        "廉政风险": 6
+       },
+       "fb": "文件发了，但执行环节处处卡壳，你不得不回头再花一年修复关系。"
+      }
+     ]
+    },
+    {
+     "q": "中央垂直管理部门与地方政府在监管责任上界限不清，出现监管空白，你怎么推动？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "提请建立联合监管机制，签订协作备忘录明确边界",
+       "e": {
+        "政绩": 30,
+        "能力": 3,
+        "人脉": 4,
+        "上司": 2
+       },
+       "fb": "备忘录签了，双方还建了联席会商制度。监管空白补上了，谁也不再推。"
+      },
+      {
+       "判": "模糊",
+       "文": "鼓励双方加强协商，遇事多沟通",
+       "e": {
+        "政绩": 8
+       },
+       "fb": "遇到具体问题还是要一件一件磨。"
+      },
+      {
+       "判": "错误",
+       "文": "以属地责任为由，把问题全部兜下来",
+       "e": {
+        "政绩": 4,
+        "道德": -3,
+        "人脉": -4
+       },
+       "fb": "你兜了不该兜的事，出了问题却无法处置，最后两头受气。"
+      }
+     ]
+    }
+   ]
+  ]
+ },
+ {
+  "名": "接待群众来访",
+  "desc": "来了三拨人，两拨是同一件事。",
+  "e": {
+   "政绩": 16,
+   "道德": 2,
+   "声望": 3
+  },
+  "asks": [
+   [
+    {
+     "q": "三拨来访者诉求相同，都涉及十年前的一桩历史遗留问题，你如何处置？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "统一登记，明确答复时限并留下联系电话",
+       "e": {
+        "政绩": 14,
+        "道德": 2,
+        "声望": 3,
+        "上司": 1
+       },
+       "fb": "你建了一本台账，承诺十五日内书面答复。半个月后，三拨人来了两拨，都是来道谢的。"
+      },
+      {
+       "判": "模糊",
+       "文": "转交信访部门，按程序分流",
+       "e": {
+        "政绩": 4
+       },
+       "fb": "程序上没问题。但没有人再跟进，三个月后他们又来了。"
+      },
+      {
+       "判": "错误",
+       "文": "先稳住情绪，告诉他们政策就是这么规定的",
+       "e": {
+        "政绩": -8,
+        "道德": -3,
+        "声望": -5,
+        "廉政风险": 3
+       },
+       "fb": "有人当场拍了桌子。第二天的短视频标题是《这就是我们的人民公仆》。"
+      }
+     ]
+    },
+    {
+     "q": "一位来访老人情绪激动、拍打桌子，你怎么处理？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "先请坐、倒水、听他说完，再逐条解释政策依据",
+       "e": {
+        "政绩": 12,
+        "道德": 3,
+        "声望": 4
+       },
+       "fb": "老人讲了四十分钟，你一句没打断。临走时他说：「你是个办事的人。」"
+      },
+      {
+       "判": "模糊",
+       "文": "请他控制情绪，否则按程序请安保介入",
+       "e": {
+        "政绩": 2,
+        "声望": -2
+       },
+       "fb": "秩序恢复了，老人也走了。他再也没来过——但去了别的部门。"
+      },
+      {
+       "判": "错误",
+       "文": "叫安保把人请出去",
+       "e": {
+        "政绩": -8,
+        "道德": -6,
+        "声望": -6
+       },
+       "fb": "人被架了出去。这段视频被转了两万次。"
+      }
+     ]
+    },
+    {
+     "q": "来访群众提出的是政策之外、但确有实际困难的诉求，你怎么处理？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "在政策范围内找可行路径，同时说明无法突破的边界",
+       "e": {
+        "政绩": 14,
+        "道德": 3,
+        "声望": 3
+       },
+       "fb": "你没有承诺突破政策，但帮他在救助政策里找到了入口。"
+      },
+      {
+       "判": "模糊",
+       "文": "告知政策依据，建议申请其他救助渠道",
+       "e": {
+        "政绩": 5
+       },
+       "fb": "材料给了，路径指了，人还是没着落。"
+      },
+      {
+       "判": "错误",
+       "文": "为了让他先走，口头承诺可以解决",
+       "e": {
+        "政绩": -10,
+        "道德": -5,
+        "声望": -6,
+        "廉政风险": 6
+       },
+       "fb": "人走了，也把这句话记住了。半年后他拿着录音回来了。"
+      }
+     ]
+    }
+   ],
+   [
+    {
+     "q": "一批群众集体来访，诉求涉及多年前的政策调整，当时并无不当，你怎么办？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "承认客观困难，提出过渡性帮扶方案并报请研究",
+       "e": {
+        "政绩": 26,
+        "能力": 2,
+        "道德": 3,
+        "声望": 4,
+        "上司": 1
+       },
+       "fb": "你没有承诺无条件补偿，但为最困难的 37 户争取到了救助政策。群众代表说：「至少有人听懂了。」"
+      },
+      {
+       "判": "模糊",
+       "文": "解释当时的政策依据，请群众理解",
+       "e": {
+        "政绩": 6
+       },
+       "fb": "政策讲清楚了，群众的困难还在。"
+      },
+      {
+       "判": "错误",
+       "文": "明确告知无法解决，请走法律途径",
+       "e": {
+        "政绩": -6,
+        "道德": -4,
+        "声望": -5,
+        "廉政风险": 4
+       },
+       "fb": "话没错，但一群老人站在门口的样子被很多人看到了。"
+      }
+     ]
+    },
+    {
+     "q": "接访现场有自媒体在拍摄，群众情绪激动，你如何应对？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "公开、坦诚回应，说明事实与办理时限，不回避镜头",
+       "e": {
+        "政绩": 24,
+        "能力": 2,
+        "道德": 2,
+        "声望": 6
+       },
+       "fb": "你没有挡镜头。视频发出去后，评论里最多的一句是：「至少这个干部没走。」"
+      },
+      {
+       "判": "模糊",
+       "文": "请宣传部门对接，先了解情况",
+       "e": {
+        "政绩": 6
+       },
+       "fb": "等宣传部门到场，现场已经散了，视频也发了。"
+      },
+      {
+       "判": "错误",
+       "文": "要求删除视频，现场不许拍摄",
+       "e": {
+        "政绩": -10,
+        "道德": -5,
+        "声望": -8,
+        "廉政风险": 6
+       },
+       "fb": "删不掉。第二天上了同城热搜。"
+      }
+     ]
+    }
+   ],
+   [
+    {
+     "q": "某历史遗留问题涉及数千人，多年反复上访，你负责牵头化解，从何入手？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "分类建档、分批化解，先解决最困难、最具体的群体",
+       "e": {
+        "政绩": 36,
+        "能力": 3,
+        "道德": 3,
+        "声望": 6,
+        "上司": 3
+       },
+       "fb": "你把三千人分成了七类，先啃最硬的骨头。半年后，重复访下降了九成。"
+      },
+      {
+       "判": "模糊",
+       "文": "成立专班，先做政策研究和风险评估",
+       "e": {
+        "政绩": 10
+       },
+       "fb": "专班成立了，报告写了三本，群众还是每个月来。"
+      },
+      {
+       "判": "错误",
+       "文": "加强稳控，重点盯住挑头的人",
+       "e": {
+        "政绩": 4,
+        "道德": -7,
+        "人脉": -5,
+        "声望": -8,
+        "廉政风险": 10
+       },
+       "fb": "稳住了表面，激化了内里。上级检查时，这件事被列为重大风险隐患。"
+      }
+     ]
+    },
+    {
+     "q": "接访中发现，群众反映的问题根源在于本系统多年积累的执行偏差，你如何处置？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "如实报告，提出纠错方案并主动承担整改责任",
+       "e": {
+        "政绩": 32,
+        "能力": 3,
+        "道德": 5,
+        "声望": 5,
+        "上司": 2
+       },
+       "fb": "你在报告里写了「主要是我们自己的问题」。主要领导批示：这份报告有担当。"
+      },
+      {
+       "判": "模糊",
+       "文": "先化解个案，系统性问题慢慢研究",
+       "e": {
+        "政绩": 8
+       },
+       "fb": "个案化了，根子还在长。"
+      },
+      {
+       "判": "错误",
+       "文": "强调客观原因，避免把问题揽到本单位",
+       "e": {
+        "政绩": -6,
+        "道德": -5,
+        "声望": -4
+       },
+       "fb": "问题被别处翻了出来。组织上问：你们当时明明知道。"
+      }
+     ]
+    }
+   ]
+  ]
+ },
+ {
+  "名": "材料报送与数据核实",
+  "desc": "汇总上报前，两个科室报来的同一指标数据相差较大。",
+  "e": {
+   "政绩": 12,
+   "能力": 1
+  },
+  "asks": [
+   [
+    {
+     "q": "处里让你把上报材料里的数字修一修，你怎么办？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "如实上报，同时附上口径说明和客观困难",
+       "e": {
+        "政绩": 10,
+        "能力": 1,
+        "道德": 3,
+        "上司": 2
+       },
+       "fb": "材料交上去，领导沉默了几秒，说难为你了。这份材料后来成了市里调整考核口径的依据。"
+      },
+      {
+       "判": "模糊",
+       "文": "在合规口径内选择最有利于本单位的表述",
+       "e": {
+        "政绩": 8
+       },
+       "fb": "数字没有错，但看的人会得出另一种结论。这种做法人人都在用。"
+      },
+      {
+       "判": "错误",
+       "文": "直接改数，反正没人逐项核",
+       "e": {
+        "政绩": 16,
+        "道德": -8,
+        "廉政风险": 20,
+        "声望": -4
+       },
+       "fb": "数字好看了，你也被记住了。第二年统计口径一调，前后对不上，麻烦开始了。"
+      }
+     ]
+    },
+    {
+     "q": "报送材料里有一个对你不利的数据，同事建议删掉这一栏，你怎么处理？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "保留数据，并在说明中解释成因",
+       "e": {
+        "政绩": 8,
+        "道德": 3,
+        "上司": 2
+       },
+       "fb": "你把不利的数字留了下来，还写清了原因。看材料的人说：这份东西实在。"
+      },
+      {
+       "判": "模糊",
+       "文": "调整统计范围，让这一栏看起来正常",
+       "e": {
+        "政绩": 8,
+        "廉政风险": 6
+       },
+       "fb": "看起来正常了，但不是真的正常。"
+      },
+      {
+       "判": "错误",
+       "文": "直接把这一栏删掉",
+       "e": {
+        "政绩": 10,
+        "道德": -6,
+        "廉政风险": 16
+       },
+       "fb": "删掉的栏位在汇总时对不上，被上级发现了。"
+      }
+     ]
+    },
+    {
+     "q": "汇总报表时发现两个科室报来的同一指标数据相差较大，你怎么处理？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "分别核对原始台账，查明差异原因后再汇总",
+       "e": {
+        "政绩": 12,
+        "能力": 2,
+        "道德": 2
+       },
+       "fb": "查了两个下午，发现是统计口径不同。数据改过来了，两边的账也对上了。"
+      },
+      {
+       "判": "模糊",
+       "文": "取平均值上报，注明为初步数据",
+       "e": {
+        "政绩": 5
+       },
+       "fb": "平均数看着稳妥，但两个真实数字都被掩盖了。"
+      },
+      {
+       "判": "错误",
+       "文": "采用较高的那个数字，先把成绩报上去",
+       "e": {
+        "政绩": 12,
+        "道德": -6,
+        "廉政风险": 16
+       },
+       "fb": "报表很好看。年度核查时，这个数字被要求提供台账支撑。"
+      }
+     ]
+    }
+   ],
+   [
+    {
+     "q": "分管领导暗示把本年度增长数据往上提一提，你如何应对？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "当面说明数据来源与风险，请领导决定是否书面批示",
+       "e": {
+        "政绩": 14,
+        "能力": 2,
+        "道德": 3,
+        "上司": 1
+       },
+       "fb": "领导最终没有让你改。他后来在会上说：「数据要经得起翻。」"
+      },
+      {
+       "判": "模糊",
+       "文": "按预计数填报，注明为预估",
+       "e": {
+        "政绩": 12
+       },
+       "fb": "预计数三个字很轻，但足够让所有人都不必负责。"
+      },
+      {
+       "判": "错误",
+       "文": "直接按领导意思改数，不留痕迹",
+       "e": {
+        "政绩": 20,
+        "道德": -8,
+        "廉政风险": 24,
+        "声望": -5
+       },
+       "fb": "数字好看了，责任却落在经办的你身上。统计执法检查时，第一个被问的是你。"
+      }
+     ]
+    },
+    {
+     "q": "上级要一份能拿得出手的经验材料，实际工作并没有那么突出，你怎么办？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "提炼可复制的做法与真实成效，不虚构数据",
+       "e": {
+        "政绩": 20,
+        "能力": 3,
+        "道德": 3,
+        "声望": 4,
+        "上司": 2
+       },
+       "fb": "材料写得朴素，但每一条都能落地。三个月后有四个市来学习。"
+      },
+      {
+       "判": "模糊",
+       "文": "突出重点、淡化短板，按惯例处理",
+       "e": {
+        "政绩": 14
+       },
+       "fb": "材料通过了。看的人心里都清楚，但没人会点破。"
+      },
+      {
+       "判": "错误",
+       "文": "编几个典型事例和数据，把材料做漂亮",
+       "e": {
+        "政绩": 24,
+        "道德": -9,
+        "廉政风险": 26,
+        "声望": -6
+       },
+       "fb": "材料被树为典型在全省推广。半年后来学习的兄弟市发现根本对不上，尴尬的是你。"
+      }
+     ]
+    }
+   ],
+   [
+    {
+     "q": "全省要总结经验，你分管领域的数据与经验材料差距较大，你怎么处理？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "如实说明差距，把短板写进材料并提出改进路径",
+       "e": {
+        "政绩": 26,
+        "能力": 3,
+        "道德": 4,
+        "上司": 3,
+        "声望": 4
+       },
+       "fb": "你在材料里主动写了三条短板。主要领导批注：敢于自我批评，值得推广。"
+      },
+      {
+       "判": "模糊",
+       "文": "选取数据最好的两个市作为经验来源",
+       "e": {
+        "政绩": 16
+       },
+       "fb": "材料很漂亮，但也只是材料。"
+      },
+      {
+       "判": "错误",
+       "文": "统一口径，要求各地按模板报送",
+       "e": {
+        "政绩": 22,
+        "道德": -8,
+        "廉政风险": 22,
+        "声望": -5
+       },
+       "fb": "报上来的数字整齐得像印出来的。上级抽查两个市，全都对不上。"
+      }
+     ]
+    },
+    {
+     "q": "统计口径与实际执行存在偏差，若按实际数据上报会影响全省排名，你怎么定？",
+     "a": [
+      {
+       "判": "正确",
+       "文": "坚持按实际数据上报，并附口径差异说明",
+       "e": {
+        "政绩": 24,
+        "能力": 3,
+        "道德": 4,
+        "上司": 2
+       },
+       "fb": "排名掉了一位，但底数清了。第二年制定政策时，你的数据是唯一能直接用的。"
+      },
+      {
+       "判": "模糊",
+       "文": "沿用原口径上报，同时在内部说明差异",
+       "e": {
+        "政绩": 14,
+        "廉政风险": 8
+       },
+       "fb": "对外好看，对内清楚。这种两本账的做法，是风险最大的做法。"
+      },
+      {
+       "判": "错误",
+       "文": "要求各地按目标数倒推数据",
+       "e": {
+        "政绩": 20,
+        "道德": -9,
+        "廉政风险": 28,
+        "声望": -6
+       },
+       "fb": "数字达标了。统计督察进驻那天，全省的报表都要重新解释。"
+      }
+     ]
+    }
+   ]
+  ]
+ }
+];
+
+const SHIXI_COUNT = 3;   // 每年从题库中随机抽取 3 项
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove('show'),2800);
+}
+function applyEffect(e){
+  if(!e) return;
+  for(const k of ['能力','道德','健康','人脉','上司','声望']) if(e[k]) S.p[k]=clamp(S.p[k]+e[k],0,100);
+  if(e.政绩) S.zhengji = Math.max(0, S.zhengji + Math.round(e.政绩*政绩系数()));
+  if(e.cash) S.cash += e.cash;
+  if(e.廉政风险) S.discipline.risk = clamp(S.discipline.risk+e.廉政风险,0,100);
+  if(e.flag) S.flags[e.flag]=true;
+  if(e.rel){
+    for(const id in e.rel){
+      const r=S.npcs.find(n=>n.id===id); if(!r) continue;
+      const d=e.rel[id];
+      if(d.信任!=null) r.信任=clamp(r.信任+d.信任,-100,100);
+      if(d.利益!=null) r.利益=clamp(r.利益+d.利益,-100,100);
+      if(d.公开!=null) r.公开=clamp(r.公开+d.公开,-100,100);
+      if(d.好感度!=null) r.好感度=clamp(r.好感度+d.好感度,0,100);
+    }
+  }
+  if(e.mem){ for(const id in e.mem){ const r=S.npcs.find(n=>n.id===id); if(r) r.memory.unshift(e.mem[id]); } }
+}
+function perfLabel(){ return S && S.p.职业==="公务员" ? "政绩点" : "业绩点"; }
+/* 人脉的宽度取决于岗位层级：职位越高，能接触到的人越多；在原地待得再久，圈子也不会无限扩大 */
+/* 收过的每一笔都会留在档案里，构成风险的下限——时间冲得淡情绪，冲不淡账目 */
+function 案件风险底(){
+  const c=(S.discipline&&S.discipline.案件)||[];
+  return Math.min(92, c.reduce((a,x)=>a+Math.min(16, Math.round(x.金额/120000*6)+4), 0));
+}
+function 涉案金额(){
+  return ((S.discipline&&S.discipline.案件)||[]).reduce((a,x)=>a+x.金额,0);
+}
+function 人脉上限(){
+  if(!S) return 60;
+  return clamp(45+Math.max(0,S.rankIdx+1)*6, 45, 100);
+}
+/* 快照与差异：用来结算「奖惩」和年度总结 */
+function 快照(){
+  return {政绩:S.zhengji, 能力:S.p.能力, 道德:S.p.道德, 健康:S.p.健康, 人脉:S.p.人脉,
+    上司:S.p.上司, 声望:S.p.声望, 现金:S.cash, 风险:S.discipline.risk, 职级:S.zhijiIdx, 职务:S.rankIdx};
+}
+function 差异(前,后,简称){
+  const 项=[["政绩","政绩"],["能力","能力"],["道德","道德"],["健康","健康"],["人脉","人脉"],["声望","声望"],["领导评价","上司"],["廉政风险","风险"]];
+  const out=[];
+  项.forEach(([名,键])=>{
+    const d=后[键]-前[键];
+    if(!d) return;
+    if(名==="廉政风险" && d>0){ out.push(`廉政风险 +${d}`); return; }
+    out.push(`${简称&&名==="政绩"?perfLabel():名} ${d>0?"+":"-"}${fmt(Math.abs(d))}`);
+  });
+  const dz=后.现金-前.现金;
+  if(dz) out.push(`现金 ${dz>0?"+":"-"}¥${fmt(Math.abs(dz))}`);
+  return out.join("　");
+}
+/* 岗位权重：层级越高，经手事项的分量越大，同样的工作产出更多政绩。
+   没有这一项，投入是线性的、门槛是指数增长的，越往上必然卡死。 */
+const TIER_WEIGHT = 1.30;
+/* 平台产出系数：层级越高，经手事项的影响面越大 */
+const 平台系数={"省级":1.15,"市级":1.08,"区级":1.02,"县级":1.0,"乡镇级":0.92};
+function 政绩系数(){
+  if(!S || S.rankIdx<0) return 1;
+  const base=Math.pow(TIER_WEIGHT, S.rankIdx+1);
+  const p=平台系数[S.p.平台]||1;
+  return S.flags&&S.flags['二线'] ? base*p*0.5 : base*p;   // 二线不再经手一线事务，产出减半
+}
+
+/* =========================================================
+   姓名校验（符合逻辑 · 公序良俗）
+========================================================= */
+const 单姓 = "赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦许何吕施张孔曹严华金魏陶姜戚谢邹喻柏窦章云苏潘葛范彭郎鲁韦昌马苗凤花方俞任袁柳鲍史唐费廉岑薛雷贺倪汤滕殷罗毕郝邬安常乐于时傅皮卞齐康伍余元卜顾孟平黄和穆萧尹姚邵湛汪祁毛禹狄米贝明臧计伏成戴谈宋茅庞熊纪舒屈项祝董梁杜阮蓝闵席季麻强贾路娄危江童颜郭梅盛林刁钟徐邱骆高夏蔡田樊胡凌霍虞万支柯管卢莫房裘缪解应宗丁宣邓郁单杭洪包诸左石崔吉钮龚程邢裴陆荣翁荀羊惠甄曲家封芮储靳段富巫乌焦巴牧山谷车侯全班仰秋仲伊宫宁仇栾暴甘厉戎祖武符刘景詹束龙叶幸司韶黎薄印宿白怀蒲邰从鄂索咸籍赖卓蔺屠蒙池乔能苍双闻莘党翟谭贡劳姬申扶堵冉宰郦雍桑桂濮牛寿通边扈燕冀浦尚农温别庄晏柴瞿阎充慕连茹习宦艾鱼容向古易慎戈廖庾终暨居衡步都耿满弘匡国文寇广禄阙东欧殳沃利蔚越师巩聂晁勾敖融冷辛阚那简饶空曾沙鞠须丰巢关蒯相查后荆红游竺权盖益桓";
+const 复姓 = ["欧阳","太史","端木","上官","司马","东方","独孤","南宫","万俟","闻人","夏侯","诸葛","尉迟","公羊","赫连","皇甫","宗政","濮阳","公冶","太叔","申屠","公孙","慕容","仲孙","钟离","长孙","宇文","司徒","鲜于","司空","子车","司寇","公西","乐正","轩辕","令狐","百里","呼延","东郭","西门","第五","南荣","仲长","子桑","即墨","达奚"];
+const 单姓集 = new Set(单姓.split(""));
+const 违禁 = ["操","屎","尿","屁","屌","逼","婊","娼","嫖","妓","奸","淫","赌","毒","鬼","尸","死","杀","畜","猪","狗","杂种","王八","混蛋","垃圾","傻","蠢","贱","鸦片","强奸","滚蛋","杂碎"];
+const 敏感姓 = ["习近平","毛泽东","邓小平","江泽民","胡锦涛","李克强","温家宝","朱德","刘少奇","周恩来","华国锋","胡耀邦","薄熙来","周永康","令计划","徐才厚","郭伯雄","蒋介石","孙中山","袁世凯"];
+const 不当称谓 = ["主席","总理","书记","总统","皇帝","皇上","陛下","万岁","常委","部长","省长","市长","县长","局长","殿下","大王"];
+function validateName(raw){
+  const n=(raw||"").trim();
+  if(!n) return "请填写姓名";
+  if(/\s/.test(n)) return "姓名不能包含空格";
+  if(/[a-zA-Z0-9]/.test(n)) return "姓名不能包含字母或数字";
+  if(!/^[\u4e00-\u9fa5]+$/.test(n)) return "姓名只能使用汉字";
+  if(n.length<2) return "姓名至少为 2 个汉字";
+  if(n.length>4) return "姓名最多为 4 个汉字";
+  for(const s of 敏感姓) if(n.includes(s)) return "该姓名涉及敏感人物，请重新填写";
+  for(const s of 不当称谓) if(n.includes(s)) return "姓名不得使用职务或不当称谓";
+  for(const b of 违禁) if(n.includes(b)) return "该姓名不符合公序良俗，请重新填写";
+  const fx=复姓.find(c=>n.startsWith(c));
+  if(fx){ if(n.length<fx.length+1) return "复姓之后请至少再写一个字"; }
+  else if(!单姓集.has(n[0])) return "姓氏“"+n[0]+"”不常见，请使用常见姓氏";
+  return null;
+}
+const 男名 = ["承宇","浩然","致远","泽楷","明远","子墨","嘉树","景行","斯年","志远","文彬","柏川","彦霖","启明","鸿飞","煜辰"];
+const 女名 = ["清予","静姝","佳宁","念安","若楠","亦柔","书瑶","文瑾","秋池","婉清","知微","雨桐","芷宁","思彤","语汐","南乔"];
+function randomName(sex){
+  const sur=pick(单姓.split("").concat(复姓));
+  return sur + pick(sex==="女"?女名:男名);
+}
+
+/* =========================================================
+   职级与职务序列
+========================================================= */
+const 职级序列 = ["二级科员","一级科员","四级主任科员","三级主任科员","二级主任科员","一级主任科员",
+  "四级调研员","三级调研员","二级调研员","一级调研员","二级巡视员","一级巡视员"];
+const 职务阶梯 = [
+  {名:"乡科级副职",月薪:8500,最低年:3,门槛:{政绩:150,能力:45,道德:50,上司:45},例:[
+    "副乡长","副镇长","街道办副主任","乡镇党委副书记","街道党工委副书记",
+    "县发展和改革局副局长","县住房和城乡建设局副局长","县财政局副局长","县教育局副局长","县公安局副局长",
+    "县卫生健康局副局长","县农业农村局副局长","县市场监督管理局副局长","县交通运输局副局长",
+    "县生态环境局副局长","县审计局副局长","县文化和旅游局副局长","县工业和信息化局副局长",
+    "开发区管委会副主任","市发展和改革委员会副科长"]},
+  {名:"乡科级正职",月薪:11000,最低年:2,门槛:{政绩:400,能力:55,道德:52,上司:55},例:[
+    "乡长","镇长","街道办主任","乡镇党委书记","街道党工委书记",
+    "县发展和改革局局长","县财政局局长","县教育局局长","县住房和城乡建设局局长","县公安局政委",
+    "县卫生健康局局长","县农业农村局局长","县市场监督管理局局长","县交通运输局局长","县审计局局长",
+    "县委组织部副部长","县委宣传部副部长","县委统战部副部长","县委政法委副书记",
+    "县文化和旅游局局长","县工业和信息化局局长","市发展和改革委员会科长","区人力资源和社会保障局局长"]},
+  {名:"县处级副职",月薪:15000,最低年:3,门槛:{政绩:800,能力:63,道德:55,上司:63},例:[
+    "副县长","区长助理","县委常委、县委组织部部长","县委常委、县委宣传部部长","县委常委、县委统战部部长",
+    "县委常委、县委政法委书记","县委常委、县委办公室主任","县委副书记","市委组织部部务委员",
+    "市发展和改革委员会副主任","市财政局副局长","市教育局副局长","市住房和城乡建设局副局长","市公安局副局长",
+    "市卫生健康委员会副主任","市交通运输局副局长","市审计局副局长","市农业农村局副局长",
+    "市生态环境局副局长","市工业和信息化局副局长","市市场监督管理局副局长","市委宣传部副部长",
+    "市委统战部副部长","市委政法委员会副书记","省发展和改革委员会副处长","省住房和城乡建设厅副处长"]},
+  {名:"县处级正职",月薪:20000,最低年:2,门槛:{政绩:1400,能力:70,道德:58,上司:70},例:[
+    "县长","区长","县委书记","市发展和改革委员会主任","市财政局局长","市教育局局长","市住房和城乡建设局局长",
+    "市公安局常务副局长","市卫生健康委员会主任","市交通运输局局长","市审计局局长","市农业农村局局长",
+    "市生态环境局局长","市工业和信息化局局长","市市场监督管理局局长","市委组织部副部长","市委宣传部副部长",
+    "市委统战部副部长","市委政法委员会副书记","省发展和改革委员会处长","市委宣传部常务副部长"]},
+  {名:"厅局级副职",月薪:26000,最低年:3,门槛:{政绩:2200,能力:76,道德:60,上司:76},例:[
+    "副市长","市委常委、市委组织部部长","市委常委、市委宣传部部长","市委常委、市委统战部部长",
+    "市委常委、市委政法委书记","市委副书记","省发展和改革委员会副主任","省财政厅副厅长","省教育厅副厅长",
+    "省住房和城乡建设厅副厅长","省公安厅副厅长","省卫生健康委员会副主任","省交通运输厅副厅长",
+    "省审计厅副厅长","省农业农村厅副厅长","省委组织部部务委员","省生态环境厅副厅长",
+    "省市场监督管理局副局长","省委宣传部副部长"]},
+  {名:"厅局级正职",月薪:34000,最低年:3,门槛:{政绩:3400,能力:82,道德:62,上司:82},例:[
+    "市长","市委书记","省发展和改革委员会主任","省财政厅厅长","省教育厅厅长","省住房和城乡建设厅厅长",
+    "省公安厅厅长","省卫生健康委员会主任","省交通运输厅厅长","省审计厅厅长","省农业农村厅厅长",
+    "省生态环境厅厅长","省工业和信息化厅厅长","省市场监督管理局局长","省委组织部副部长",
+    "省委宣传部副部长","省委统战部副部长","省委政法委员会副书记"]},
+  {名:"省部级副职",月薪:44000,最低年:3,门槛:{政绩:5000,能力:87,道德:65,上司:88},例:[
+    "副省长","省委常委、省委组织部部长","省委常委、省委宣传部部长","省委常委、省委统战部部长",
+    "省委常委、省委政法委书记","省委副书记","国家发展和改革委员会副主任","财政部副部长","教育部副部长",
+    "住房和城乡建设部副部长","公安部副部长","国家卫生健康委员会副主任","交通运输部副部长",
+    "审计署副审计长","中央组织部部务委员","农业农村部副部长","生态环境部副部长","工业和信息化部副部长"]},
+  {名:"省部级正职",月薪:55000,最低年:3,门槛:{政绩:7000,能力:90,道德:68,上司:92},例:[
+    "省长","省委书记","省政协主席","国家发展和改革委员会主任","财政部部长","教育部部长",
+    "住房和城乡建设部部长","国家卫生健康委员会主任","交通运输部部长","审计署审计长","农业农村部部长",
+    "生态环境部部长","工业和信息化部部长","中央组织部副部长","中央宣传部副部长"]},
+  {名:"国家级副职",月薪:68000,最低年:5,门槛:{政绩:10000,能力:94,道德:72,上司:95},例:[
+    "国务院副总理","国务委员","国家副主席","中央组织部部长","中央宣传部部长"]}
+];
+function mkLadder(names, base){
+  return names.map((n,i)=>({
+    名:n, 月薪:Math.round(base*Math.pow(1.5,i)), 最低年:i===0?3:(i>=4?3:2),
+    门槛:{政绩:Math.round(150*Math.pow(2.0,i)),能力:Math.min(95,45+i*6),道德:55,上司:Math.min(95,42+i*6)},
+    例:[n+"（综合）",n+"（业务）",n+"（市场）",n+"（技术）",n+"（行政）",n+"（财务）"]
+  }));
+}
+const LADDERS = {
+  "事业单位":[["科员",6200],["副科长",8200],["科长",11500],["副处长",15000],["处长",19500],["副主任",25000]],
+  "国企":[["职员",7000],["业务主管",9800],["部门副经理",13000],["部门经理",17500],["副总经理",24000],["总经理",33000],["集团副总经理",43000]],
+  "企业":[["业务员",6500],["业务主管",9500],["部门经理",14000],["总监",20000],["副总经理",28000],["总经理",40000]],
+  "记者":[["见习记者",5800],["记者",7600],["资深记者",10500],["部门副主任",14000],["部门主任",19000],["副总编辑",26000],["总编辑",34000]],
+  "教师":[["二级教师",6200],["一级教师",8000],["高级教师",11000],["教务处副主任",13500],["副校长",17500],["校长",24000]],
+  "律师":[["实习律师",5500],["执业律师",12000],["主办律师",22000],["合伙人",45000],["高级合伙人",80000]],
+  "医生":[["住院医师",7000],["主治医师",11000],["副主任医师",17000],["主任医师",26000],["科室副主任",30000],["科室主任",40000]],
+  "市民":[["个体经营者",6000],["小店主",9000],["连锁经营者",15000],["小微企业主",26000]],   // 已下线，仅作旧存档兜底
+};
+function ladder(){
+  if(S.p.职业==="公务员") return 职务阶梯;
+  const L=LADDERS[S.p.职业];
+  if(L) return mkLadder(L.map(x=>x[0]),L[0][1]);
+  // 兜底：旧存档里可能保留着已下线的职业，按事业单位序列继续
+  return mkLadder(LADDERS["事业单位"].map(x=>x[0]),LADDERS["事业单位"][0][1]);
+}
+/* 岗位条线：用来判断一个岗位属于哪个系统，从而与专业、现单位、现任条线做匹配 */
+const 条线词表=[
+  ["住建",["住房和城乡建设","住建","城乡建设"]],
+  ["发改",["发展和改革","发展改革","发改委"]],
+  ["财政",["财政"]],
+  ["教育",["教育"]],
+  ["政法",["政法委","公安","司法"]],
+  ["组工",["组织","人力资源和社会保障","人社"]],
+  ["宣传",["宣传","文化和旅游","文旅"]],
+  ["卫健",["卫生健康","卫健"]],
+  ["自然资源",["自然资源","规划"]],
+  ["交通",["交通"]],
+  ["工信",["工业和信息化","工信","数据"]],
+  ["农业",["农业农村","农业"]],
+  ["生态",["生态环境","环保"]],
+  ["审计",["审计"]],
+  ["市场监管",["市场监督管理","市场监管"]],
+  ["综合",["办公室","办公厅","政府"]]
+];
+function 条线Of(名){
+  if(!名) return "其他";
+  if(/县长|区长|市长|省长|乡长|镇长|街道办主任|县长|总理|主席/.test(名)) return "主官";
+  for(const [k,ws] of 条线词表) if(ws.some(w=>名.includes(w))) return k;
+  if(/助理|常务|常委|秘书长|办公室主任/.test(名)) return "综合";
+  return "其他";
+}
+/* 不同专业门类对口的主管条线 */
+const 专业偏好条线={
+  "工学门类":["住建","交通","自然资源","工信","生态"],
+  "经济学门类":["发改","财政","审计","工信","综合"],
+  "管理学门类":["综合","组工","财政","市场监管","发改"],
+  "法学门类":["政法","综合","市场监管","审计"],
+  "文学门类":["宣传","教育","综合"],
+  "医学门类":["卫健","教育"],
+  "理学门类":["教育","工信","生态","综合"]
+};
+/* 高配岗位：名义层级不变，但兼任常委、或岗位本身配置更高，含金量更大 */
+const 高配岗位=["县委常委、县委组织部部长","县委常委、县委宣传部部长","县委常委、县委统战部部长",
+  "县委常委、县委政法委书记","县委常委、县委办公室主任","市委副书记","市委常委、市委组织部部长",
+  "市委常委、市委宣传部部长","市委常委、市委统战部部长","市委常委、市委政法委书记","县委书记",
+  "省委常委、省委组织部部长","省委常委、省委宣传部部长","省委常委、省委统战部部长","省委常委、省委政法委书记",
+  "省委副书记","中央组织部部长","中央宣传部部长","中央组织部部务委员","省委组织部副部长","省政协主席"];
+function 是高配(名){ return 高配岗位.some(x=>名===x||名.indexOf(x)>=0); }
+/* 党政领导班子经历：书记、副书记、常委、县长/区长/乡长/镇长，以及组织部、宣传部、统战部等党委序列 */
+function 是党政班子(名){
+  if(!名) return false;
+  return /副书记|书记|常委|县长|区长|乡长|镇长|组织部|宣传部|统战部|政法委|党委/.test(名);
+}
+/* 二线岗位：人大、政协、参事等非一线领导职务 */
+const 二线岗位=["人大常委会副主任","人大专门委员会主任委员","政协副主席","政协秘书长","政府参事","巡视员","调研员","专职副书记"];
+function 是二线(名){ return !!名 && 二线岗位.some(x=>名.indexOf(x)>=0); }
+/* 实权岗位：党政一把手、常委、关键部门正职 */
+function 是实权(名){
+  if(!名) return false;
+  if(是二线(名)) return false;
+  return /县委书记|区委书记|市委书记|省委书记|县长|区长|市长|省长|乡长|镇长|街道办主任|副书记|常委|组织部长|宣传部长|统战部长|政法委书记|公安局|发展和改革委员会主任|财政局局长|财政厅厅长|组织部部长/.test(名);
+}
+/* 提任年龄界限：现实中到龄不再提任实职，距退休不足五年的一般不再提任 */
+function 提任年龄上限(idx){
+  const 女=(S&&S.p&&S.p.性别==="女");
+  const 表=[[50,48],[50,48],[53,51],[53,51],[57,55],[57,55],[60,58],[60,58],[63,61]];
+  const v=表[idx]||[63,61];
+  return 女?v[1]:v[0];
+}
+/* 退居二线的年龄线：越往上走得越晚 */
+function 二线年龄(){
+  if(!S) return 60;
+  const 女=S.p.性别==="女";
+  if(S.rankIdx>=6) return 女?60:63;
+  if(S.rankIdx>=3) return 女?55:58;
+  return 女?54:57;
+}
+/* 工作平台：决定你走哪条路、接触什么层级的人。平台不设硬天花板，但越往上越窄 */
+const 平台表={
+  "省级":{城市:["京州市"],单位:["省发展和改革委员会","省财政厅","省委组织部","省委宣传部","省住房和城乡建设厅","省公安厅","省教育厅","省交通运输厅"],顶:8,上:null},
+  "市级":{城市:["京州市","吕州市","林城市"],单位:["市发展和改革委员会","市财政局","市委组织部","市委宣传部","市住房和城乡建设局","市公安局","市教育局","市交通运输局"],顶:6,上:"省级"},
+  "区级":{城市:["光明区","新城区","临港区"],单位:["区发展和改革局","区财政局","区委组织部","区委宣传部","区住房和城乡建设局","区教育局","区人力资源和社会保障局"],顶:4,上:"市级"},
+  "县级":{城市:["岩台县","平塘县","东山县"],单位:["县发展和改革局","县财政局","县委组织部","县委宣传部","县住房和城乡建设局","县教育局","县农业农村局"],顶:4,上:"市级"},
+  "乡镇级":{城市:["平塘镇","青桥镇","柳林镇","双河乡","东河乡"],单位:["镇人民政府","乡人民政府"],顶:3,上:"县级"}
+};
+const 平台集合=["省级","市级","区级","县级","乡镇级"];
+function 平台单位(平台,城市){
+  const 表=平台表[平台]; if(!表) return "机关";
+  let 单位=pick(表.单位);
+  if(平台==="乡镇级"){
+    // 镇配镇、乡配乡
+    单位 = 城市.slice(-1)==="乡" ? "乡人民政府" : "镇人民政府";
+    return 城市 + 单位.slice(1);
+  }
+  if(平台==="省级") return 单位;
+  return 城市 + 单位.slice(1);
+}
+/* 判断一个岗位属于哪个平台 */
+function 岗位平台(名){
+  if(!名) return "其他";
+  if(/省长|省委/.test(名)) return "省级";
+  if(/省发展和改革委员会|省财政厅|省教育厅|省公安厅|省[^市]*厅|国家|中央/.test(名)) return "省级";
+  if(/市长|市委|市政府|市[^县]*局|市[^县]*委员会/.test(名)) return "市级";
+  if(/区长|区委|区政府|区[^县]*局/.test(名)) return "区级";
+  if(/县长|县委|县政府|县[^乡]*局|县人民政府/.test(名)) return "县级";
+  if(/乡人民政府|镇人民政府|副乡长|副镇长|乡长|镇长|乡镇党委|街道办|街道党工委/.test(名)) return "乡镇级";
+  if(平台集合.includes(名)) return 名;
+  return "其他";
+}
+function 平台天花板(){
+  if(S.p.平台顶!=null) return S.p.平台顶;   // 起点平台决定最终能走到哪一级
+  const t=平台表[S.p.平台];
+  return t?t.顶:8;
+}
+const ZHIJI_CAP={"-1":1,"0":3,"1":5,"2":7,"3":9,"4":10,"5":11,"6":11,"7":11,"8":11,"9":11};
+/* 职务与职级的对应下限：提任领导职务后，职级不得低于该层次的最低线 */
+const ZHIJI_FLOOR={"-1":0,"0":2,"1":4,"2":6,"3":8,"4":9,"5":10,"6":11,"7":11,"8":11,"9":11};
+function zhijiFloorOf(idx){ const c=ZHIJI_FLOOR[String(idx)]; return c==null?0:c; }
+function zhijiCapOf(idx){ const c=ZHIJI_CAP[String(idx)]; return c==null?1:c; }
+function zhijiCap(){ if(S.p.职业!=="公务员") return 0; return zhijiCapOf(S.rankIdx); }
+
+/* =========================================================
+   专业 · 学历 · 选调生
+========================================================= */
+const MAJORS = {
+  "法学门类":["法学","政治学与行政学","社会学","公安学","纪检监察"],
+  "经济学门类":["经济学","金融学","财政学","税收学","国际经济与贸易","统计学","数字经济"],
+  "管理学门类":["会计学","审计学","工商管理","人力资源管理","行政管理","公共事业管理","工程管理","土地资源管理","大数据管理与应用"],
+  "文学门类":["汉语言文学","新闻学","传播学","网络与新媒体","英语"],
+  "工学门类":["计算机科学与技术","软件工程","人工智能","数据科学与大数据技术","土木工程","建筑学","城乡规划","电气工程及其自动化","环境工程","机械设计制造及其自动化","通信工程"],
+  "医学门类":["临床医学","口腔医学","预防医学","药学","中医学"],
+  "理学门类":["数学与应用数学","应用心理学","地理信息科学","生物科学"]
+};
+function majorGroup(m){ for(const g in MAJORS) if(MAJORS[g].includes(m)) return g; return null; }
+const MAJOR_FIT = {
+  "法学门类":  {公务员:95,事业单位:82,国企:74,企业:72,记者:78,教师:71,医生:0},
+  "经济学门类":{公务员:92,事业单位:85,国企:92,企业:92,记者:80,教师:75,医生:0},
+  "管理学门类":{公务员:90,事业单位:88,国企:90,企业:90,记者:75,教师:72,医生:0},
+  "文学门类":  {公务员:85,事业单位:82,国企:75,企业:78,记者:95,教师:92,医生:0},
+  "工学门类":  {公务员:80,事业单位:88,国企:95,企业:95,记者:71,教师:75,医生:0},
+  "医学门类":  {公务员:75,事业单位:85,国企:72,企业:72,记者:0, 教师:72,医生:98},
+  "理学门类":  {公务员:80,事业单位:85,国企:82,企业:85,记者:72,教师:90,医生:0}
+};
+function fitOf(major, job){ const g=majorGroup(major); return (MAJOR_FIT[g]&&MAJOR_FIT[g][job])||0; }
+const ALL_JOBS=["公务员","事业单位","国企","企业","记者","教师","医生"];
+
+const EDU_BY_AGE = age => age<=20?"高中/中专" : age===21?"大专" : age<=24?"本科" : age<=27?"硕士" : "博士";
+const EDU_LEVEL = {"高中/中专":0,"大专":1,"本科":2,"硕士":3,"博士":4};
+const eduIdx = e => EDU_LEVEL[e]!=null?EDU_LEVEL[e]:2;
+const GRAD_AGE = {"高中/中专":18,"大专":21,"本科":22,"硕士":25,"博士":28};
+function xdRate(age, edu){
+  const e=eduIdx(edu);
+  if(e===2&&age<=25) return 0.16;
+  if(e===3&&age<=28) return 0.28;
+  if(e===4&&age<=32) return 0.36;
+  return 0;
+}
+function startZhiji(edu, isXd){
+  const e=eduIdx(edu);
+  let idx=e<=1?0 : e===2?1 : e===3?2 : 3;
+  if(isXd) idx=Math.min(职级序列.length-1, idx+1);
+  return idx;
+}
+
+/* =========================================================
+   状态
+========================================================= */
+let S=null, curTab='事件', pendingEvent=null, pendingPositions=null, pendingPosTitle="", yearLog=[];
+
+const 男名池=["侯浩然","周正","方军","许文博","林远","顾南舟","宋启明","江述白","程亦然","陆时宴"];
+const 女名池=["林晓月","沈静","苏晚","何晓芸","陆清予","温以宁","叶书瑶","白露","秦知微","许南乔"];
+const 婚恋职业池=[
+  {类别:"公务员",名:"市财政局科员"},{类别:"公务员",名:"区委办公室科员"},{类别:"公务员",名:"市发展和改革委员会科员"},
+  {类别:"事业单位人员",名:"市第一人民医院医师"},{类别:"事业单位人员",名:"市第三中学教师"},{类别:"事业单位人员",名:"市规划设计院工程师"},
+  {类别:"国企人员",名:"汉东能源集团职员"},{类别:"国企人员",名:"市供电公司职员"},
+  {类别:"企业经营者",名:"自营连锁餐饮店主"},{类别:"企业经营者",名:"京州宏远实业部门经理"},
+  {类别:"基层工作人员",名:"社区居委会工作人员"},{类别:"基层工作人员",名:"乡镇综合服务中心工作人员"},
+  {类别:"普通市民",名:"个体经营户"},{类别:"普通市民",名:"自由职业者"}
+];
+const 婚恋收入={"公务员":5600,"事业单位人员":5900,"国企人员":6600,"企业经营者":9500,"基层工作人员":4600,"普通市民":5200};
+const 婚恋性格=["温和顾家，喜欢安稳","独立要强，事业心重","开朗健谈，社交广","安静内向，喜欢读书","孝顺父母，重视家庭","务实节俭，会过日子","浪漫感性，需要陪伴","理性克制，讲原则"];
+
+function newState(f){
+  const age=f.age, edu=EDU_BY_AGE(age);
+  const fit=fitOf(f.major,f.job);
+  const isXd = f.job==="公务员" && Math.random()<xdRate(age,edu);
+  const BG=[
+    {k:"农村家庭",bonus:{道德:+6,健康:+3,人脉:-3},现金:rnd(2000,8000),负债:rnd(20000,45000)},
+    {k:"普通职工家庭",bonus:{道德:+4,健康:+2},现金:rnd(8000,20000),负债:rnd(0,20000)},
+    {k:"知识分子家庭",bonus:{能力:+5,道德:+3},现金:rnd(15000,35000),负债:0},
+    {k:"干部家庭",bonus:{上司:+9,人脉:+7},现金:rnd(25000,50000),负债:0},
+    {k:"个体经营家庭",bonus:{人脉:+5,健康:+1},现金:rnd(30000,80000),负债:rnd(0,50000)}
+  ];
+  const bg=pick(BG);
+  const born=pick(["汉东省京州","汉东省吕州","汉东省林城","汉东省岩台","外省城镇","外省农村"]);
+  // 每次开局随机分配工作平台（省 / 市 / 区 / 县 / 乡镇），晋升路径随之不同
+  const 平台=pick(平台集合);
+  const city=pick(平台表[平台].城市);
+  const 分配单位=平台单位(平台, city);
+  const housing=pick(["单位集体宿舍","与人合租的老小区两居","城中村单间","亲戚家借住","父母家（每天通勤）"]);
+  const jobUnit={"公务员":分配单位,"事业单位":"市规划设计院","国企":"汉东能源集团","企业":"京州宏远实业",
+    "记者":"汉东日报社","教师":"京州第三中学","医生":"京州市第一人民医院"}[f.job];
+  const jobBonus={"公务员":{上司:+4},"事业单位":{能力:+3},"国企":{人脉:+3},"企业":{人脉:+5,能力:+2},
+    "记者":{能力:+2,声望:+5},"教师":{道德:+4,声望:+3},"律师":{能力:+4,声望:+2},
+    "医生":{能力:+3,道德:+2}}[f.job]||{};
+  const basePay={公务员:6800,事业单位:7200,国企:8000,企业:7500,记者:7000,教师:6900,医生:7800}[f.job];
+
+  const s={
+    version:5,
+    p:{ 姓名:f.name, 性别:f.sex, 年龄:age, 出生地:born, 城市:city, 家庭背景:bg.k, 平台:平台, 平台顶:平台表[平台].顶,
+      学历:edu, 专业:f.major, 专业匹配度:fit, 职业:f.job, 单位:jobUnit,
+      选调生:isXd, 政治面貌:isXd?"中共党员":(Math.random()<0.3?"中共党员":"群众"),
+      目标:pick(["在体制内向上走，做出实事","把家人安顿好，过得踏实","做成一件真正留下痕迹的事","守住底线，安稳一生","趁年轻多挣点钱，别留遗憾"]),
+      能力:52, 道德:58, 健康:72, 人脉:28, 上司:40, 声望:48 },
+    p2:{ 处分:0, 嘉奖:0, 任职年:0, 职级年:0, 初次晋升:false, 连续模糊:0, 累计模糊:0 },
+    status:"在职",
+    rankIdx: isXd?0:-1,
+    zhijiIdx: f.job==="公务员"?Math.max(startZhiji(edu,isXd), isXd?zhijiFloorOf(0):0):0,
+    positions:[], zhengji:0,
+    cash:bg.现金, housing:housing,
+    assets:{房产:[],车辆:[],投资:[]},
+    market:{房价:1},
+    loans:[], 负债:bg.负债, fund:0,   // 住房公积金个人账户
+    edu:{在读:null,证书:[]},
+    income:{月工资:basePay,其他:0},
+    date:{y:2040}, beginYear:2040, endYear:0,
+    actions:ACTIONS_PER_YEAR, actionsMax:ACTIONS_PER_YEAR,
+    usedThisYear:[],
+    shixiOrder: shuffle(SHIXI.map((_,i)=>i)).slice(0,SHIXI_COUNT),
+    quiz:null,
+    family:{婚姻:"单身",配偶:null,子女:[]},
+    candidates:[],
+    discipline:{risk:0,level:"平稳",records:[],案件:[]}, riskSnapshot:0,
+    city:{财政收入:62,就业:58,房地产:55,产业:54,公共服务:60,交通:52,舆论:60,矛盾:38},
+    npcs:[], log:[], flags:{}, over:false
+  };
+  for(const m of [bg.bonus, jobBonus]) for(const k in m) if(k in s.p) s.p[k]=clamp(s.p[k]+m[k],0,100);
+  let post=null;
+  if(isXd){
+    s.p.上司=clamp(s.p.上司+8,0,100); s.p.人脉=clamp(s.p.人脉+6,0,100); s.p.声望=clamp(s.p.声望+5,0,100);
+    s.flags['选调生']=true;
+    // 选调生编制在省委组织部，先下派到市、县挂职锻炼，期满回部
+    s.p.单位="省委组织部";
+    s.p.平台="省级";
+    const 挂职层级=pick(["县级","县级","乡镇级"]);
+    const 挂职城市=pick(平台表[挂职层级].城市);
+    const 挂职单位=平台单位(挂职层级,挂职城市);
+    s.p.挂职={层级:挂职层级, 单位:挂职单位, 结束年:s.date.y+rnd(2,3)};
+    s.rankIdx=0;
+    s.zhijiIdx=Math.max(s.zhijiIdx, zhijiFloorOf(0));
+    // 岗位与挂职单位的条线保持一致
+    const 挂职条=条线Of(挂职单位);
+    const 条线岗位={
+      "发改":"县发展和改革局副局长","财政":"县财政局副局长","组工":"县委组织部副部长",
+      "宣传":"县委宣传部副部长","住建":"县住房和城乡建设局副局长","政法":"县公安局副局长",
+      "教育":"县教育局副局长","农业":"县农业农村局副局长","交通":"县交通运输局副局长",
+      "审计":"县审计局副局长","市场监管":"县市场监督管理局副局长","卫健":"县卫生健康局副局长",
+      "自然资源":"县自然资源局副局长","工信":"县工业和信息化局副局长","生态":"县生态环境局副局长","综合":"副乡长"
+    };
+    // 岗位要和挂职单位对得上：镇配镇、乡配乡
+    const 挂职岗位 = 挂职层级==="乡镇级"
+      ? (挂职城市.slice(-1)==="乡" ? pick(["副乡长","乡镇党委副书记"]) : pick(["副镇长","乡镇党委副书记"]))
+      : (条线岗位[挂职条]||"县发展和改革局副局长");
+    post="挂职"+挂职岗位;
+    s.positions=[{年:s.date.y,职级:"乡科级副职",岗位:post,条线:条线Of(post),挂职:true}];
+    s.p2.初次晋升=true;
+    s.zhijiIdx=Math.min(s.zhijiIdx, zhijiCapOf(0));
+  }
+  const leaderName=pick(["高育良","李达康","季昌明","孙连城","丁义珍","陈海","赵东来","田国福"]);
+  s.npcs=[
+    {id:"leader",姓名:leaderName,身份:"分管领导（正处级）",年龄:52,面:"🧔",层级:"上级",
+     信任:32,利益:0,公开:20,好感度:62,性格:"爱惜羽毛，重文字材料",
+     memory:["第一次见他时，你交上去的材料格式错了三处。"],notes:"你的直接领导，晋升时最有分量的一票。"},
+    {id:"colleague",姓名:pick(男名池),身份:"同处室同批同事",年龄:Math.max(24,age+2),面:"👨‍💼",层级:"同事",
+     信任:48,利益:0,公开:45,好感度:75,性格:"业务熟，话不多",
+     memory:[],notes:"和你同一条船，也和你争同一个位置。"},
+    {id:"oldclass",姓名:pick(["蔡成功","王大路","郑胜利","刘新建","孙广志"]),身份:"京州民营建筑公司老板",年龄:Math.max(26,age+3),面:"🧑‍💼",层级:"社会",
+     信任:58,利益:28,公开:40,好感度:78,性格:"讲义气，也讲利益，胆子偏大",
+     memory:["大学时你借过他两千块交学费。"],notes:"你的老同学，做工程生意。"},
+    {id:"discipline",姓名:pick(男名池),身份:"市纪委监委监督检查室副主任",年龄:44,面:"🕵️",层级:"监督",
+     信任:20,利益:0,公开:15,好感度:40,性格:"程序至上，只认证据",
+     memory:[],notes:"目前和你没有交集，但你知道他存在。"}
+  ];
+  s.candidates=makeCandidates(f.sex, age);
+  s._年初快照=null;   // 开局后由 start 写入
+
+  s.log.unshift({
+    t:`${s.date.y}年`, h:"初入社会", kind:"",
+    d:"",
+    d:`你叫${f.name}，${f.sex}，${age}岁，${edu}学历，${f.major}专业，专业与${f.job}的匹配度为 ${fit}%。`
+      +`\n出生地：${born}　家庭：${bg.k}　城市：${city}　现居：${housing}`
+      +`\n存款 ${fmt(s.cash)} 元${s.负债?`，助学贷款等负债 ${fmt(s.负债)} 元`:""}。一切从零开始。`
+      +`\n身份：${f.job}${jobUnit?`（${jobUnit}）`:""}${isXd?"，省委组织部选调生，按规定定级为乡科级副职":""}`
+      + `\n工作平台：${isXd?"省委组织部（下派"+s.p.挂职.单位+"挂职锻炼）":(平台+"（"+(平台==="省级"?"起点高，但往上每一步都要挤":平台==="乡镇级"?"离群众最近，路也最窄":"上下都有通道")+"）")}`
+      + `\n目前单身。感情和事业一样，都需要时间。`
+  });
+  if(isXd) s.log.unshift({t:`${s.date.y}年`,h:"选调生分配",kind:"good",
+    d:`作为省委组织部选调生，你的人事关系留在省委组织部，先下派到${s.p.挂职.单位}挂职锻炼。\n当前岗位：${post}（乡科级副职），挂职期约 ${s.p.挂职.结束年-s.date.y} 年，期满回部另行安排。\n同批选调生不多，组织上对你们有另一种期待——也有另一种要求。`});
+  return s;
+}
+function makeCandidates(sex, age){
+  // 年过 66 不再张罗介绍对象：这个年纪的人，生活已经定型
+  if(age>66) return [];
+  const opp=sex==="男"?"女":"男";
+  const pool=sex==="男"?女名池:男名池;
+  const 下限=Math.max(22, age-8), 上限=Math.min(70, age+6);
+  return shuffle(pool).slice(0,3).map((nn,i)=>{
+    const jd=pick(婚恋职业池);
+    const 身份=jd.类别+" · "+jd.名;
+    return {id:"cand"+i+Math.floor(Math.random()*1000),姓名:nn,性别:opp,
+      年龄:clamp(age+rnd(-8,6),下限,上限),
+      职业:身份,身份:身份,类别:jd.类别,
+      月收入:Math.round((婚恋收入[jd.类别]||5200)*(0.85+Math.random()*0.35)),
+      性格:pick(婚恋性格),好感度:rnd(8,26),
+      面:opp==="女"?"👩":"👨",memory:[],notes:"通过朋友介绍认识的。"};
+  });
+}
+
+/* =========================================================
+   头部 / 晋升指标
+========================================================= */
+function rankTitle(){
+  if(S.status==="退休") return "退休（"+((S.positions[0]&&S.positions[0].职级)||"科员")+"）";
+  if(S.rankIdx<0) return S.p.职业==="公务员"?"科员":ladder()[0].名;
+  const L=ladder();
+  return (L[S.rankIdx]&&L[S.rankIdx].名)||"—";
+}
+function networkScore(){
+  const key=S.npcs.filter(n=>!n.非核心);
+  if(!key.length) return S.p.人脉;
+  let t=0,g=0;
+  key.forEach(n=>{ t+=(n.信任+100)/2; g+=n.好感度; });
+  return clamp(S.p.人脉*0.45+(t/key.length)*0.30+(g/key.length)*0.25,0,100);
+}
+/* 人脉门槛：按「领导评价门槛」的 78% 折算，最低 35。
+   现实逻辑：人脉讲究的是「广」，领导评价讲究的是「关键一票」，两者不该用同一把尺子。 */
+function 人脉门槛(def){ if(!def||!def.门槛) return 35; return Math.max(35, Math.round(def.门槛.上司*0.78)); }
+
+/* 晋升指标共 6 项。
+   累计型指标（政绩）用倍数判定：超门槛 20% / 60%。
+   比例型指标（能力、道德、领导评价、人脉、健康）满分都是 100，
+   用「还剩多少提升空间、已经走完多少」判定，否则健康要 128 分才达标，根本不可能。 */
+function indicatorList(def){
+  if(!def) return [];
+  const mk=(名,当前,门槛)=>{
+    if(门槛>=100) return {名,当前,门槛,超20:门槛,超60:门槛,已达20:当前>=门槛,已达60:当前>=门槛};
+    const room=100-门槛;
+    const 超20=Math.round(门槛+room*0.30);
+    const 超60=Math.round(门槛+room*0.70);
+    return {名,当前,门槛,超20,超60,已达20:当前>=超20,已达60:当前>=超60};
+  };
+  const 政绩项={名:"政绩",当前:S.zhengji,门槛:def.门槛.政绩,
+    超20:Math.round(def.门槛.政绩*1.2),超60:Math.round(def.门槛.政绩*1.6),
+    已达20:S.zhengji>=def.门槛.政绩*1.2,已达60:S.zhengji>=def.门槛.政绩*1.6};
+  return [
+    政绩项,
+    mk("能力",S.p.能力,def.门槛.能力),
+    mk("道德",S.p.道德,def.门槛.道德),
+    mk("领导评价",S.p.上司,def.门槛.上司),
+    mk("人脉",Math.round(networkScore()),人脉门槛(def)),
+    mk("健康",S.p.健康,80)
+  ];
+}
+function earlyYears(def){
+  if(!def) return 0;
+  let c20=0,c60=0;
+  indicatorList(def).forEach(x=>{ if(x.已达60) c60++; if(x.已达20) c20++; });
+  if(c60>=4) return 4;
+  if(c20>=4) return 2;
+  return 0;
+}
+function nextRankInfo(){
+  const L=ladder(), idx=S.rankIdx+1, def=L[idx];
+  if(!def) return {def:null,min:0,served:S.p2.任职年,can:false,have:false,idx:idx,early:0,effMin:0};
+  const early=S.status==="在职"?earlyYears(def):0;
+  const effMin=Math.max(1, def.最低年-early);
+  const haveZ=S.zhengji>=def.门槛.政绩;
+  const healthy=S.p.健康>=50;
+  const 未超龄=S.p.年龄<=提任年龄上限(idx);
+  return {def:def,min:def.最低年,served:S.p2.任职年,have:haveZ,idx:idx,early:early,effMin:effMin,
+    超龄:!未超龄, 年龄线:提任年龄上限(idx),
+    can: S.status==="在职" && !S.flags['二线'] && !影响期内() && 未超龄 && S.p2.任职年>=effMin && haveZ && healthy};
+}
+function retireAge(){
+  const senior=S.rankIdx>=6;
+  if(S.p.性别==="男") return senior?65:60;
+  return senior?63:55;
+}
+function renderHeader(){
+  const t=rankTitle();
+  $('h-rank').innerHTML = `${t}<small>${S.p.职业==="公务员"?职级序列[S.zhijiIdx]:"职级序列"}</small>`
+    + `${S.p.选调生?'<small class="tag-xd">选调生</small>':''}`
+    + `${S.status==="退休"?'<small class="tag-xd">退休</small>':''}`
+    + `${S.family.婚姻==="已婚"?'<small class="tag-xd">已婚</small>':''}`;
+  $('h-meta').innerHTML = `${S.p.单位} · <b>${S.p.城市}</b> · ${S.p.平台||''} · ${S.date.y}年 · ${S.p.年龄}岁 · ${S.p.学历} · 目标：${S.rankIdx>=ladder().length-1?"已 达 巅 峰":S.p.目标}`;
+  const ni=nextRankInfo();
+  $('h-next').innerHTML = S.status==="退休"
+    ? `已退休（${retireAge()}岁到龄）· 每年可安排家庭、资产与健康事务`
+    : (ni.def
+      ? `下一职级：<b>${ni.def.名}</b>　最低任职 <b>${ni.effMin}</b> 年（已任 ${ni.served} 年）`
+      : `已达本序列最高职级`);
+  $('h-avatar').textContent=S.p.职业==="公务员"?"🧑‍💼":(S.p.职业==="教师"?"👩‍🏫":S.p.职业==="医生"?"👨‍⚕️":S.p.职业==="记者"?"📰":S.p.职业==="律师"?"⚖️":"🧑");
+  $('h-zhengji').textContent=fmt(S.zhengji);
+  const hp=S.p.健康;
+  const hpCls = hp<20?"bad" : hp<30?"bad" : hp<50?"warn" : hp<80?"warn" : "";
+  const st=[["能力",S.p.能力],["道德",S.p.道德],["人脉",S.p.人脉],["上司",S.p.上司],["声望",S.p.声望]];
+  $('h-stats').innerHTML = st.map(([k,v])=>`<div class="chip">${k}<b>${v}</b></div>`).join('')
+    + `<div class="chip ${hpCls}">健康<b>${hp}</b></div>`
+    + `<div class="chip ${S.discipline.risk>50?'bad':S.discipline.risk>20?'warn':''}">廉政风险<b>${S.discipline.risk}</b></div>`
+    + `<div class="chip">现金<b>${fmt(S.cash)}</b></div>`;
+}
+
+/* =========================================================
+   导航 / 渲染
+========================================================= */
+const TABS=[{id:"事件",icon:"🗓️"},{id:"施政",icon:"🧰"},{id:"城建",icon:"🏗️"},{id:"人脉",icon:"🕸️"},
+  {id:"进修",icon:"🎓"},{id:"资产",icon:"💰"},{id:"廉政",icon:"⚠️"},{id:"档案",icon:"📁"},{id:"健康",icon:"🩺"}];
+function renderNav(){
+  $('nav').innerHTML=TABS.map(t=>
+    `<button class="${curTab===t.id?'on':''}" data-tab="${t.id}">
+      <span class="ni">${t.icon}</span><span class="nl">${t.id}</span></button>`).join('');
+  $('nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{curTab=b.dataset.tab;render();window.scrollTo({top:0,behavior:'smooth'});});
+}
+/* 关键修复：弹窗与主视图都要绑定事件 */
+function 回到顶部(){ try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){} }
+function bind(){
+  ['view','modal'].forEach(id=>{
+    const root=$(id); if(!root||!root.querySelectorAll) return;
+    root.querySelectorAll('[data-act]').forEach(el=>{
+      el.onclick=()=>{ const f=ACTIONS[el.dataset.act]; if(f){ f(el.dataset.arg, el); 回到顶部(); } else toast("该操作暂不可用。"); };
+    });
+  });
+}
+function render(){
+  renderHeader(); renderNav();
+  const v=$('view');
+  if(S.over){ closeModal(); v.innerHTML=tabEnd(); bind(); return; }
+  v.innerHTML=({事件:tabEvents,施政:tabShixi,城建:tabCity,人脉:tabPeople,
+    进修:tabStudy,资产:tabAssets,廉政:tabIntegrity,档案:tabArchive,健康:tabHealth})[curTab]();
+  renderModal();   // 先生成弹窗内容
+  bind();          // 再统一绑定事件（顺序反了会导致弹窗按钮点不动）
+}
+function modal(html){ $('modal').innerHTML=`<div class="modal-mask"><div class="modal-box">${html}</div></div>`; $('modal').classList.remove('hidden'); }
+function closeModal(){ $('modal').classList.add('hidden'); $('modal').innerHTML=''; }
+function renderModal(){
+  if(S.yearSummary){
+    const y=S.yearSummary;
+    y.事件=Array.isArray(y.事件)?y.事件:[];
+    y.记录=Array.isArray(y.记录)?y.记录:[];
+    // 只挑真正值得记一笔的事，不显示处置对错的评判
+    const 施政类=/^(下基层调研检查|推进重点项目|协调跨部门事项|接待群众来访|材料报送与数据核实)/;
+    const 大事=y.记录
+      .filter(x=>!施政类.test(x.h) && !/互动 ·/.test(x.h))
+      .map(x=>"· "+(x.t?x.t.replace(/^\d+年\s*/,""):"")+" "+x.h.replace(/（[^）]*）$/,"").trim())
+      .slice(0,6);
+    modal(`<div class="card-hd"><span class="ic">📅</span><h2>${y.年} 年度总结</h2></div>
+      <div class="card-bd">
+        <div class="tags">
+          <span class="tag green">${y.年龄} 岁</span>
+          <span class="tag gold">${y.职务}</span>
+          <span class="tag gray">本年完成施政 ${y.施政数} 项</span>
+        </div>
+        <div class="sumbox"><span>本年变化</span>${y.明细||"平稳度过"}</div>
+        <div class="sumbox"><span>家庭收支</span>收入 ${fmt(y.收入)}　支出 ${fmt(y.支出)}　
+          结余 <b class="${y.结余>=0?'ok-txt':'bad-txt'}">${y.结余>=0?"+":"-"}¥${fmt(Math.abs(y.结余))}</b></div>
+        <div class="sumbox"><span>职务职级</span>职务：${y.职务变化}　职级：${y.职级变化}</div>
+        <div class="sumbox"><span>人脉圈子</span>${S.p.人脉} / ${人脉上限()}（与当前岗位层级相匹配）</div>
+        ${y.事件.length?`<div class="sumbox"><span>突发事件</span>${y.事件.map(x=>"· "+x).join("<br>")}</div>`:""}
+        ${大事.length?`<div class="sumbox"><span>本年记事</span>${大事.join("<br>")}</div>`:""}
+        <div class="sumbox next"><span>下一年</span>${y.下一年}</div>
+        <button class="btn-red" data-act="closeSummary">进入 ${S.date.y} 年 →</button>
+      </div>`);
+    return;
+  }
+  if(pendingPositions&&pendingPositions.length){
+    modal(`<div class="card-hd"><span class="ic">🏅</span><h2>组织谈话 · 拟任岗位</h2></div>
+      <div class="card-bd">
+        <div class="txt"><p>组织部门找你谈话，拟提任你为 <span class="hl">${pendingPosTitle}</span>。组织上按你的专业、现单位和任职经历，给出了以下岗位方向，<b>只能选择一个</b>。</p>
+        <p class="hint">岗位不同，部门关系、群众基础与今后的路也不同。排在前面的，是与你的经历更匹配的岗位。<br>
+        组织上不会告诉你哪个岗位更重——同样是"副市长"，市委常委与普通副市长分量并不相同。这一步值不值得走，请自己判断。</p></div>
+        ${pendingPositions.map((p,i)=>`<button class="btn-line" data-act="choosePos" data-arg="${i}">
+          ${p.名||p}
+          <small><b>级别：${p.级别||pendingPosTitle}${p.条线?`　条线：${p.条线}`:""}${p.党政?"　党委序列":""}</b><br>${posHint(p)}</small></button>`).join('')}
+        <div class="hint">决定之后不可更改。</div>
+      </div>`);
+  } else closeModal();
+}
+function posHint(p){
+  const 名=(p&&p.名)||p;
+  const 理由=(p&&p.理由)?p.理由.join("、"):"";
+  const 补=[];
+  // 岗位的轻重不做标注：同样是"副市长"，市委常委与普通副市长分量不同，交由玩家自己判断
+  if(p&&p.党政) 补.push("党委序列");
+  if(/乡长|镇长|街道办|乡政府|镇政府/.test(名)) 补.push("基层一线，直接面对群众");
+  if(/省|部|国家|中央/.test(名)) 补.push("离决策层近，人脉提升快");
+  if(/县|区/.test(名)&&!/省|市/.test(名)) 补.push("承上启下，事务最杂");
+  return [理由].concat(补).filter(Boolean).join("；");
+}
+function posEffect(p){
+  const 名=(p&&p.名)||p;
+  if(/乡长|镇长|街道办|乡政府|镇政府/.test(名)){ applyEffect({道德:2,声望:4,政绩:60,人脉:1,健康:-2});
+    return "基层的两年，你走遍了辖区的每个村。群众认得你，也愿意跟你说实话。"; }
+  if(/省|部|国家|中央/.test(名)){ applyEffect({上司:3,人脉:3,政绩:30,声望:-1});
+    return "你在更高层的机关见了更多场面，也离决策更近了一步。"; }
+  if(/县|区/.test(名)){ applyEffect({能力:2,政绩:50,健康:-1});
+    return "县区的工作包罗万象，你被迫学会了同时处理十几件事。"; }
+  applyEffect({政绩:40,能力:1});
+  return "业务条线上的工作扎实而具体，你的专业能力在增长。";
+}
+
+/* ---------- 事件页 ---------- */
+function tabEvents(){
+  if(pendingEvent){
+    return card("⚠️","突发事件 · 待决策",
+      `<div class="tags"><span class="tag red">待你决定</span><span class="tag gray">${pendingEvent.类型}</span><span class="tag gray">${S.date.y} 年 ${pendingEvent.月||"?"} 月</span></div>
+       <div class="sec-title">${pendingEvent.标题}</div>
+       <div class="txt"><p>${pendingEvent.描述}</p></div>
+       ${pendingEvent.背景?`<div class="box">${pendingEvent.背景}</div>`:""}
+       <div class="mt6">${pendingEvent.月?`<div class="hint mb12">这件事发生在 ${S.date.y} 年 ${pendingEvent.月} 月。不同的处置方式，会带来不同的奖励与后果。</div>`:""}
+       ${pendingEvent.选项.map((o,i)=>
+        `<button class="btn-line" data-act="chooseEvent" data-arg="${i}">${o.text}
+          ${o.hint?`<small>${o.hint}</small>`:""}</button>`).join('')}</div>
+       <div class="hint">每个选项都会留下痕迹。系统不会告诉你哪个“正确”。</div>`);
+  }
+  const ni=nextRankInfo();
+  let body="";
+  // 新手引导：头三年给一份上手指引，之后不再出现
+  if(S.date.y - (S.beginYear||S.date.y) < 3 && S.status!=="退休"){
+    body+=`<div class="card" style="border-color:#e8d5a8;background:#fffdf4;margin-bottom:12px">
+      <div class="card-bd" style="padding:13px 14px">
+        <div class="sec-title" style="color:#9a7a24;border-left-color:#e8c56a">上手指引（前三年显示）</div>
+        <div class="hint" style="margin:0;line-height:1.85">
+          每年有 <b>${ACTIONS_PER_YEAR} 次行动</b>，建议这样分配：<b>${SHIXI_COUNT} 次施政</b>（做实事，积累政绩）
+          ＋ <b>1 次向领导汇报</b>（提升领导评价）＋ <b>剩下的留给家庭、健康或廉政梳理</b>。<br>
+          晋升要看 <b>六项指标</b>：政绩、能力、道德、领导评价、人脉、健康。点开「🧰 施政」页能看到每一项的完成情况与差距。<br>
+          任职年限一到会自动进入考察；考察没通过也不会白费，补齐差距可以再申请。<br>
+          第一次晋升的把握本来就不小，先把政绩和领导评价养起来，再去申请。<br>
+          <b>岗位的轻重，组织上不会明说</b>——同样是"副市长"，市委常委和普通副市长分量完全不同。哪一步值得走，要你自己判断。
+        </div>
+      </div></div>`;
+  }
+  body+=`<div class="tags">
+       <span class="tag green">${S.date.y} 年度</span>
+       <span class="tag gold">本年无突发事件</span>
+       <span class="tag gray">按年推进</span>
+       ${S.status==="退休"?'<span class="tag gray">已退休</span>':""}
+     </div>`;
+  body+=`<div class="box">
+      当前健康：<b class="${S.p.健康<30?'bad-txt':S.p.健康<80?'':'ok-txt'}">${S.p.健康}</b>
+      <div class="bar"><i style="width:${S.p.健康}%"></i></div>
+      <span class="hint">健康是六项晋升指标之一。可免费休养 +5—10，或花行动与现金调养 +10—20、专业健康管理 +20—25，详见「🩺 健康」页。</span>
+    </div>`;
+
+  if(S.status!=="退休"&&ni.def){
+    body+=`<div class="sec-title mt14">晋升指标（共 6 项）</div>
+      <div class="note">
+        下一职级：<span class="big">${ni.def.名}</span>　最低任职 <span class="big">${ni.effMin}</span> 年（已任 ${ni.served} 年）　提任年龄界限 <span class="big">${ni.年龄线}</span> 岁<br>
+        工作平台：<b>${S.p.平台}${S.p.挂职?"（挂职中）":""}</b>${ni.early?`　<span class="ok-txt">多项指标表现突出，组织上会考虑提前</span>`:""}
+        ${ni.超龄?`<br><span class="bad-txt">已超过提任该级职务的年龄界限，组织上不再考虑实职提拔。</span>`:""}
+        <div class="bars">${Array.from({length:ni.effMin},(_,i)=>`<i class="${i<ni.served?'on':''}"></i>`).join('')}</div>
+      </div>
+      <div class="ind-list">${indicatorList(ni.def).map(x=>{
+        const 档 = x.已达60?"top" : x.已达20?"ok" : x.当前>=x.门槛?"ok" : x.当前>=x.门槛*0.7?"":"bad";
+        const tag = x.已达60?"位列前茅" : x.已达20?"表现突出" : x.当前>=x.门槛?"已达到要求" : x.当前>=x.门槛*0.7?"尚需努力":"差距较大";
+        return `<div class="ind">
+          <span class="ind-name">${x.名}</span>
+          <span class="ind-val">${fmt(x.当前)}<em> / 要求 ${fmt(x.门槛)}</em></span>
+          <span class="ind-tag ${档}">${tag}</span></div>`;
+      }).join("")}</div>
+      <div class="hint">六项指标中，若四项「表现突出」，组织上会考虑提前 1—2 年提拔；若四项「位列前茅」，可提前 3—4 年。</div>`;
+  }
+  body+=`<div class="sec-title mt14">本年度工作安排</div>
+    <div class="txt">
+      <p>本模拟器<b>按年推进</b>：每年一次工作安排，共 <b>${ACTIONS_PER_YEAR} 次</b>行动额度。</p>
+      <p>行动用于施政、感情与家庭、协调关系、廉政梳理和在职学习；用完后点「结束本年」。</p>
+      <p>职务晋升有最低任职年限，<b>年限一到会自动进入考察程序</b>，也可以主动申请。</p>
+    </div>
+    <div class="ap-row">本年剩余行动：<b>${S.actions} / ${S.actionsMax} 次</b>
+       <span class="dots">${Array.from({length:S.actionsMax},(_,i)=>`<i class="${i<S.actions?'on':''}"></i>`).join('')}</span>
+    </div>
+    ${S.status==="退休"?'<button class="btn-red gray" data-act="endYear">结束本年 · 推进时间 →</button>'
+      :'<button class="btn-red" data-act="goto" data-arg="施政">前往安排本年工作 →</button><button class="btn-red gray" data-act="endYear">结束本年 · 推进时间 →</button>'}
+    ${yearLog.length?`<div class="mt14">${yearLog.map(l=>
+       `<div class="log-item ${l.kind||''}"><div class="t">本年纪录</div><div class="h">${l.h}</div><div class="d">${l.d}</div></div>`).join('')}</div>`:""}`;
+  return card("📋","年度生活与工作", body);
+}
+
+/* ---------- 施政页 ---------- */
+function tierOf(){ if(S.rankIdx>=4) return 2; if(S.rankIdx>=2) return 1; return 0; }
+const TIER_NAME=["科员及乡科级","县处级","厅局级及以上"];
+function tabShixi(){
+  if(S.status==="退休"){
+    return card("🧰","施政 · 已退休",
+      `<div class="box">你已于 ${S.p.年龄} 岁到龄退休，不再担任现职。<br>
+       现在可以做的是：照顾好家庭、打理资产、保养身体，看着这座城市继续往前走。</div>
+       <div class="ap-row">本年剩余行动：<b>${S.actions} / ${S.actionsMax} 次</b>
+       <span class="dots">${Array.from({length:S.actionsMax},(_,i)=>`<i class="${i<S.actions?'on':''}"></i>`).join('')}</span></div>
+       <button class="btn-red gray" data-act="endYear">结束本年 · 推进时间 →</button>`);
+  }
+  const ni=nextRankInfo();
+  if(S.quiz){
+    const item=SHIXI[S.quiz.item], tier=S.quiz.tier, set=item.asks[tier][S.quiz.variant];
+    const mo=S.p2.连续模糊||0;
+    return card("❓","处置问答 · "+item.名,
+      `<div class="tags"><span class="tag gray">${TIER_NAME[tier]}阶段</span><span class="tag gold">作答正确可增加晋升条件</span>${mo>0?`<span class="tag red">已连续 ${mo} 次模棱两可</span>`:""}</div>
+       <div class="sec-title">${set.q}</div>
+       <div class="hint mb12">三个选项对应不同处置方式，位置随机，系统不会提示哪个更合适。</div>
+       ${S.quiz.order.map((ai,k)=>`<button class="btn-line" data-act="answerQuiz" data-arg="${k}">${set.a[ai].文}</button>`).join('')}
+       <div class="hint">作答后本项工作才算完成，且本年内该项工作不能重复开展。</div>`);
+  }
+  const rows=S.shixiOrder.map((idx,i)=>{
+    const a=SHIXI[idx];
+    const used=S.usedThisYear.includes(idx);
+    return `<button class="btn-line" ${(S.actions<=0||used)?"disabled":""} data-act="shixi" data-arg="${idx}">
+      <span class="idx">${i+1}</span>${a.名}${used?'<span class="cost">本年已开展</span>':`<span class="cost">-1 行动</span>`}
+      <small>${a.desc}${used?"":"　选择后需作答处置问题"}</small></button>`;
+  }).join('');
+  let promo="";
+  if(ni.def){
+    promo=`<div class="sec-title mt14">晋升</div>
+      <div class="box">
+        <div class="kv2">
+          <div><span>下一职级</span><b>${ni.def.名}</b></div>
+          <div><span>最低任职</span><b>${ni.effMin} 年（已任 ${ni.served} 年）</b></div>
+          <div><span>提任年龄界限</span><b class="${ni.超龄?"bad-txt":""}">${ni.年龄线} 岁（现任 ${S.p.年龄} 岁）</b></div>
+          <div><span>工作平台</span><b>${S.p.平台}${S.p.挂职?'（挂职）':''}</b></div>
+          <div><span>${perfLabel()}</span><b>${fmt(S.zhengji)} / 要求 ${fmt(ni.def.门槛.政绩)}</b></div>
+          </div>
+        <div class="mt8">
+          <div class="bar-row"><span>人脉（晋升中分量最重的一项）</span><b>${Math.round(networkScore())}</b></div>
+          <div class="bar"><i style="width:${Math.round(networkScore())}%"></i></div>
+          <div class="hint mt6">由综合人脉、关键人物的信任与好感度共同构成。上级、同事、老同学、纪委，每一个都算数。<br>
+          人脉的宽度与岗位层级相匹配：职位越高，能接触到的人越多；在原地待得再久，圈子也不会无限扩大。</div>
+        </div>
+        <div class="mt8">
+          <div class="bar-row"><span>健康（承担更重岗位的身体条件）</span><b class="${S.p.健康<70?'bad-txt':S.p.健康<80?'':'ok-txt'}">${S.p.健康}</b></div>
+          <div class="bar"><i style="width:${S.p.健康}%"></i></div>
+          <div class="hint mt6">健康 80 以上才具备承担更重岗位的条件；低于 70 组织上会有所顾虑。</div>
+        </div>
+        <div class="hint mt6">硬性条件：能力 ≥ ${ni.def.门槛.能力}、道德 ≥ ${ni.def.门槛.道德}、领导评价 ≥ ${ni.def.门槛.上司}
+        ${ni.idx>=2?`；学历须本科及以上（当前${S.p.学历}${eduIdx(S.p.学历)>=2?"，满足":"，不满足"}）`:""}</div>
+      </div>
+      <button class="btn-line" ${S.actions<=0?"disabled":""} data-act="applyPromote">
+        主动申请晋升 · 组织谈话<span class="cost">-1 行动</span>
+        <small>向组织部门正式提出申请，进入考察程序。是否通过，取决于组织对你六个方面情况的综合判断。</small>
+      </button>`;
+  }
+  return card("🧰","施政 · 年度工作安排",
+    `<div class="ap-row">本年剩余行动：<b>${S.actions} / ${S.actionsMax} 次</b>
+       <span class="dots">${Array.from({length:S.actionsMax},(_,i)=>`<i class="${i<S.actions?'on':''}"></i>`).join('')}</span>
+       <span class="hint right">${S.date.y} 年度</span>
+     </div>
+     <div class="hint mb12">共 ${SHIXI_COUNT} 项年度工作，顺序每年随机；<b>每项每年只能开展一次</b>。答对增加晋升条件；模棱两可不加不减，但连续 3 次以上说明处置能力有问题，此后每次都要扣减，答对一次即清零；答错直接扣减。</div>
+     ${rows}
+     <div class="box mt12">每年共 ${ACTIONS_PER_YEAR} 次行动额度，由施政、感情与家庭、协调关系、廉政梳理和在职学习共用。</div>
+     ${promo}
+     <button class="btn-red gray mt12" data-act="endYear">结束本年 · 推进时间 →</button>`);
+}
+/* 家庭系数：-0.13 ~ +0.04 */
+function 家庭系数(){
+  let f=0;
+  const sp=S.family.配偶;
+  if(sp){
+    const g=sp.好感度;
+    if(g>=80) f+=0.03;
+    else if(g>=60) f+=0.015;
+    else if(g>=30) f+=0;
+    else if(g>=15) f-=0.06;
+    else f-=0.13;                        // 夫妻关系濒临破裂，考察组一定会了解到
+  }else if(S.family.婚姻==="离异"){
+    f-=0.04;                             // 离异本身不致命，但需要向组织说明情况
+  }else if(S.p.年龄>=35){
+    f-=0.02;                             // 大龄未婚，组织会了解个人情况
+  }
+  const kids=S.family.子女;
+  if(kids.length){
+    const avg=kids.reduce((a,c)=>a+c.好感度,0)/kids.length;
+    if(avg>=75) f+=0.01;                 // 家风好
+    else if(avg<30) f-=0.03;             // 亲子关系紧张，被反映到单位并非不可能
+  }
+  return f;
+}
+/* 专业与现岗位条线是否对口：对口的人在同一条线上走得更顺 */
+function 专业条线匹配(){
+  const 专业=(专业偏好条线[majorGroup(S.p.专业)]||[]);
+  const 现条线=条线Of(S.positions[0]&&S.positions[0].岗位);
+  return 专业.includes(现条线);
+}
+function promoteRate(idx){
+  const L=ladder(), def=L[idx];
+  if(!def) return 0;
+  if(S.p.健康<50) return 0;
+  if(S.p.年龄>提任年龄上限(idx)) return 0;   // 超过提任年龄界限，不再考虑
+  const need=def.门槛;
+  let r=0.06;
+  r += networkScore()/100*0.30;                                   // 人脉：30%
+  r += clamp(S.p.能力-need.能力,0,45)/45*0.17;
+  r += clamp(S.p.上司-need.上司,0,45)/45*0.17;
+  r += Math.min(1,S.zhengji/Math.max(1,need.政绩))*0.17;
+  r += clamp(S.p.道德-need.道德,0,45)/45*0.06;
+  if(S.p.健康<70) r -= (70-S.p.健康)*0.006;                        // 健康低于70显著降概率
+  else if(S.p.健康<80) r -= (80-S.p.健康)*0.004;
+  else if(S.p.健康>=90) r += 0.02;
+  if(S.p.选调生) r+=0.06;
+  if(idx>=2&&eduIdx(S.p.学历)>=2) r+=0.04;
+  if(专业条线匹配()) r+=0.05;                 // 专业与岗位对口
+  if(S.flags["党政班子经历"]&&idx>=4) r+=0.04;  // 有党政班子经历，往上走更被认
+  if(S.p2.任职年<def.最低年) r-=0.15;
+  // 家庭因素：组织考察要看「家风」，家庭稳定是加分项，家庭失和是减分项
+  r += 家庭系数();
+  r -= S.discipline.risk/100*0.45;
+  r -= S.p2.处分*0.07;
+  if(!S.p2.初次晋升) r=Math.max(r,0.80+clamp(S.p.专业匹配度-80,0,20)/20*0.10);
+  return clamp(r,0.03,0.96);
+}
+function doPromote(manual){
+  const ni=nextRankInfo();
+  if(!ni.def) return toast("已达本序列最高职级。");
+  if(S.status!=="在职") return toast("已退休，不再涉及晋升。");
+  if(S.flags['二线']) return toast("已转任二线岗位，组织上不再考虑实职提拔。");
+  if(影响期内()) return toast(`你还在影响期（至 ${S.discipline.影响期} 年底）内，不得提拔或者进一步使用。`);
+  if(S.p2.任职年<ni.effMin){
+    applyEffect({政绩:-10});
+    S.log.unshift({t:`${S.date.y}年`,h:"申请晋升（破格）",kind:"",
+      d:`你在任现职 ${S.p2.任职年} 年时主动提出申请。组织部门认为尚不具备条件，未予受理。`});
+    toast("申请未被受理：任职年限不足。"); return render();
+  }
+  if(S.zhengji<ni.def.门槛.政绩){ toast("基本条件尚有缺口，组织暂不列入考虑。"); return; }
+  if(S.p.健康<50){ toast("身体条件不适宜承担更重岗位，组织暂不列入考虑。"); return; }
+  if(S.p.年龄>提任年龄上限(ni.idx)){
+    toast(`已超过提任${ni.def.名}的年龄界限（${提任年龄上限(ni.idx)} 岁），组织上不再考虑。`);
+    S.log.unshift({t:`${S.date.y}年`,h:"到龄不再提任",kind:"",
+      d:`你已 ${S.p.年龄} 岁，超过提任${ni.def.名}的年龄界限（${提任年龄上限(ni.idx)} 岁）。\n从这一年起，实职提拔这条路对你关闭了。`});
+    return render();
+  }
+  if(S.discipline.risk>=40 && Math.random()<S.discipline.risk/380){
+    pendingEvent=生成调查事件("组织正在对你进行晋升考察，同时收到了相关的信访举报");
+    pendingEvent.月=rnd(1,12);
+    S.log.unshift({t:`${S.date.y}年`,h:"考察中止",kind:"bad",
+      d:"晋升考察期间，考察组收到了关于你的反映。考察中止，问题移交有关部门核实。"});
+    toast("考察中止：涉及问题线索。");
+    return render();
+  }
+  if(Math.random()>=promoteRate(ni.idx)){
+    // 新手保护：第一次晋升考察未通过时不扣政绩、不扣领导评价，只说明差距在哪，
+    // 免得新人以为是系统随机，而不是自己没准备好
+    if(!S.p2.初次晋升){
+      const 缺=[];
+      if(S.zhengji<ni.def.门槛.政绩) 缺.push(`${perfLabel()}还差 ${fmt(ni.def.门槛.政绩-S.zhengji)}`);
+      if(S.p.能力<ni.def.门槛.能力) 缺.push(`能力还差 ${ni.def.门槛.能力-S.p.能力}`);
+      if(S.p.道德<ni.def.门槛.道德) 缺.push(`道德评价还差 ${ni.def.门槛.道德-S.p.道德}`);
+      if(S.p.上司<ni.def.门槛.上司) 缺.push(`领导评价还差 ${ni.def.门槛.上司-S.p.上司}`);
+      if(S.p.健康<80) 缺.push(`健康需要回到 80 以上（当前 ${S.p.健康}）`);
+      if(S.p.人脉<人脉门槛(ni.def)) 缺.push(`人脉还差 ${人脉门槛(ni.def)-S.p.人脉}`);
+      S.log.unshift({t:`${S.date.y}年`,h:"首次考察未通过",kind:"",
+        d:`组织部门找你谈了话，认为你还需要继续历练。公示名单里没有你。\n`+
+          (缺.length?`差距主要在：${缺.join("、")}。`:"组织上认为时机还不成熟。")+
+          `\n（这次不影响你的记录，补齐之后可以再次申请。）`});
+      toast(缺.length?`考察未通过，差距：${缺[0]}`:"考察未通过，时机未到。");
+      return render();
+    }
+    S.zhengji=Math.max(0,S.zhengji-Math.round(ni.def.门槛.政绩*0.05));
+    applyEffect({上司:-1});
+    S.log.unshift({t:`${S.date.y}年`,h:"组织考察未通过",kind:"bad",
+      d:`组织部门进行了考察谈话，最终认为你还需要继续历练。\n公示名单里没有你。有人安慰你「下一步还有机会」。`});
+    toast("组织考察未通过。"); return render();
+  }
+  pendingPositions=genPositions(ni.idx);
+  pendingPosTitle=ni.def.名;
+  S.rankIdx=ni.idx;
+  // 到了更高的平台，接触的人自然不一样
+  const 人脉跃升=3+Math.max(0,S.rankIdx);
+  S.p.人脉=clamp(S.p.人脉+人脉跃升,0,100);
+  // 提任领导职务后，职级相应调整到该层次的最低线，不会出现「县处级副职 · 三级主任科员」这种组合
+  const 职级下限=zhijiFloorOf(S.rankIdx);
+  if(S.zhijiIdx<职级下限){
+    S.zhijiIdx=职级下限;
+    S.income.月工资=Math.max(S.income.月工资, 职务阶梯[S.rankIdx].月薪*0.85);
+    S.log.unshift({t:`${S.date.y}年`,h:"职级相应调整",kind:"good",
+      d:`因提任领导职务，你的职级同步调整为${职级序列[S.zhijiIdx]}。`});
+  }
+  S.p2.任职年=0;
+  S.p2.连续模糊=0;   // 换岗之后重新开始考察
+  S.p2.累计模糊=0;
+  if(ni.idx===0) S.p2.初次晋升=true;
+  S._晋升消耗=Math.round(ni.def.门槛.政绩*0.75);
+  S.zhengji=Math.max(0,S.zhengji-S._晋升消耗);
+  S.income.月工资=Math.max(S.income.月工资, ni.def.月薪);
+  render();
+}
+function genPositions(idx){
+  const L=ladder(), def=L[idx];
+  if(!def) return [];
+  let pool=(def.例&&def.例.length)?def.例.slice():[def.名];
+  if(S.p.年龄>=二线年龄()){
+    pool=["人大常委会副主任","人大专门委员会主任委员","政协副主席","政协秘书长","政府参事"];
+  }
+  while(pool.length<3) pool.push(def.名+"（"+pick(["综合","业务","行政"])+"）");
+
+  const 专业=(专业偏好条线[majorGroup(S.p.专业)]||[]).slice();
+  const 现条线=条线Of(S.positions[0]&&S.positions[0].岗位);
+  const 单位条线=条线Of(S.p.单位);
+  const 有基层经历=!!S.flags["基层经历"];
+  const 有党政经历=!!S.flags["党政班子经历"];
+  const 现平台=S.p.平台||"市级";
+
+  const 序号={"乡镇级":0,"县级":1,"区级":1,"市级":2,"省级":3};
+
+  let 突出数=0;
+  if(idx>0){ const d=L[idx-1]; if(d){ indicatorList(d).forEach(x=>{ if(x.已达20) 突出数++; }); } }
+  const 高配概率 = 突出数>=4 ? 0.75 : 突出数>=2 ? 0.4 : 0.12;
+
+  // 本层级岗位池里若没有本级岗位，上调是唯一出路，不能再罚分
+  const 有本级 = pool.some(x=>岗位平台(x)===现平台);
+
+  const 评分=pool.map(名=>{
+    let sc=rnd(0,4);
+    const 理由=[];
+    const 条=条线Of(名);
+    const 岗台=岗位平台(名);
+    const 基层=/乡长|镇长|街道办|乡政府|镇政府|乡镇党委|街道党工委/.test(名);
+    const 高层=/省|部|国家|中央/.test(名);
+    const 主官=(条==="主官");
+    const 党政=是党政班子(名);
+    const 高配=是高配(名);
+    const 二线=是二线(名), 实权=是实权(名);
+    const d=(序号[岗台]!==undefined&&序号[现平台]!==undefined)?序号[岗台]-序号[现平台]:0;
+    // 逐级上升：平台不是想换就换。只有在一个平台上干到顶了，组织才考虑上调；
+    // 而且要有基层经历与拿得出手的实绩，否则连门都进不去。
+    if(d===0) sc+=6;
+    else if(d===1){
+      const 够格 = 有基层经历 && 突出数>=2;
+      // 每上调一次，再往上调的难度翻倍：省级起点从不上调，乡镇起点要连跳三层
+      const 上调概率 = Math.pow(0.45, S.p.上调次数||0);
+      // 本级没有合适岗位时也必须过上调这一关，只是门槛略低
+      const 过关 = Math.random() < (有本级 ? 上调概率 : Math.max(0.4, 上调概率));
+      if(够格 && 过关){
+        sc+=6;
+        理由.push(有本级?"组织上有意把你放到更高一层的平台锻炼":"本级没有合适岗位，组织安排到上一级平台");
+      }else if(过关 && !够格){
+        sc-=6; 理由.push("有上调的机会，但缺少基层经历或拿得出手的实绩");
+      }else sc-=12;
+    }
+    else if(d>=2) sc-=16;
+    else sc-=4;
+    if(条!=="综合" && 条!=="主官" && 条!=="其他" && 专业.includes(条)){ sc+=4; 理由.push("与你的专业对口"); }
+    else if(条==="综合" && 专业.includes("综合")){ sc+=2; 理由.push("综合管理岗位，与你所学相近"); }
+    if(主官){ sc += 专业.includes("综合")?2:0; 理由.push("主官岗位，综合性强"); }
+    if(条===现条线 && 条!=="其他"){ sc+=3; 理由.push("延续你现在的条线"); }
+    if(条===单位条线 && 条!=="其他"){ sc+=2; 理由.push("与所在单位业务相通"); }
+    if(基层){
+      if(有基层经历){ sc+=1; 理由.push("你已有基层经历，回去是压担子"); }
+      else { sc+=3; 理由.push("需要到基层历练一段"); }
+    }else{
+      if(主官||高层){
+        if(有基层经历){ sc+=2; 理由.push("基层经验完整，可往上走"); }
+        else { sc-=1; 理由.push("缺少基层经历，组织会慎重"); }
+      }
+    }
+    if(idx>=4 && 党政){
+      if(有党政经历){ sc+=4; 理由.push("你有党政领导班子经历，组织上会优先考虑"); }
+      else { sc-=3; 理由.push("缺少党政领导班子经历，这是硬杠杠"); }
+    }
+    if(党政 && 有党政经历 && idx<4) sc+=1;
+    if(二线){
+      if(S.p.年龄>=二线年龄()){ sc+=6; 理由.push("组织上对临近退休干部的统筹安排"); }
+      else sc-=6;
+    }
+    if(实权 && S.p.年龄<二线年龄()) sc+=3;
+    if(高配){
+      if(S.p.年龄>=二线年龄()) sc-=4;
+      else if(Math.random()<高配概率){ sc+=5; 理由.push("经组织统筹考虑后拿出的岗位"); }
+      else sc-=6;
+    }
+    if(S.p.选调生) sc+=1;
+    return {名:名,sc:sc,高配:高配,党政:党政,二线:二线,实权:实权,平台:岗台,级别:def.名,条线:条,
+      理由:理由.length?Array.from(new Set(理由)):["组织统一安排"]};
+  });
+  评分.sort((a,b)=>b.sc-a.sc);
+  const 可用=(idx>=4)?评分.filter(x=>!(x.党政&&x.高配&&!有党政经历)):评分;
+  const 上限=Math.min(8,可用.length);
+  const n2=clamp(rnd(3,上限),3,上限);
+  return 可用.slice(0,n2);
+}
+function settlePosition(pos){
+  const L=ladder();
+  const 职级名=(S.rankIdx>=0&&L[S.rankIdx])?L[S.rankIdx].名:(S.rankIdx<0?"科员":rankTitle());
+  if(/乡长|镇长|街道办|乡政府|镇政府|乡镇党委|街道党工委/.test(pos)) S.flags['基层经历']=true;
+  if(是党政班子(pos)) S.flags['党政班子经历']=true;
+  if(是高配(pos)) S.flags['高配经历']=true;
+  const 新台=岗位平台(pos);
+  const 台序={"乡镇级":0,"县级":1,"区级":1,"市级":2,"省级":3};
+  if(台序[新台]!==undefined && 台序[S.p.平台]!==undefined && 台序[新台]>台序[S.p.平台]){
+    const 旧台=S.p.平台;
+    S.p.平台=新台;
+    S.p.上调次数=(S.p.上调次数||0)+1;
+    S.log.unshift({t:`${S.date.y}年`,h:"平台调整",kind:"good",
+      d:`你从${旧台}机关调到${新台}机关任职，站到了更高的平台上。`});
+  }
+  if(是实权(pos)) S.flags['实权经历']=true;
+  if(是二线(pos) && !S.flags['二线']){
+    S.flags['二线']=true;
+    S.p.声望=clamp(S.p.声望+3,0,100);
+    S.p.健康=clamp(S.p.健康+4,0,100);
+  }
+  S.positions.unshift({年:S.date.y,职级:职级名,岗位:pos,条线:条线Of(pos)});
+  const extra=posEffect(pos);
+  S.log.unshift({t:`${S.date.y}年`,h:"职务调整",kind:"good",
+    d:`经组织研究，任命你为${pos}（${职级名}）。${S.p.选调生?"作为选调生，你比同批人快了一步，也比同批人更容易被盯着。":""}\n${extra}`});
+  toast("职务调整："+pos);
+}
+
+/* ---------- 城建 ---------- */
+function tabCity(){
+  const c=S.city;
+  const kv=[["财政收入",c.财政收入,c.财政收入>60],["就业",c.就业,c.就业>55],["房地产",c.房地产,c.房地产>50],
+    ["产业结构",c.产业,c.产业>52],["公共服务",c.公共服务,c.公共服务>55],["交通",c.交通,c.交通>52],
+    ["舆论环境",c.舆论,c.舆论>55],["社会矛盾",c.矛盾,c.矛盾<45]]
+    .map(([k,v,g])=>`<div class="k"><span>${k}</span><b class="${g?'up':'dn'}">${v}</b></div>`).join('');
+  return card("🏗️","城市发展 · "+S.p.城市,
+    `<div class="kv">${kv}</div>
+     <div class="sec-title mt14">在建 / 在推进项目</div>
+     <div class="box"><b>${S.p.城市.replace(/[市县委区镇]/g,"")}老城更新片区改造</b>（前期摸底阶段）<br>
+       涉及三个街道、约 1200 户居民、两家国企厂区。财政缺口约 4.6 亿，社会资本方意向未定。<br>
+       <span class="hint">项目进度：${S.flags['项目摸底完成']?'已形成摸底材料，等待上会':'尚未形成完整材料'}</span></div>
+     <div class="box"><b>京州临港产业园二期</b><br>
+       招商进度落后于计划，两家意向企业因用地指标问题在观望。<br>
+       <span class="hint">与你所在单位的职责：${条线Of(S.p.单位)==="发改"?"牵头":(条线Of(S.p.单位)==="其他"?"基本无关":"配合")}</span></div>
+     <div class="hint">城市不会围着你转。你所在部门只是这座城市的一个环节。</div>`);
+}
+
+/* ---------- 人脉 · 感情 · 家庭 ---------- */
+function npcCard(n, acts, extra){
+  const rel=[`<span class="${n.信任>50?'pos':n.信任<0?'neg':''}">信任 ${n.信任}</span>`,
+    `<span class="${n.公开>50?'pos':'neg'}">公开支持 ${n.公开}</span>`,
+    `<span class="${n.利益>20?'pos':'neg'}">利益关联 ${n.利益}</span>`].join('');
+  return `<div class="npc">
+    <div class="npc-top"><div class="npc-face">${n.面}</div>
+      <div class="npc-main">
+        <div class="npc-name">${n.姓名}<em>${n.年龄}岁</em></div>
+        <div class="hint">${n.身份}</div>
+      </div>
+      <div class="npc-score"><b>${n.好感度}</b><span>好感度</span></div>
+    </div>
+    <div class="bar"><i style="width:${n.好感度}%"></i></div>
+    <div class="rel mt8">${rel}</div>
+    <div class="hint mb8">性格：${n.性格}<br>${n.notes}</div>
+    ${n.memory&&n.memory.length?`<div class="box sm mb9">对方记得：${n.memory[0]}</div>`:""}
+    ${extra||""}
+    <div class="npc-act">${acts}</div></div>`;
+}
+function tabPeople(){
+  let body="";
+  body+=`<div class="sec-title">家庭</div>`;
+
+  if(S.family.配偶){
+    const sp=S.family.配偶;
+    sp.额外=`月收入：${fmt(sp.退休?(sp.养老金||0):(sp.月收入||0))} 元${sp.退休?"（养老金）":"　职业："+sp.职业}`;
+    body+=npcCard(sp,`<button data-act="spouse" data-arg="陪伴">陪伴家人<br><small>1 行动</small></button>
+      <button data-act="spouse" data-arg="吃饭">一起吃饭<br><small>1 行动</small></button>
+      <button data-act="spouse" data-arg="礼物">送礼物<br><small>1 行动</small></button>
+      <button data-act="spouse" data-arg="家务">分担家务<br><small>1 行动</small></button>`);
+  }else{
+    body+=`<div class="box">婚姻状况：<b>${S.family.婚姻}</b>${S.candidates.length?"　城市里有几位可以认识的人，见下方「感情」。":"　这个年纪，已经很少有人再给你介绍对象了。"}</div>`;
+  }
+
+  if(S.family.子女.length){
+    S.family.子女.forEach(c=>{
+      const 额外=`养育支出：${c.独立?"已独立，会补贴家里":fmt(子女月支出(c)*12)+" 元 / 年"}`;
+      body+=npcCard({姓名:c.姓名,年龄:c.年龄,面:c.性别==="男"?"👦":"👧",身份:"子女",
+        好感度:c.好感度,信任:0,公开:0,利益:0,性格:c.性格,notes:c.备注,memory:[],额外:额外},
+        `<button data-act="child" data-arg="${c.id}|陪伴">陪伴孩子<br><small>1 行动</small></button>
+         <button data-act="child" data-arg="${c.id}|教育">过问学业<br><small>1 行动</small></button>`);
+    });
+  }else if(S.family.配偶){
+    body+=`<div class="box">你们还没有孩子。生育会增加家庭开支，而养育成本会随孩子长大逐年上升。</div>
+      <button class="btn-line" ${S.actions<=0?"disabled":""} data-act="birth">计划要一个孩子<span class="cost">-1 行动</span>
+      <small>需配偶好感度 ≥ 50、配偶未满 42 岁，最多 3 个孩子且间隔 2 年以上</small></button>`;
+  }
+
+  if(!S.family.配偶){
+    body+=`<div class="sec-title mt14">感情 · 认识与相处</div>
+      <div class="hint mb12">好感度达到 80 即可登记结婚。婚后若长期疏于陪伴，关系同样会变冷。</div>`;
+    S.candidates.forEach(c=>{
+      body+=npcCard({...c,信任:0,公开:0,利益:0},
+        `<button data-act="date" data-arg="${c.id}|逛街">逛街散步<br><small>1 行动·300元</small></button>
+         <button data-act="date" data-arg="${c.id}|电影">看电影<br><small>1 行动·200元</small></button>
+         <button data-act="date" data-arg="${c.id}|吃饭">一起吃饭<br><small>1 行动·500元</small></button>
+         <button data-act="date" data-arg="${c.id}|旅行">短途旅行<br><small>1 行动·3000元</small></button>
+         <button data-act="date" data-arg="${c.id}|礼物">送礼物<br><small>1 行动·1000元起</small></button>
+         <button data-act="date" data-arg="${c.id}|表白">坦诚表白<br><small>需好感度 ≥ 60</small></button>
+         <button data-act="marry" data-arg="${c.id}">登记结婚<br><small>需好感度 ≥ 80</small></button>`,
+        c.好感度>=80?'<div class="box sm mb9" style="background:#eff8f2;border-color:#bfe0cb">对方已经在等你开口了。</div>':"");
+    });
+    body+=`<button class="btn-line" ${S.actions<=0?"disabled":""} data-act="meetMore">请朋友再介绍几位<span class="cost">-1 行动</span>
+      <small>重新认识 3 位可以相处的人，原有关系会保留</small></button>`;
+  }
+
+  body+=`<div class="sec-title mt14">工作与社会关系</div>
+    <div class="hint mb12">人脉是晋升中分量最重的一项。每次互动消耗 1 次行动。</div>`;
+  S.npcs.forEach(n=>{
+    body+=npcCard(n,
+      `<button data-act="rel" data-arg="${n.id}|吃饭">私下聚餐<br><small>1 行动</small></button>
+       <button data-act="rel" data-arg="${n.id}|汇报">汇报工作<br><small>1 行动</small></button>
+       <button data-act="rel" data-arg="${n.id}|帮忙">请托帮忙<br><small>1 行动</small></button>
+       <button data-act="rel" data-arg="${n.id}|送礼">送礼走动<br><small>1 行动</small></button>`);
+  });
+  return card("🕸️","人脉 · 感情 · 家庭", body);
+}
+function findCand(id){ return S.candidates.find(c=>c.id===id); }
+function childAct(id){ return S.family.子女.find(c=>c.id===id); }
+
+/* ---------- 进修 ---------- */
+const EDU_UP=[
+  {至:"大专",名:"在职高起专",年:2,费:16000,需:["高中/中专"],效:{政绩:40,能力:3},注:"补学历，也是补以后的门槛。"},
+  {至:"本科",名:"在职专升本（成人高等教育）",年:2,费:26000,需:["大专","高中/中专"],效:{政绩:60,能力:4},注:"县级及以上岗位普遍要求本科以上学历。"},
+  {至:"硕士",名:"在职攻读硕士研究生（非全日制）",年:3,费:96000,需:["本科","大专"],效:{政绩:120,能力:7,声望:4},注:"全国统考，周末与假期上课。"},
+  {至:"博士",名:"在职攻读博士研究生",年:4,费:150000,需:["硕士"],效:{政绩:260,能力:12,声望:8},注:"需单位同意并出具委托培养函。"}
+];
+const CERTS=[
+  {名:"法律职业资格证书",费:12000,年:1,效:{能力:5,声望:5},限:["法学","政治学与行政学","公安学","社会学","纪检监察"]},
+  {名:"注册会计师（CPA）",费:18000,年:2,效:{能力:6,声望:6},限:["会计学","审计学","金融学","经济学","财政学","税收学"]},
+  {名:"一级建造师",费:15000,年:1,效:{能力:5,声望:4},限:["土木工程","建筑学","工程管理","城乡规划"]},
+  {名:"党校中青年干部培训班",费:0,年:1,效:{政绩:90,能力:4,上司:6},限:null,党校:true}
+];
+function tabStudy(){
+  const cur=S.p.学历, up=S.edu.在读;
+  const inOffice=["公务员","事业单位","国企"].includes(S.p.职业)&&S.status!=="退休";
+  let body=`<div class="kv">
+      <div class="k"><span>当前学历</span><b>${cur}</b></div>
+      <div class="k"><span>专业</span><b>${S.p.专业}</b></div>
+      <div class="k"><span>政治面貌</span><b>${S.p.政治面貌}</b></div>
+      <div class="k"><span>在编在岗</span><b class="${inOffice?'up':'dn'}">${inOffice?"是":"否"}</b></div>
+     </div>`;
+  if(up){
+    const done=up.年-up.剩;
+    body+=`<div class="sec-title mt14">在读中</div>
+      <div class="box"><b>${up.名}</b><br>
+      目标学历：${up.至}　已读 ${done} / ${up.年} 年　已投入 ${fmt(up.已付)} 元
+      <div class="bars mt8">${Array.from({length:up.年},(_,i)=>`<i class="${i<done?'on':''}"></i>`).join('')}</div>
+      <span class="hint">每年自动占用 1 次行动额度；中途放弃已缴费用不退。</span></div>
+      <button class="btn-red gray" data-act="eduCancel">中 途 放 弃</button>`;
+  }
+  body+=`<div class="sec-title mt14">在职学历提升（在编在岗）</div>`;
+  if(!inOffice) body+=`<div class="box">你目前不在编在岗，可以自费报考，但拿不到委托培养与工龄衔接的政策便利。</div>`;
+  EDU_UP.forEach((e,i)=>{
+    const ok=e.需.includes(cur), busy=!!up, pay=S.cash>=Math.round(e.费*0.3);
+    body+=`<button class="btn-line" ${(!ok||busy||!pay)?"disabled":""} data-act="eduStart" data-arg="${i}">
+      ${e.名}<span class="cost">${fmt(e.费)} 元</span>
+      <small>目标学历：${e.至}　周期：${e.年} 年　前置学历要求：${e.需.join(" / ")}
+      ${ok?"":(eduIdx(cur)>eduIdx(e.至)?`<br><b class="ok-txt">你已取得${cur}学历，高于该层次</b>`:`<br><b class="bad-txt">学历不符：该层次要求${e.需.join(" / ")}，当前为${cur}</b>`)}
+      ${busy?'<br><b class="bad-txt">正在攻读一项学历，无法同时进行。</b>':""}
+      <br>${e.注}</small></button>`;
+  });
+  body+=`<div class="sec-title mt14">职业资格与培训</div>`;
+  CERTS.forEach((c,i)=>{
+    const done=S.edu.证书.includes(c.名), bad=c.限&&!c.限.includes(S.p.专业);
+    body+=`<button class="btn-line" ${(done||bad)?"disabled":""} data-act="certStart" data-arg="${i}">
+      ${c.名}<span class="cost">${c.费?fmt(c.费)+" 元":"免费"}</span>
+      <small>周期约 ${c.年} 年　${done?'<b class="ok-txt">已取得</b>':bad?`<b class="bad-txt">专业不符（限${c.限.join("/")}）</b>`:"考核通过后生效"}</small></button>`;
+  });
+  body+=`<div class="hint">学历不是万能钥匙，但县级以上的岗位、遴选和调任公告里，“本科及以上”几乎从不缺席。</div>`;
+  return card("🎓","进修 · 在职在编在岗提升", body);
+}
+
+/* ---------- 资产 ---------- */
+const HOUSES=[
+  {名:"城郊刚需小两居（约70㎡）",面积:70,总价:680000,首付比:.30,年:30},
+  {名:"市区普通两居（约90㎡）",面积:90,总价:1350000,首付比:.30,年:30},
+  {名:"学区三居（约120㎡）",面积:120,总价:2600000,首付比:.35,年:25},
+  {名:"改善型大平层（约160㎡）",面积:160,总价:4200000,首付比:.40,年:25,奢侈:true},
+  {名:"独栋/联排别墅",面积:280,总价:7800000,首付比:.50,年:20,奢侈:true}
+];
+const CARS=[
+  {名:"经济型代步车（约12万）",总价:120000,首付比:.30,年:5},
+  {名:"合资中级车（约22万）",总价:220000,首付比:.30,年:5},
+  {名:"豪华品牌轿车（约45万）",总价:450000,首付比:.35,年:4,奢侈:true},
+  {名:"高端SUV（约80万）",总价:800000,首付比:.40,年:3,奢侈:true}
+];
+function loanRate(kind){ const pub=["公务员","事业单位","国企"].includes(S.p.职业); return kind==="房"?(pub?3.1:4.2):4.8; }
+function monthly(principal, annualPct, years){
+  const r=annualPct/100/12, n=Math.round(years*12);
+  if(principal<=0||n<=0) return 0;
+  if(r===0) return Math.round(principal/n);
+  return Math.round(principal*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1));
+}
+function totalMonthly(){ return (S.loans||[]).reduce((a,l)=>a+l.月供,0); }
+/* 工资条：应发 = 岗位＋级别＋津补贴；代扣五险一金与个税后为实发 */
+function 五险一金(月薪){ const m=(月薪==null?S.income.月工资:月薪); return Math.round(m*0.22); }
+function 个税(月薪){
+  const m=(月薪==null?S.income.月工资:月薪);
+  const y=Math.max(0, m-五险一金(m)-5000);          // 起征点 5000
+  if(y<=3000) return Math.round(y*0.03);
+  if(y<=12000) return Math.round(90+(y-3000)*0.10);
+  if(y<=25000) return Math.round(990+(y-12000)*0.20);
+  return Math.round(3590+(y-25000)*0.25);
+}
+function 实发(月薪){ const m=(月薪==null?S.income.月工资:月薪); return Math.max(0, m-五险一金(m)-个税(m)); }
+/* 住房公积金：单位与个人各缴 12%，共 24% 进入个人账户，可提取用于购房与还贷 */
+function 公积金月缴(月薪){ const m=(月薪==null?S.income.月工资:月薪); return Math.round(m*0.24); }
+/* 年终考核奖：按年度考核结果，约 1—3 个月应发工资 */
+function 岗位月薪(idx){ const L=(idx==null||idx<0)?null:职务阶梯[idx]; return L?L.月薪:5200; }
+function 年终奖(){
+  if(S.status==="退休") return 0;
+  const 体制内=["公务员","事业单位","国企"].includes(S.p.职业);
+  return Math.round(S.income.月工资*(体制内?rnd(1,3):rnd(0,4)));
+}
+function netIncome(){
+  let n=实发()+S.income.其他;
+  const sp=S.family&&S.family.配偶;
+  if(sp) n += 实发(sp.退休?(sp.养老金||0):(sp.月收入||0));
+  return n;
+}
+/* 子女月支出：按成长阶段递增，养孩子的钱是越花越多的 */
+function 子女月支出(c){
+  if(c.独立) return 0;
+  const a=c.年龄;
+  if(a<=2) return 1500;
+  if(a<=5) return 1800;
+  if(a<=11) return 1600;
+  if(a<=14) return 1900;
+  if(a<=17) return 2200;
+  if(a<=21) return c.考上大学?3200:1200;
+  return 1000;
+}
+/* 非自住房产的年租金收入（按市值 1.4%） */
+function 年租金收入(){
+  return (S.assets.房产||[]).filter(x=>!x.自住).reduce((a,x)=>a+Math.round((x.市值||x.购入价||0)*0.014),0);
+}
+function 年养车成本(){
+  return (S.assets.车辆||[]).reduce((a,v)=>a+Math.round((v.总价||v.市值||120000)*0.03),0);
+}
+function livingCost(){
+  let c=Math.round(S.income.月工资*0.28);
+  if(S.family.配偶) c+=1400;
+  S.family.子女.forEach(k=>c+=子女月支出(k));
+  return c;
+}
+function isPublicJob(){ return ["公务员","事业单位","国企"].includes(S.p.职业); }
+function luxuryCount(){
+  return (S.assets.房产||[]).filter(x=>/大平层|别墅/.test(x.名||x)).length
+       + (S.assets.车辆||[]).filter(x=>/豪华|高端/.test(x.名||x)).length;
+}
+function buyAsset(kind,i){
+  const d=(kind==="房"?HOUSES:CARS)[i];
+  const down=Math.round(d.总价*d.首付比);
+  const 可用公积金=(kind==="房")?Math.min(S.fund||0, down):0;
+  if(S.cash+可用公积金<down) return toast(`首付不足，需 ${fmt(down)} 元${可用公积金?`（公积金可抵 ${fmt(可用公积金)} 元）`:""}。`);
+  const pr=d.总价-down, rate=loanRate(kind), pay=monthly(pr,rate,d.年);
+  const limit=Math.round((netIncome()+公积金月缴())*0.55);   // 公积金可用于还贷，银行认这一块
+  if(pay+totalMonthly()>limit)
+    return toast(`银行不予批贷：月供 ${fmt(pay)} 元，已超过家庭月收入 55% 的还款能力上限（${fmt(limit)} 元）。`);
+  if(可用公积金>0) S.fund-=可用公积金;
+  S.cash-=(down-可用公积金);
+  S.loans.push({名:d.名,类型:kind,余额:pr,月供:pay,利率:rate,总月:Math.round(d.年*12),已还:0,年:d.年});
+  if(kind==="房"){
+    const 首套=S.assets.房产.length===0;
+    S.assets.房产.push({名:d.名,面积:d.面积,购入价:d.总价,购入年:S.date.y,市值:d.总价,自住:首套,贷款:true});
+    if(首套) S.housing="自有住房 · "+d.名;
+  }else{
+    S.assets.车辆.push({名:d.名,总价:d.总价,购入年:S.date.y,市值:d.总价});
+  }
+  S.log.unshift({t:`${S.date.y}年`,h:kind==="房"?"购置住房":"购置车辆",kind:"good",
+    d:`你以 ${fmt(down)} 元首付（其中公积金 ${fmt(可用公积金)} 元）买下${d.名}，贷款 ${fmt(pr)} 元，${d.年} 年期，年利率 ${rate}%，月供 ${fmt(pay)} 元。`
+      +(kind==="房"?(S.assets.房产.length===1?"\n这是你的第一套房，从租房搬进了自己的家。":"\n这套房用于出租，每年约有 "+fmt(Math.round(d.总价*0.014))+" 元租金收入。"):"")
+      +(d.奢侈&&isPublicJob()?`\n一名${S.p.职业}购置这种价位的资产，在每年的组织考察中，都可能被重新提起。`:"")});
+  toast("已购置："+d.名); render();
+}
+function sellAsset(kind,i){
+  const arr=kind==="房"?S.assets.房产:S.assets.车辆;
+  const it=arr[i]; if(!it) return;
+  const 名=it.名||it;
+  const loan=S.loans.find(l=>名.indexOf(l.名)===0);
+  const 基准=kind==="房"?(it.市值||it.购入价||0):(it.市值||Math.round((it.总价||0)*0.5));
+  const price=Math.round(基准*(kind==="房"?(0.94+Math.random()*0.10):(0.90+Math.random()*0.10)));
+  const 手续费=Math.round(price*(kind==="房"?0.02:0.005));
+  if(loan){ S.cash += price-loan.余额-手续费; S.loans=S.loans.filter(l=>l!==loan); }
+  else S.cash += price-手续费;
+  arr.splice(i,1);
+  if(kind==="房"){
+    if(!S.assets.房产.some(x=>x.自住)&&S.assets.房产.length) S.assets.房产[0].自住=true;
+    if(!S.assets.房产.length) S.housing="租房（原自有住房已出售）";
+  }
+  S.log.unshift({t:`${S.date.y}年`,h:kind==="房"?"出售住房":"出售车辆",kind:"",
+    d:`你以 ${fmt(price)} 元处置了${名}${loan?`，结清剩余贷款 ${fmt(loan.余额)} 元`:""}，扣除手续费 ${fmt(手续费)} 元。`
+      +(kind==="房"&&!S.assets.房产.length?"\n房子卖掉之后，你们又回到了租房的日子。":"")});
+  toast("已处置，款项到账。"); render();
+}
+function tabAssets(){
+  const a=S.assets, totalLoan=S.loans.reduce((x,l)=>x+l.余额,0)+S.负债;
+  const limit=Math.round(netIncome()*0.55), used=totalMonthly(), pub=isPublicJob(), lux=luxuryCount();
+  let body=`<div class="kv">
+      <div class="k"><span>现金 / 存款</span><b>${fmt(S.cash)}</b></div>
+      <div class="k"><span>月收入${S.status==="退休"?"（养老金）":""}</span><b>${fmt(netIncome())}</b></div>
+      <div class="k"><span>月供合计（上限 ${fmt(limit)}）</span><b class="${used>limit*0.8?'dn':'up'}">${fmt(used)}</b></div>
+      <div class="k"><span>负债合计</span><b class="${totalLoan?'dn':''}">${fmt(totalLoan)}</b></div>
+     </div>
+     <div class="sec-title mt14">工资条（本人）</div>
+     <div class="box">
+       应发工资：<b>${fmt(S.income.月工资)}</b> 元 / 月<br>
+       五险一金：<b class="dn">-${fmt(五险一金())}</b> 元　个人所得税：<b class="dn">-${fmt(个税())}</b> 元<br>
+       <b>实发工资：${fmt(实发())} 元 / 月</b>　社会保险与公积金按规定比例代扣<br>
+       住房公积金账户：<b class="ok-txt">${fmt(S.fund||0)}</b> 元（单位与个人各缴 12%，可用于购房与还贷）<br>
+       <span class="hint">年终考核奖另计，约为 1—3 个月应发工资；每两年晋一档，工资约涨 2%。</span>
+     </div>
+     <div class="sec-title">每年收支</div>
+     <div class="box">
+       家庭年收入：<b>${fmt(netIncome()*12)}</b> 元（已扣五险一金与个税，含配偶收入）<br>
+       生活与家庭支出：<b>${fmt(livingCost()*12)}</b> 元${S.family.子女.length?`（含 ${S.family.子女.length} 名子女养育）`:""}<br>
+       贷款年供：<b>${fmt(used*12)}</b> 元${年租金收入()?`　租金收入：<b class="ok-txt">+${fmt(年租金收入())}</b> 元`:""}${年养车成本()?`　养车：<b class="dn">-${fmt(年养车成本())}</b> 元`:""}<br>
+       年终净结余：<b>${fmt((netIncome()-livingCost()-used)*12+年租金收入()-年养车成本())}</b> 元
+     </div>`;
+  if(lux>0&&pub&&S.status!=="退休"){
+    body+=`<div class="box warn-box"><b class="bad-txt">廉政提示</b><br>
+      你名下现有 ${lux} 项明显超出正常工资收入的资产。作为${S.p.职业}，每年组织考察期间都可能被纪律审查、监察调查，
+      轻则影响晋升，重则形成问题线索。</div>`;
+  }
+  body+=`<div class="sec-title">名下资产</div>`;
+  body+= a.房产.length? a.房产.map((x,i)=>{
+    const 增值=(x.市值||0)-(x.购入价||0);
+    const 年租=x.自住?0:Math.round((x.市值||0)*0.014);
+    return `<button class="btn-line" data-act="sellAsset" data-arg="房|${i}">${x.名}${x.自住?'<span class="tag green fr">自住</span>':'<span class="tag gray fr">出租</span>'}
+      <span class="cost">市值 ${fmt(x.市值||0)}</span>
+      <small>约 ${x.面积||"—"}㎡　${x.购入年||""} 年购入 / ${fmt(x.购入价||0)} 元<br>
+      较购入价 ${增值>=0?'<b class="ok-txt">涨 '+fmt(增值):'<b class="bad-txt">跌 '+fmt(-增值)}</b> 元　
+      ${x.自住?"当前自住，无租金":"年租金约 "+fmt(年租)+" 元"}<br>
+      点此出售：按市值成交，扣约 2% 中介与税费</small></button>`;
+  }).join('')
+    : `<div class="box">名下暂无住房，现居：${S.housing}。${pub?"你是"+S.p.职业+"，可申请公积金贷款，利率约 3.1%。":"商业贷款年利率约 4.2%。"}<br>
+      房价随本地房地产市场涨跌，长期看并不保证只涨不跌。</div>`;
+  body+= a.车辆.length? a.车辆.map((v,i)=>`<button class="btn-line" data-act="sellAsset" data-arg="车|${i}">${v.名}
+      <span class="cost">残值 ${fmt(v.市值||0)}</span>
+      <small>${v.购入年||""} 年购入 / ${fmt(v.总价||0)} 元　已使用 ${Math.max(0,S.date.y-(v.购入年||S.date.y))} 年<br>
+      车辆每年折旧约 15%，另需保险保养油费约 ${fmt(Math.round((v.总价||0)*0.03))} 元 / 年<br>
+      点此出售：按当前残值成交</small></button>`).join('')
+    : `<div class="box">名下暂无车辆。车贷年利率约 4.8%，期限 3—5 年。</div>`;
+  if(S.loans.length){
+    body+=`<div class="sec-title">贷款明细</div>`+S.loans.map(l=>
+      `<div class="box">· <b>${l.名}</b><br>余额 ${fmt(l.余额)} 元　月供 ${fmt(l.月供)} 元　
+       年利率 ${l.利率}%　剩余 ${l.总月-l.已还} / ${l.总月} 期</div>`).join('');
+  }
+  body+=`<div class="sec-title">购房（首付现金支付，月供不得超家庭月收入 55%）</div>`;
+  HOUSES.forEach((h,i)=>{
+    const down=Math.round(h.总价*h.首付比),pr=h.总价-down,rate=loanRate("房"),pay=monthly(pr,rate,h.年);
+    const okPay=pay+used<=limit, okDown=S.cash>=down;
+    body+=`<button class="btn-line" ${(okPay&&okDown)?"":"disabled"} data-act="buyHouse" data-arg="${i}">
+       ${h.名}${h.奢侈?'<span class="tag red fr">超标</span>':''}<span class="cost">总价 ${fmt(h.总价)}</span>
+       <small>首付 ${h.首付比*100}% ＝ <b>${fmt(down)}</b> 元　贷款 ${fmt(pr)} 元　${h.年} 年期　年利率 ${rate}%（${pub?"公积金":"商业"}）　月供 <b>${fmt(pay)}</b> 元
+         ${okDown?"":`<br><b class="bad-txt">现金不足，缺 ${fmt(down-S.cash)} 元</b>`}
+         ${okPay?"":`<br><b class="bad-txt">月供超出可贷上限 ${fmt(limit)} 元，银行不予批贷</b>`}</small></button>`;
+  });
+  body+=`<div class="sec-title">购车</div>`;
+  CARS.forEach((c,i)=>{
+    const down=Math.round(c.总价*c.首付比),pr=c.总价-down,rate=loanRate("车"),pay=monthly(pr,rate,c.年);
+    const okPay=pay+used<=limit, okDown=S.cash>=down;
+    body+=`<button class="btn-line" ${(okPay&&okDown)?"":"disabled"} data-act="buyCar" data-arg="${i}">
+       ${c.名}${c.奢侈?'<span class="tag red fr">超标</span>':''}<span class="cost">总价 ${fmt(c.总价)}</span>
+       <small>首付 ${c.首付比*100}% ＝ <b>${fmt(down)}</b> 元　贷款 ${fmt(pr)} 元　${c.年} 年期　年利率 ${rate}%　月供 <b>${fmt(pay)}</b> 元
+         ${okDown?"":`<br><b class="bad-txt">现金不足，缺 ${fmt(down-S.cash)} 元</b>`}
+         ${okPay?"":`<br><b class="bad-txt">月供超出可贷上限 ${fmt(limit)} 元</b>`}</small></button>`;
+  });
+  body+=`<div class="sec-title">投资与产业</div>
+     <div class="box">${a.投资.length?a.投资.map(i=>"· "+i).join("<br>"):"暂无合法投资。"}</div>
+     <div class="hint">不能出现无来源的巨额财富变化。所有资产、贷款、月供都会逐年真实结算；逾期会形成不良记录并影响声誉。</div>`;
+  return card("💰","资产 · 每一分钱都要有来源", body);
+}
+
+/* ---------- 廉政 ---------- */
+function tabIntegrity(){
+  const r=S.discipline.risk;
+  const lvl=r===0?"干净":r<=20?"低":r<=40?"需关注":r<=70?"较高":"高危";
+  const color=r>70?"var(--red-700)":r>40?"#b06a1e":"var(--green)";
+  const lux=luxuryCount();
+  return card("⚠️","廉政 · 纪律不会自动放过谁",
+    `<div class="kv">
+      <div class="k"><span>风险指数</span><b style="color:${color}">${r}</b></div>
+      <div class="k"><span>当前等级</span><b style="color:${color}">${lvl}</b></div>
+      <div class="k"><span>处分记录</span><b>${S.p2.处分} 次</b></div>
+      <div class="k"><span>嘉奖记录</span><b class="up">${S.p2.嘉奖} 次</b></div>
+     </div>
+     ${lux>0&&isPublicJob()?`<div class="box warn-box"><b class="bad-txt">超标资产提示</b><br>
+       名下 ${lux} 项资产明显超出正常工资水平。每年组织考察阶段都可能有纪律审查、监察调查，请自行判断是否处置。</div>`:""}
+     ${(S.discipline.案件&&S.discipline.案件.length)?`<div class="sec-title mt14">问题线索</div>
+     <div class="box warn-box"><b class="bad-txt">已掌握在案 ${S.discipline.案件.length} 笔，合计 ${fmt(涉案金额())} 元</b><br>
+       ${S.discipline.案件.slice(-4).map(c=>`· ${c.年}年　${c.事由}　${fmt(c.金额)} 元`).join("<br>")}
+       <br><span class="hint">每一笔都记在案上。风险指数以此为底线，不会随时间冲淡。被调查时，这些就是证据。</span></div>`:""}
+     ${影响期内()?`<div class="box warn-box">正处于影响期（至 ${S.discipline.影响期} 年底），期间不得提拔或者进一步使用。</div>`:""}
+     ${(S.discipline.已查金额)?`<div class="box">历年已被查处的涉案金额合计 <b class="bad-txt">${fmt(S.discipline.已查金额)}</b> 元。</div>`:""}
+     <div class="sec-title mt14">纪律日志</div>
+     <div class="box">${S.discipline.records.length?S.discipline.records.map(x=>"· "+x).join("<br>"):"暂无异常记录。"}</div>
+     <div class="hint">纪律不会因为你是主角而自动放过问题。过去的行为不会因为“想洗白”就消失。</div>
+     <button class="btn-line" ${(S.actions<=0||S.status==="退休")?"disabled":""} data-act="audit">
+       主动梳理本人及分管领域的廉政风险点<span class="cost">-1 行动</span>
+       <small>耗时一整段工作时间。可能降低风险、积累口碑，也可能反而暴露更多问题。</small></button>`);
+}
+
+/* ---------- 健康 ---------- */
+function healthLevel(){
+  const h=S.p.健康;
+  if(h>=90) return ["极佳","ok-txt","身体状态很少成为你的负担。"];
+  if(h>=80) return ["良好","ok-txt","达到承担更重岗位的身体要求。"];
+  if(h>=70) return ["尚可","","还能支撑，但已经能感觉到累。"];
+  if(h>=50) return ["偏弱","bad-txt","组织上会开始考虑你的身体是否吃得消。"];
+  if(h>=30) return ["较差","bad-txt","再往下走，就是强制退休的线了。"];
+  return ["危险","bad-txt","随时可能倒下。"];
+}
+function tabHealth(){
+  const [lv,cls,tip]=healthLevel();
+  const freeDone=!!S.flags['本年免费健康'];
+  return card("🩺","健康 · 身体是一切的前提",
+    `<div class="box">
+      <div class="bar-row"><span>当前健康值</span><b class="${cls}">${S.p.健康} / 100（${lv}）</b></div>
+      <div class="bar"><i style="width:${S.p.健康}%"></i></div>
+      <span class="hint">${tip}</span>
+     </div>
+     <div class="sec-title">健康管理</div>
+     <button class="btn-line" ${freeDone?"disabled":""} data-act="healthFree">
+       年度体检与休养<span class="cost">每年一次 · 免费</span>
+       <small>${freeDone?"本年已经体检休养过了，下一年度可再次使用。":"不占用行动额度。可提升健康 5—10 点。"}</small></button>
+     <button class="btn-line" ${(S.actions<=0||S.cash<8000)?"disabled":""} data-act="healthPaid">
+       抽出时间调养身体<span class="cost">-1 行动 · 3,000—8,000 元</span>
+       <small>请中医调理、办健身卡、把作息彻底改过来。可提升健康 10—20 点。</small></button>
+     <button class="btn-line" ${(S.actions<=0||S.cash<50000)?"disabled":""} data-act="healthCare">
+       专业健康管理<span class="cost">-1 行动 · 20,000—50,000 元</span>
+       <small>全面体检＋营养师＋私人教练＋短期疗养。可提升健康 20—25 点，费用不低。</small></button>
+
+     <div class="sec-title mt14">健康与人生的关系</div>
+     <div class="box">
+       · 健康低于 <b class="bad-txt">20</b>：强制死亡，人生结束。<br>
+       · 健康低于 <b class="bad-txt">30</b>：强制退休，退出工作岗位。<br>
+       · 健康 <b>80</b> 以上：满足承担更重岗位的身体要求。<br>
+       · 健康低于 <b>70</b>：组织上会有所顾虑。<br>
+       · 健康低于 <b>50</b>：组织暂不将你列入晋升考虑。
+     </div>
+     <div class="box">
+       <b>身体的变化规律</b><br>
+       · 每年年底会随年龄与劳累自然变化，年轻时恢复较快。<br>
+       · 45 岁以后每年下滑，55 岁以后下滑更快，70 岁以后加速。<br>
+       · 施政与应酬都会消耗身体，留有余力的年份恢复得更好。
+     </div>
+     <div class="hint">施政会消耗身体：每做一件实事随机消耗 1—2 点健康，全年 ${SHIXI_COUNT} 项合计 3—6 点，一次免费休养就能补回来。<br>
+      健康是六项晋升指标之一，也是唯一一项一旦崩掉就无法挽回的指标。</div>`);
+}
+
+/* ---------- 档案 ---------- */
+function tabArchive(){
+  const l=S.log.map(x=>`<div class="log-item ${x.kind||''}">
+      <div class="t">${x.t}</div><div class="h">${x.h}</div><div class="d">${x.d}</div></div>`).join('');
+  const pos=S.positions.length?S.positions.map(p=>`· ${p.年}年　${p.职级}　${p.岗位}`).join("<br>"):"尚无任职记录";
+  const fam=[];
+  fam.push(S.family.配偶?`配偶：${S.family.配偶.姓名}（好感度 ${S.family.配偶.好感度}）`:"配偶：无");
+  S.family.子女.forEach(c=>fam.push(`子女：${c.姓名}（${c.年龄}岁）`));
+  return card("📁","档案 · 过去必须留下痕迹",
+    `<div class="kv">
+       <div class="k"><span>姓名</span><b>${S.p.姓名}</b></div>
+       <div class="k"><span>年龄</span><b>${S.p.年龄}</b></div>
+       <div class="k"><span>学历 / 专业</span><b>${S.p.学历} · ${S.p.专业}</b></div>
+       <div class="k"><span>专业匹配度</span><b>${S.p.专业匹配度}%</b></div>
+       <div class="k"><span>职务 / 职级</span><b>${rankTitle()}${S.p.职业==="公务员"?" · "+职级序列[S.zhijiIdx]:""}</b></div>
+       <div class="k"><span>出生地 / 家庭</span><b>${S.p.出生地} · ${S.p.家庭背景}</b></div>
+       <div class="k"><span>工作平台</span><b>${S.p.平台||"—"}${S.p.挂职?" · 挂职"+S.p.挂职.层级:""}</b></div>
+       <div class="k"><span>人事关系</span><b>${S.p.选调生?"省委组织部（选调生）":(S.p.单位||"—")}</b></div>
+       ${S.p.挂职?`<div class="k"><span>挂职单位</span><b>${S.p.挂职.单位}（至 ${S.p.挂职.结束年} 年）</b></div>`:""}
+       <div class="k"><span>政治面貌</span><b>${S.p.政治面貌}${S.p.选调生?"（选调生）":""}</b></div>
+       <div class="k"><span>任现职年限</span><b>${S.p2.任职年} 年</b></div>
+     </div>
+     <div class="sec-title mt14">长期目标</div>
+     <div class="box">${S.p.目标}</div>
+     <div class="sec-title">家庭</div>
+     <div class="box">${fam.join("<br>")}</div>
+     <div class="sec-title">任职经历</div>
+     <div class="box">${pos}</div>
+     ${S.edu.证书.length?`<div class="sec-title">已取得资格</div><div class="box">${S.edu.证书.map(c=>"· "+c).join("<br>")}</div>`:""}
+     <div class="sec-title">人生轨迹</div>
+     ${l}
+     <div class="btn-row">
+       <button class="btn-ghost" data-act="save">保存存档</button>
+       <button class="btn-ghost" data-act="load">读取存档</button>
+       <button class="btn-ghost" data-act="reset">重开人生</button>
+     </div>`);
+}
+
+/* ---------- 结局 ---------- */
+function tabEnd(){
+  const L=ladder();
+  const last=S.positions[0];
+  const houses=S.assets.房产.length?S.assets.房产.map(x=>`${x.名}（${x.自住?"自住":"出租"}，市值 ${fmt(x.市值||0)} 元）`).join("<br>"):"无";
+  const cars=S.assets.车辆.length?S.assets.车辆.map(v=>`${v.名}（残值 ${fmt(v.市值||0)} 元）`).join("<br>"):"无";
+  const loan=S.loans.reduce((a,l)=>a+l.余额,0)+S.负债;
+  const netWorth=S.cash+ (S.assets.房产.length?S.assets.房产.length*1350000:0) - loan;
+  const kids=S.family.子女.length?S.family.子女.map(c=>`${c.姓名}（${c.年龄}岁，${c.备注}）`).join("<br>"):"无";
+  const rep=S.p.声望;
+  const repText = rep>=85?"群众口碑极好，被许多人记住":rep>=70?"口碑良好，同事与群众评价正面":rep>=50?"评价尚可，是个本分的干部或从业者":rep>=30?"评价一般，有过争议":'评价不高，留下过一些非议';
+  return `<div class="card"><div class="card-hd"><span class="ic">🕯️</span><h2>人生终章</h2></div>
+    <div class="card-bd">
+      <div class="txt"><p><b>${S.p.姓名}</b>，${S.p.性别}，${S.p.出生地}人，${S.beginYear||S.date.y}年参加工作，${S.endYear||S.date.y}年去世，享年 <span class="hl">${S.p.年龄}</span> 岁。</p></div>
+      <div class="sec-title">最后职务</div>
+      <div class="box">
+        职务层级：<b>${last?last.职级:"无"}</b>　具体岗位：<b>${last?last.岗位:"无"}</b><br>
+        ${S.p.职业==="公务员"?`最后职级：<b>${职级序列[S.zhijiIdx]}</b><br>`:""}
+        ${S.p.选调生?"身份：省委组织部选调生<br>":""}
+        任职经历：<br>${S.positions.length?S.positions.map(p=>`· ${p.年}年　${p.职级}　${p.岗位}`).join("<br>"):"无"}
+      </div>
+      <div class="sec-title">资产与负债</div>
+      <div class="box">
+        现金存款：<b>${fmt(S.cash)}</b> 元<br>
+        房产：<b>${houses}</b><br>
+        车辆：<b>${cars}</b><br>
+        剩余负债：<b>${fmt(loan)}</b> 元<br>
+        净资产（估算）：<b>${fmt(netWorth)}</b> 元
+      </div>
+      <div class="sec-title">家庭</div>
+      <div class="box">
+        婚姻：<b>${S.family.婚姻}</b>${S.family.配偶?`　配偶：${S.family.配偶.姓名}（${S.family.配偶.身份}）`:""}<br>
+        子女：<br>${kids}
+      </div>
+      <div class="sec-title">廉政结局</div>
+      ${S.discipline.移送?`<div class="box warn-box" style="background:#f7dede;border-color:#e0a8a8">
+        <b class="bad-txt">严重违纪违法，被开除党籍、开除公职，移送检察机关依法审查起诉。</b><br>
+        涉案金额合计 <b>${fmt(涉案金额())}</b> 元，共 ${(S.discipline.案件||[]).length} 笔。<br>
+        <span class="hint">此前的职务、荣誉与待遇一并终止。</span></div>`
+      :(S.p2.处分?`<div class="box warn-box">职业生涯中受到 <b>${S.p2.处分}</b> 次处分。
+        已掌握在案涉案金额 ${fmt(涉案金额())} 元。</div>`
+      :`<div class="box"><b class="ok-txt">一生未受处分，未发现问题线索。</b><br>在那个位置上待了这么多年，档案里干干净净。</div>`)}
+      <div class="sec-title">名誉与社会评价</div>
+      <div class="box">
+        公开声誉：<b>${rep}</b>　${repText}<br>
+        领导评价：<b>${S.p.上司}</b>　道德评价：<b>${S.p.道德}</b><br>
+        人脉：<b>${S.p.人脉}</b>　专业能力：<b>${S.p.能力}</b><br>
+        处分记录：<b>${S.p2.处分}</b> 次　嘉奖记录：<b>${S.p2.嘉奖}</b> 次<br>
+        廉政风险终值：<b>${S.discipline.risk}</b>
+      </div>
+      <div class="sec-title">人生轨迹</div>
+      ${S.log.slice(0,24).map(x=>`<div class="log-item ${x.kind||''}">
+        <div class="t">${x.t}</div><div class="h">${x.h}</div><div class="d">${x.d}</div></div>`).join('')}
+      <div class="btn-row">
+        <button class="btn-ghost" data-act="save">保存存档</button>
+        <button class="btn-ghost" data-act="reset">重新开始一生</button>
+      </div>
+    </div></div>`;
+}
+
+function card(icon,title,body){
+  return `<div class="card"><div class="card-hd"><span class="ic">${icon}</span><h2>${title}</h2></div>
+    <div class="card-bd">${body}</div></div>`;
+}
+
+/* =========================================================
+   行为
+========================================================= */
+const ACTIONS={
+  goto:(t)=>{ curTab=t; render(); window.scrollTo({top:0,behavior:'smooth'}); },
+
+  shixi:(idx)=>{
+    idx=+idx;
+    const a=SHIXI[idx]; if(!a) return;
+    if(S.status!=="在职") return toast("已退休，不再开展施政工作。");
+    if(S.actions<=0) return toast("本年行动额度已用完，请结束本年。");
+    if(S.usedThisYear.includes(idx)) return toast("本年度该项工作已经开展过了。");
+    S.actions--;
+    S.usedThisYear.push(idx);
+    applyEffect(a.e);
+    // 每做一件实事都要消耗身体，全年 5 项合计 5—10 点，正好是一次免费休养能补回来的量
+    const 劳损=rnd(1,2);
+    S.p.健康=clamp(S.p.健康-劳损,0,100);
+    yearLog.unshift({t:`${S.date.y}年`,h:a.名,kind:"",d:a.desc+`（耗费精力，健康 -${劳损}）`});
+    const tier=tierOf();
+    S.quiz={item:idx, tier:tier, variant:rnd(0,a.asks[tier].length-1), order:shuffle([0,1,2])};
+    render();
+  },
+  answerQuiz:(k)=>{
+    if(!S.quiz) return;
+    const item=SHIXI[S.quiz.item], set=item.asks[S.quiz.tier][S.quiz.variant];
+    const a=set.a[S.quiz.order[+k]];
+    if(!a) return;
+    const mark=a.判==="正确"?["正确处置","good"]:a.判==="模糊"?["处置平平",""]:["处置失当","bad"];
+    const gain=[];
+    if(a.判==="模糊"){
+      // 模棱两可：不加不减；但「连续」三次说明处置能力有问题，此后每次都要付出代价
+      applyEffect({廉政风险:a.e.廉政风险||0});
+      S.p2.连续模糊=(S.p2.连续模糊||0)+1;
+      S.p2.累计模糊=(S.p2.累计模糊||0)+1;
+      if(S.p2.连续模糊>=3){
+        const nx=nextRankInfo();
+        const base=nx.def?nx.def.门槛.政绩:200;
+        const cut={政绩:-Math.max(8,Math.round(base*0.02)),能力:-1};
+        applyEffect(cut);
+        gain.push(`已连续 ${S.p2.连续模糊} 次模棱两可：${perfLabel()} ${cut.政绩}、能力 ${cut.能力}`);
+      }else{
+        gain.push(`模棱两可 ${S.p2.连续模糊} / 3 次（不加不减，答对一次即清零）`);
+      }
+    }else{
+      S.p2.连续模糊=0;   // 处置得当或明显失当，都会中断「连续」判定
+      applyEffect(a.e);
+      if(a.e.政绩) gain.push(`${perfLabel()} ${a.e.政绩>0?"+":""}${a.e.政绩}`);
+      if(a.e.能力) gain.push(`能力 ${a.e.能力>0?"+":""}${a.e.能力}`);
+      if(a.e.道德) gain.push(`道德 ${a.e.道德>0?"+":""}${a.e.道德}`);
+      if(a.e.上司) gain.push(`领导评价 ${a.e.上司>0?"+":""}${a.e.上司}`);
+      if(a.e.廉政风险) gain.push(`廉政风险 +${a.e.廉政风险}`);
+      if(a.判==="错误"){
+        const cut={政绩:-Math.round(a.e.政绩<0?-a.e.政绩*0.6:25),道德:-1};
+        applyEffect(cut);
+        gain.push(`直接扣除晋升条件：${perfLabel()} ${cut.政绩}、道德 ${cut.道德}`);
+      }
+    }
+    yearLog.unshift({t:`${S.date.y}年`,h:`${item.名} · ${mark[0]}`,kind:mark[1],d:a.fb});
+    S.log.unshift({t:`${S.date.y}年`,h:`${item.名}（${mark[0]}）`,kind:mark[1],
+      d:a.fb+"\n"+(a.判==="正确"?"这次处置被记入了你的工作实绩，成为晋升考察的加分项。":
+        a.判==="模糊"?`没有出错，也没有加分。你已经连续 ${S.p2.连续模糊} 次给出模棱两可的处置。`:
+        "这件事留下了需要解释的地方，晋升所需的条件被直接扣减。")});
+    toast(`${mark[0]}　${gain.join("　")||"无变化"}`);
+    S.quiz=null;
+    render();
+  },
+  closeSummary:()=>{ S.yearSummary=null; render(); },
+  applyPromote:()=>{
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    S.actions--; doPromote(true);
+  },
+  choosePos:(i)=>{
+    const p=pendingPositions&&pendingPositions[+i];
+    if(!p) return toast("请选择一个岗位。");
+    if(S.rankIdx<0){ pendingPositions=null; pendingPosTitle=""; return render(); }
+    settlePosition(p.名||p);
+    pendingPositions=null; pendingPosTitle="";
+    curTab='事件';
+    render();
+    toast("已就任："+p);
+  },
+  healthFree:()=>{
+    if(S.flags['本年免费健康']) return toast("本年已经体检休养过了，下一年度可再次使用。");
+    const d=rnd(5,10);
+    S.flags['本年免费健康']=true;
+    S.p.健康=clamp(S.p.健康+d,0,100);
+    yearLog.unshift({t:`${S.date.y}年`,h:"年度体检与休养",kind:"good",d:`你安排了一次完整体检，按医嘱调整作息。健康 +${d}。`});
+    toast(`体检休养完成，健康 +${d}`);
+    render();
+  },
+  healthPaid:()=>{
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    const 费=rnd(3000,8000);
+    if(S.cash<费) return toast(`现金不足，需要 ${fmt(费)} 元。`);
+    S.actions--; S.cash-=费;
+    const d=rnd(10,20);
+    S.p.健康=clamp(S.p.健康+d,0,100);
+    yearLog.unshift({t:`${S.date.y}年`,h:"调养身体",kind:"good",d:`你请了中医调理，办了健身卡，推掉了整个月的应酬，花费 ${fmt(费)} 元。健康 +${d}。`});
+    toast(`调养完成，花费 ${fmt(费)} 元，健康 +${d}`);
+    render();
+  },
+  healthCare:()=>{
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    const 费=rnd(20000,50000);
+    if(S.cash<费) return toast(`现金不足，需要 ${fmt(费)} 元。`);
+    S.actions--; S.cash-=费;
+    const d=rnd(20,25);
+    S.p.健康=clamp(S.p.健康+d,0,100);
+    yearLog.unshift({t:`${S.date.y}年`,h:"专业健康管理",kind:"good",d:`你做了全面体检，配了营养师和私人教练，还去疗养了两周，花费 ${fmt(费)} 元。健康 +${d}。`});
+    toast(`健康管理完成，花费 ${fmt(费)} 元，健康 +${d}`);
+    render();
+  },
+
+  meetMore:()=>{
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    S.actions--;
+    makeCandidates(S.p.性别,S.p.年龄).forEach((c,i)=>{ c.id="cand"+(S.candidates.length+i); S.candidates.push(c); });
+    if(S.candidates.length>6) S.candidates=S.candidates.slice(0,6);
+    toast("朋友又介绍了新的朋友。");
+    S.log.unshift({t:`${S.date.y}年`,h:"经人介绍",kind:"",d:"通过朋友介绍，你认识了几位新朋友。感情需要时间，也需要主动。"});
+    render();
+  },
+  date:(arg)=>{
+    const [id,type]=arg.split("|");
+    const c=findCand(id); if(!c) return;
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    const conf={"逛街":{钱:300,加:[4,9],文:"你们在商业街逛了一下午，聊起各自的工作和家里的事。"},
+      "电影":{钱:200,加:[5,10],文:"看了一场电影，散场后又站在路边聊了很久。"},
+      "吃饭":{钱:500,加:[6,13],文:"一起吃了顿饭。对方说，你比介绍人描述的更好相处。"},
+      "旅行":{钱:3000,加:[12,22],文:"周末短途旅行，两天时间足够看清一个人，也足够让对方看清你。"},
+      "礼物":{钱:1000,加:[6,15],文:"你送了对方一件用心的礼物。对方收下了，也记住了价格之外的东西。"}}[type];
+    if(type==="表白"){
+      if(c.好感度<60) return toast("现在说这些还太早，对方有些尴尬。");
+      S.actions--;
+      if(Math.random()<0.5+c.好感度/400){
+        c.好感度=clamp(c.好感度+8,0,100); S.family.婚姻="恋爱中";
+        S.log.unshift({t:`${S.date.y}年`,h:"确定恋爱关系",kind:"good",d:`你向${c.姓名}表明心意，对方答应了。\n从此你的时间，有一部分不再属于自己。`});
+        toast("你们确定了恋爱关系。");
+      }else{ c.好感度=clamp(c.好感度-4,0,100); toast("对方说需要再想想。"); }
+      return render();
+    }
+    if(!conf) return;
+    if(S.cash<conf.钱) return toast(`现金不足，需要 ${fmt(conf.钱)} 元。`);
+    S.actions--; S.cash-=conf.钱;
+    const before=c.好感度;
+    c.好感度=clamp(c.好感度+rnd(conf.加[0],conf.加[1]),0,100);
+    const d=c.好感度-before;
+    c.memory.unshift(`${S.date.y}年：你约${c.姓名}${type==="礼物"?"送了礼物":type}，好感度 +${d}。`);
+    if(c.memory.length>5) c.memory.pop();
+    toast(`与${c.姓名}${type}，好感度 +${d}（当前 ${c.好感度}）`);
+    yearLog.unshift({t:`${S.date.y}年`,h:`与${c.姓名}约会 · ${type}`,kind:"",d:conf.文});
+    render();
+  },
+  marry:(id)=>{
+    const c=findCand(id); if(!c) return;
+    if(c.好感度<80) return toast("好感度不足 80，对方还没有做好准备。");
+    if(Math.abs(c.年龄-S.p.年龄)>14) return toast(`你们相差 ${Math.abs(c.年龄-S.p.年龄)} 岁，对方家里不同意。`);
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    const cost=clamp(Math.round((netIncome()+(c.月收入||5200))*rnd(5,11)),50000,420000);
+    if(S.cash<cost) return toast(`办婚事需要约 ${fmt(cost)} 元（约合双方收入的半年到一年），现金不足。`);
+    S.actions--; S.cash-=cost;
+    S.family.配偶={id:"spouse",姓名:c.姓名,年龄:c.年龄,身份:"你的配偶 · "+c.职业,职业:c.职业,类别:c.类别,
+      月收入:c.月收入,养老金:0,退休:false,
+      性格:c.性格,好感度:88,面:"💑",信任:80,公开:60,利益:0,memory:[],notes:"你们在亲友的见证下办了婚事。"};
+    S.family.婚姻="已婚";
+    S.candidates=S.candidates.filter(x=>x.id!==id);
+    S.log.unshift({t:`${S.date.y}年`,h:"结婚",kind:"good",
+      d:`你和${c.姓名}（${c.职业}）登记结婚，办了一场不算铺张的婚礼，花费约 ${fmt(cost)} 元。\n从今天起，你的每一个决定都不再只影响自己。`});
+    toast("已结婚。家庭系统已开启。"); render();
+  },
+  spouse:(type)=>{
+    const sp=S.family.配偶; if(!sp) return;
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    S.actions--; S.flags['本年顾家']=true;
+    let msg="",d=0;
+    if(type==="陪伴"){ d=rnd(4,10); msg=`你推掉了两个饭局，在家待了一整天。${sp.姓名}嘴上说你无所事事，晚上却多做了两个菜。`; }
+    else if(type==="吃饭"){ S.cash-=rnd(200,600); d=rnd(3,7); msg="你们在外面吃了顿饭，聊了很多和单位无关的事。"; }
+    else if(type==="礼物"){ S.cash-=rnd(1000,6000); d=rnd(6,14); msg=`你给${sp.姓名}买了一件礼物。${sp.好感度<50?"对方收下了，但没说什么。":"对方很高兴。"}`; }
+    else { d=rnd(3,8); msg=`你主动把家里的事分担了一部分。${sp.姓名}说：「难得。」`; }
+    sp.好感度=clamp(sp.好感度+d,0,100);
+    sp.memory.unshift(`${S.date.y}年：${msg}`);
+    if(sp.memory.length>5) sp.memory.pop();
+    toast(`配偶好感度 +${d}（当前 ${sp.好感度}）`);
+    yearLog.unshift({t:`${S.date.y}年`,h:"家庭 · "+type,kind:"",d:msg});
+    render();
+  },
+  birth:()=>{
+    const sp=S.family.配偶; if(!sp) return;
+    if(sp.好感度<50) return toast("配偶好感度不足 50，暂不考虑生育。");
+    if(S.family.子女.length>=3) return toast("三个孩子已经是这个家庭能承担的极限了。");
+    if(S.family.上次生育年 && S.date.y-S.family.上次生育年<2) return toast("距离上一个孩子出生还不到两年，身体和精力都需要恢复。");
+    if(sp.年龄>=42) return toast("配偶年龄偏大，医生建议不再考虑生育。");
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    const cost=clamp(Math.round(netIncome()*rnd(2,5)),20000,180000);
+    if(S.cash<cost) return toast(`生育与前期养育约需 ${fmt(cost)} 元，现金不足。`);
+    S.actions--; S.cash-=cost;
+    S.family.上次生育年=S.date.y;
+    const 姓=pick([S.p.姓名[0], sp.姓名[0]]);
+    const 名=pick(["子涵","思远","一诺","嘉禾","若溪","书言","亦辰","知遥","沐阳","念初"]);
+    const sex=Math.random()<0.5?"男":"女";
+    const child={id:"child"+(S.family.子女.length+1),姓名:姓+名,性别:sex,年龄:0,好感度:60,
+      性格:"还不知道",备注:"你和"+sp.姓名+"的孩子。"};
+    S.family.子女.push(child);
+    sp.好感度=clamp(sp.好感度+8,0,100);
+    S.log.unshift({t:`${S.date.y}年`,h:"孩子出生",kind:"good",
+      d:`你们的${sex==="男"?"儿子":"女儿"}出生了，取名${child.姓名}，花费约 ${fmt(cost)} 元。\n养育开支会随孩子长大逐年增加：现在每月约 1500 元，上学之后更多。`});
+    toast("家中添了一个孩子。"); render();
+  },
+  child:(arg)=>{
+    const [id,type]=arg.split("|");
+    const c=childAct(id); if(!c) return;
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    S.actions--; S.flags['本年顾家']=true;
+    let d=0,msg="";
+    if(type==="陪伴"){ d=rnd(4,10); msg=`你抽时间陪${c.姓名}玩了一下午，${c.年龄<6?"孩子笑得很大声":"孩子跟你说了很多学校里的事"}。`; }
+    else { d=rnd(3,8); msg=`你过问了${c.姓名}的学业。${c.年龄<6?"孩子还小，主要是陪着":"孩子把成绩单拿给你看"}。`; }
+    c.好感度=clamp(c.好感度+d,0,100);
+    toast(`亲子好感度 +${d}（当前 ${c.好感度}）`);
+    yearLog.unshift({t:`${S.date.y}年`,h:`家庭 · ${c.姓名}`,kind:"",d:msg});
+    render();
+  },
+
+  rel:(arg)=>{
+    const [id,type]=arg.split("|");
+    const n=S.npcs.find(x=>x.id===id); if(!n) return;
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    S.actions--;
+    let msg="";
+    if(type==="吃饭"){
+      S.cash-=rnd(300,900);
+      n.好感度=clamp(n.好感度+rnd(4,9),0,100); n.信任=clamp(n.信任+rnd(2,5),-100,100);
+      msg=`你和${n.姓名}吃了一顿饭，聊了家里的事，也聊了单位的事。`;
+    }else if(type==="汇报"){
+      if(id==="leader"){ n.信任=clamp(n.信任+rnd(3,7),-100,100); n.好感度=clamp(n.好感度+rnd(3,7),0,100);
+        applyEffect({上司:rnd(2,4),政绩:rnd(8,16)}); }
+      else { n.信任=clamp(n.信任+rnd(1,4),-100,100); n.好感度=clamp(n.好感度+rnd(2,5),0,100); }
+      msg=`你向${n.姓名}汇报了近期工作，重点讲了${pick(["项目进度","群众反映的问题","材料里的数据","下一步安排"])}。`;
+    }else if(type==="帮忙"){
+      if(Math.random()<0.45){
+        n.信任=clamp(n.信任+8,-100,100); n.利益=clamp(n.利益+10,-100,100);
+        applyEffect({声望:-2,廉政风险:rnd(6,14)});
+        S.discipline.records.unshift(`${S.date.y}年：应${n.姓名}之请，就${pick(["一个审批环节","一笔资金拨付","一次检查安排"])}打了招呼。`);
+        msg=`你帮${n.姓名}办了一件事。他连声道谢，但你知道这件事不完全符合程序。`;
+      }else{
+        n.信任=clamp(n.信任-3,-100,100); n.好感度=clamp(n.好感度-6,0,100);
+        msg=`你拒绝了${n.姓名}的请托。他表示理解，但气氛明显冷了下来。`;
+      }
+    }else if(type==="送礼"){
+      S.cash-=rnd(2000,12000);
+      n.信任=clamp(n.信任+5,-100,100); n.利益=clamp(n.利益+12,-100,100); n.好感度=clamp(n.好感度+5,0,100);
+      applyEffect({廉政风险:rnd(8,18)});
+      S.discipline.records.unshift(`${S.date.y}年：向${n.姓名}送去${pick(["两条烟","一瓶酒","一张购物卡","一份土特产"])}。`);
+      msg=`你去了${n.姓名}家。东西他收下了，话也说得客气。`;
+    }
+    n.memory.unshift(`${S.date.y}年：${msg}`);
+    if(n.memory.length>6) n.memory.pop();
+    yearLog.unshift({t:`${S.date.y}年`,h:`互动 · ${n.姓名}`,kind:"",d:msg});
+    toast(msg); render();
+  },
+
+  buyHouse:(i)=>buyAsset("房",+i),
+  buyCar:(i)=>buyAsset("车",+i),
+  sellAsset:(arg)=>{
+    const [k,i]=arg.split("|");
+    const arr=k==="房"?S.assets.房产:S.assets.车辆;
+    if(!confirm(`确定出售「${arr[+i]}」？`)) return;
+    sellAsset(k,+i);
+  },
+  eduStart:(i)=>{
+    const e=EDU_UP[+i]; if(!e) return;
+    if(S.edu.在读) return toast("你正在攻读一项学历，无法同时进行。");
+    if(!e.需.includes(S.p.学历)) return toast("学历不符，无法报考。");
+    const first=Math.round(e.费*0.3);
+    if(S.cash<first) return toast(`首期学费不足 ${fmt(first)} 元。`);
+    S.cash-=first;
+    S.edu.在读={名:e.名,至:e.至,年:e.年,剩:e.年,已付:first,总费:e.费,效:e.效};
+    S.log.unshift({t:`${S.date.y}年`,h:"报名在职学历教育",kind:"",
+      d:`你报名参加${e.名}，首期缴纳 ${fmt(first)} 元，总费用约 ${fmt(e.费)} 元，周期 ${e.年} 年。\n${e.注}`});
+    toast("已报名，开始在职攻读。"); render();
+  },
+  eduCancel:()=>{
+    if(!S.edu.在读) return;
+    if(!confirm("中途放弃将损失已缴费用，并留下一次未完成记录。确定？")) return;
+    const u=S.edu.在读;
+    S.p.声望=clamp(S.p.声望-4,0,100);
+    S.log.unshift({t:`${S.date.y}年`,h:"放弃在职学习",kind:"bad",
+      d:`你中止了${u.名}，已缴纳的 ${fmt(u.已付)} 元不再退还。单位里有人问起，你只说工作太忙。`});
+    S.edu.在读=null; toast("已放弃，学费不退。"); render();
+  },
+  certStart:(i)=>{
+    const c=CERTS[+i]; if(!c) return;
+    if(S.edu.证书.includes(c.名)) return toast("你已取得该项资格。");
+    if(c.限&&!c.限.includes(S.p.专业)) return toast("专业不符，无法报考。");
+    if(S.cash<c.费) return toast(`费用不足 ${fmt(c.费)} 元。`);
+    S.cash-=c.费;
+    if(c.党校||Math.random()<0.55){
+      applyEffect(c.效); S.edu.证书.push(c.名);
+      S.log.unshift({t:`${S.date.y}年`,h:`取得${c.名}`,kind:"good",
+        d:`经过约 ${c.年} 年的准备，你通过了${c.名}。${c.党校?"培训班结业后，组织部的人记住了你的名字。":"这张证书不会立刻改变什么，但迟早有用。"}`});
+      toast("已取得："+c.名);
+    }else{
+      S.p.声望=clamp(S.p.声望-2,0,100);
+      S.log.unshift({t:`${S.date.y}年`,h:`${c.名}未通过`,kind:"bad",
+        d:`你花了 ${fmt(c.费)} 元和 ${c.年} 年时间，最终没有通过${c.名}。工作和备考两头都没顾好。`});
+      toast("未通过，费用已支出。");
+    }
+    render();
+  },
+  audit:()=>{
+    if(S.actions<=0) return toast("本年行动额度已用完。");
+    S.actions--;
+    if(S.discipline.risk<20&&Math.random()<0.7){
+      applyEffect({政绩:14,道德:2,声望:2});
+      toast("梳理完毕，未发现实质问题，形成了一份报告。");
+      S.log.unshift({t:`${S.date.y}年`,h:"廉政自查",kind:"good",d:"你对本人及分管领域做了风险梳理，形成书面报告上报。未发现问题。"});
+    }else{
+      S.discipline.risk=clamp(S.discipline.risk+rnd(3,9),0,100);
+      toast("梳理中发现几处程序瑕疵，你需要时间解释。");
+      S.log.unshift({t:`${S.date.y}年`,h:"廉政自查",kind:"bad",d:"梳理中发现几处程序上的模糊地带，其中一处涉及你签过字的材料。你暂时无法完全说清。"});
+    }
+    render();
+  },
+  chooseEvent:(i)=>{
+    if(!pendingEvent) return;
+    const o=pendingEvent.选项[+i]; if(!o) return;
+    const 前=快照();
+    const res=o.run?o.run():"";
+    const 后=快照();
+    const 明细=差异(前,后);
+    const 好=(后.政绩-前.政绩)+(后.声望-前.声望)+(后.道德-前.道德)+(后.上司-前.上司);
+    const 坏=(后.风险-前.风险);
+    let 判定 = 坏>=12 ? "后果严重" : (好>=20 ? "处置得当，得到肯定" : 好>0 ? "处理尚可" : "处置失当");
+    const 正文 = res + (明细?`\n奖惩结算：${明细}`:"") + `\n（${判定}）`;
+    S.log.unshift({t:`${S.date.y}年 ${pendingEvent.月||""}月`,h:pendingEvent.标题,kind:(o.kind||""),d:正文});
+    (S._本年事件=S._本年事件||[]).push(`${pendingEvent.月?pendingEvent.月+"月　":""}${pendingEvent.标题}${明细?"　"+明细:""}`);
+    pendingEvent=null;
+    toast(明细?(判定+"　"+明细):判定);
+    render();
+  },
+
+  endYear:()=>{
+    const 年初=S._年初快照||快照();
+    const 本年施政=(S.usedThisYear||[]).length;
+    S.date.y++; S.p.年龄++; S.p2.任职年++;
+    S.quiz=null;
+
+    // 家庭合并收支 + 年终考核奖 + 非自住房租金 - 养车
+    const 奖金=年终奖();
+    if(奖金>0){ S.cash+=奖金; yearLog.unshift({t:`${S.date.y}年`,h:"年终考核奖",kind:"good",
+      d:`年度考核结果出来，你拿到 ${fmt(奖金)} 元年终奖（约 ${Math.round(奖金/S.income.月工资)} 个月工资）。`}); }
+    // 公积金：按月缴存进入个人账户
+    S.fund=(S.fund||0)+公积金月缴()*12;
+    // 有房贷时，公积金自动冲还贷（现实中每年可提取一次）
+    const 房供年=(S.loans||[]).filter(l=>l.类型==="房").reduce((a,l)=>a+l.月供,0)*12;
+    if(房供年>0&&S.fund>0){
+      const 冲还=Math.min(S.fund, 房供年);
+      S.fund-=冲还; S.cash+=冲还;
+      yearLog.unshift({t:`${S.date.y}年`,h:"公积金冲还贷",kind:"good",
+        d:`从公积金账户提取 ${fmt(冲还)} 元用于偿还房贷。`});
+    }
+    // 工龄增资：每两年晋一档，约 2%
+    if(S.date.y%2===0){
+      const 同级=Math.max(6200, (S.rankIdx>=0?岗位月薪(S.rankIdx):5200)*1.6);
+      S.income.月工资=Math.min(Math.round(同级), Math.round(S.income.月工资*1.02));
+    }
+    S.cash += (netIncome()-livingCost())*12;
+    const 租金=年租金收入();
+    if(租金>0){ S.cash+=租金; yearLog.unshift({t:`${S.date.y}年`,h:"租金收入",kind:"good",
+      d:`名下非自住房产本年租金收入约 ${fmt(租金)} 元。`}); }
+    const 养车=年养车成本();
+    if(养车>0) S.cash-=养车;
+    for(const l of S.loans){
+      if(l.余额<=0) continue;
+      for(let m=0;m<12&&l.余额>0;m++){
+        const interest=Math.round(l.余额*l.利率/100/12);
+        if(S.cash>=l.月供){ S.cash-=l.月供; l.余额=Math.max(0,l.余额-(l.月供-interest)); l.已还++; }
+        else{ l.余额+=l.月供+Math.round(l.月供*0.05); l.已还++;
+          S.p.声望=clamp(S.p.声望-3,0,100); S.discipline.risk=clamp(S.discipline.risk+2,0,100);
+          yearLog.unshift({t:`${S.date.y}年`,h:"贷款逾期",kind:"bad",
+            d:`${l.名}月供 ${fmt(l.月供)} 元未能按时偿还，银行计收罚息并上报征信。`}); }
+      }
+    }
+    S.loans=S.loans.filter(l=>l.余额>0);
+
+    // 在职学历
+    if(S.edu.在读){
+      const u=S.edu.在读; u.剩--; S.actions=Math.max(0,S.actions-1);
+      const per=Math.round((u.总费-u.已付)/Math.max(1,u.剩+1));
+      if(per>0){ if(S.cash>=per){ S.cash-=per; u.已付+=per; }
+        else yearLog.unshift({t:`${S.date.y}年`,h:"学费未缴",kind:"bad",d:`本年学费 ${fmt(per)} 元未缴清。`}); }
+      if(u.剩<=0){
+        const old=S.p.学历; S.p.学历=u.至; applyEffect(u.效);
+        S.log.unshift({t:`${S.date.y}年`,h:"学历提升完成",kind:"good",
+          d:`你完成了${u.名}，学历由${old}提升至${u.至}。`});
+        S.edu.在读=null; toast("学历已提升！");
+      }
+    }
+
+    // 家庭
+    if(S.family.配偶){
+      const sp=S.family.配偶; sp.年龄++;
+      if(!sp.退休){
+        if(sp.年龄>=55){ sp.退休=true; sp.养老金=Math.round((sp.月收入||0)*0.8);
+          S.log.unshift({t:`${S.date.y}年`,h:`${sp.姓名}退休`,kind:"",d:`${sp.姓名}办理了退休手续，每月养老金约 ${fmt(sp.养老金)} 元。家里的收入少了一块。`}); }
+        else sp.月收入=Math.round((sp.月收入||5000)*1.03);
+      }
+      let drift=rnd(-8,2);
+      if(S.flags['本年顾家']) drift+=6;
+      sp.好感度=clamp(sp.好感度+drift,0,100);
+      if(sp.年龄>=72 && Math.random()<0.03+(sp.年龄-72)*0.012){
+        S.family.配偶=null; S.family.婚姻="丧偶";
+        S.candidates=makeCandidates(S.p.性别,S.p.年龄); S._候选年数=0;
+        S.p.声望=clamp(S.p.声望-3,0,100); S.p.健康=clamp(S.p.健康-8,0,100);
+        S.log.unshift({t:`${S.date.y}年`,h:"配偶去世",kind:"bad",
+          d:`${sp.姓名}因病去世，享年 ${sp.年龄} 岁。\n家里忽然安静下来，很多习惯要重新学一遍。`});
+      }
+      else if(sp.好感度<20&&Math.random()<0.35){
+        S.family.配偶=null; S.family.婚姻="离异";
+        S.candidates=makeCandidates(S.p.性别,S.p.年龄); S._候选年数=0;
+        S.p.声望=clamp(S.p.声望-6,0,100); S.p.健康=clamp(S.p.健康-4,0,100);
+        S.log.unshift({t:`${S.date.y}年`,h:"离婚",kind:"bad",
+          d:`你和${sp.姓名}办理了离婚手续。\n对方说：「你从来没有真正在这个家里待过。」`});
+      }
+    }
+    S.flags['本年顾家']=false;
+    S.family.子女.forEach(c=>{
+      c.年龄++;
+      // 不陪伴会疏远，但亲子之间不会掉到零；成年独立后关系趋于稳定
+      const 底=c.独立?30:10;
+      c.好感度=clamp(c.好感度-rnd(0,c.独立?1:4),底,100);
+      if(c.年龄===3) S.log.unshift({t:`${S.date.y}年`,h:`${c.姓名}上幼儿园`,kind:"",d:`${c.姓名}开始上幼儿园，每月多出一笔不小的开销。`});
+      if(c.年龄===6) S.log.unshift({t:`${S.date.y}年`,h:`${c.姓名}上小学`,kind:"",d:`${c.姓名}背上书包上学了。${c.好感度>60?"孩子愿意跟你说学校的事。":"孩子的话越来越少。"}`});
+      if(c.年龄===12) S.log.unshift({t:`${S.date.y}年`,h:`${c.姓名}上初中`,kind:"",d:`${c.姓名}升入初中，补课费成了家里的一项固定支出。`});
+      if(c.年龄===15) S.log.unshift({t:`${S.date.y}年`,h:`${c.姓名}中考`,kind:"",d:`${c.姓名}今年中考。${c.好感度>60?"孩子愿意听你的意见。":"孩子什么都不愿意跟你说。"}`});
+      if(c.年龄===18){
+        if(Math.random()<(c.好感度/150+0.25)){
+          c.考上大学=true; c.备注="在读大学";
+          if(S.family.配偶) S.family.配偶.好感度=clamp(S.family.配偶.好感度+8,0,100);
+          S.log.unshift({t:`${S.date.y}年`,h:`${c.姓名}考上大学`,kind:"good",d:`${c.姓名}收到了大学录取通知书。学费和生活费每年要花掉你不少钱，但你请了半天假去车站送他。`});
+        }else{
+          c.考上大学=false; c.独立=true; c.备注="外出务工";
+          S.log.unshift({t:`${S.date.y}年`,h:`${c.姓名}高考失利`,kind:"bad",d:`${c.姓名}没能考上大学，决定外出打工。你在电话里沉默了很久。`});
+        }
+      }
+      if(c.年龄===22&&c.考上大学){
+        c.独立=true; c.备注="已工作";
+        S.log.unshift({t:`${S.date.y}年`,h:`${c.姓名}大学毕业`,kind:"good",d:`${c.姓名}大学毕业，找到了工作。你终于不用再为他/她的生活费操心。`});
+      }
+      if(c.独立&&c.年龄>=23&&Math.random()<0.55){
+        const 孝养=Math.round(rnd(2000,12000)*(0.4+c.好感度/100));
+        S.cash+=孝养;
+        yearLog.unshift({t:`${S.date.y}年`,h:`${c.姓名}的孝养`,kind:"good",d:`${c.姓名}给你转了 ${fmt(孝养)} 元，说让你别太省。`});
+      }
+    });
+    // 认识的人也会一年年老去，长期没结果就各自成家（每 8 年更换一批）
+    S.candidates.forEach(c=>c.年龄++);
+    S._候选年数=(S._候选年数||0)+1;
+    if(S.status!=="退休" && S.p.年龄<=66 && (!S.candidates.length || S._候选年数>=8)){
+      S.candidates=makeCandidates(S.p.性别,S.p.年龄);
+      S._候选年数=0;
+    }
+
+    // 先按本年度结束时的身体状况判定（低于20死亡、低于30强制退休）
+    lifeCheck();
+    if(S.over){ yearWrapUp(); render(); return; }
+
+    // 人脉：在岗位上待得越久，认识的人越多；职级越高，接触的层级越高
+    const 上限=人脉上限();
+    const 年增=1+Math.floor(Math.max(0,S.rankIdx+1)/3);
+    if(S.p.人脉<上限) S.p.人脉=clamp(Math.min(S.p.人脉+年增,上限),0,100);
+
+    // 健康：年度休整带来的恢复；年龄带走一部分，但不会把人一下打垮
+    S.p.健康=clamp(S.p.健康+6+Math.min(S.actions,4),0,100);
+    if(S.p.年龄>45) S.p.健康=clamp(S.p.健康-2,0,100);
+    if(S.p.年龄>55) S.p.健康=clamp(S.p.健康-2,0,100);
+    if(S.p.年龄>70) S.p.健康=clamp(S.p.健康-3,0,100);
+    if(S.p.健康<25) S.p.能力=clamp(S.p.能力-2,0,100);
+
+    // 事件
+    if(S.status==="退休"){
+      if(Math.random()<0.55){ pendingEvent=makeRetiredEvent(); pendingEvent.月=rnd(1,12); }
+      else if(Math.random()<0.5) retiredMini();
+    }else{
+      const 廉政机会=(["公务员","事业单位","国企"].includes(S.p.职业) && S.rankIdx>=0 && Math.random()<0.6) ? make腐败事件() : null;
+      if(廉政机会){ pendingEvent=廉政机会; pendingEvent.月=rnd(1,12); }
+      else if(Math.random()<0.62){ pendingEvent=makeEvent(); pendingEvent.月=rnd(1,12); }
+      else if(Math.random()<0.5) miniEvent();
+    }
+
+    npcTick(); cityTick(); disciplineTick();
+    S.discipline.risk=clamp(S.discipline.risk-6,0,100);
+
+    // 超标资产
+    const lux=luxuryCount();
+    if(lux>0&&isPublicJob()&&S.status!=="退休"){
+      if(Math.random()<0.10+0.08*(lux-1)){
+        S.discipline.risk=clamp(S.discipline.risk+10*lux,0,100);
+        S.discipline.records.unshift(`${S.date.y}年：组织考察期间，个人有关事项报告中的房产/车辆情况被要求作出说明。`);
+        S.p.声望=clamp(S.p.声望-5,0,100);
+        if(Math.random()<0.35){ S.p2.处分++; S.p.上司=clamp(S.p.上司-8,0,100); }
+        S.log.unshift({t:`${S.date.y}年`,h:"纪律审查",kind:"bad",
+          d:`组织部门在考察期间核对个人有关事项报告，你名下 ${lux} 项明显超出收入水平的资产被要求说明来源。\n`
+            +(S.p2.处分?"最终给予诫勉谈话，记入个人档案。":"你提供了购房贷款合同与资金来源说明，暂时过关——但这件事被记下来了。")});
+      }
+    }
+
+    // 挂职期满，回原单位
+    if(S.p.挂职 && S.date.y>=S.p.挂职.结束年){
+      const g=S.p.挂职;
+      S.p.挂职=null;
+      S.log.unshift({t:`${S.date.y}年`,h:"挂职期满",kind:"good",
+        d:`你在${g.单位}的挂职期满，组织关系转回${S.p.单位}。\n两年基层下来，你说话的分量和两年前不一样了。`});
+      toast("挂职期满，回到省委组织部。");
+    }
+
+    // 退居二线：到龄后组织上会陆续安排转任人大、政协等岗位
+    if(S.p.职业==="公务员"&&S.status==="在职"&&!S.flags['二线']&&S.rankIdx>=2&&S.p.年龄>=二线年龄()){
+      const 超龄=S.p.年龄-二线年龄();
+      if(S.discipline.risk>=35 && Math.random()<S.discipline.risk/300){
+        pendingEvent=生成调查事件("你即将转任二线，组织上按惯例对你进行离任审计");
+        pendingEvent.月=rnd(1,12);
+      }else if(Math.random()<0.35+超龄*0.12){
+        const 现任=S.positions[0];
+        const 二线名=pick(["人大常委会副主任","政协副主席","政协秘书长","政府参事"]);
+        const 级别名=现任?现任.职级:rankTitle();
+        S.positions.unshift({年:S.date.y,职级:级别名,岗位:二线名,条线:"综合"});
+        S.flags['二线']=true;
+        S.p.声望=clamp(S.p.声望+3,0,100);      // 老同志到二线，通常会得到体面与尊重
+        S.p.健康=clamp(S.p.健康+4,0,100);      // 不再一线操劳，身体好转
+        S.log.unshift({t:`${S.date.y}年`,h:"转任二线",kind:"",
+          d:`年满 ${S.p.年龄} 岁，组织上安排你转任${二线名}（${级别名}）。\n不再分管一线事务，但级别与待遇不变。办公室的人来得少了，会开得也少了。`});
+        toast("已转任二线岗位。");
+      }
+    }
+
+    // 职级并行
+    if(S.p.职业==="公务员"&&S.status==="在职"){
+      S.p2.职级年=(S.p2.职级年||0)+1;
+      if(S.zhijiIdx<zhijiCap()&&S.p2.职级年>=2&&S.p2.处分===0&&S.discipline.risk<70&&Math.random()<0.72){
+        S.zhijiIdx++; S.p2.职级年=0; S.income.月工资+=900; S.p.人脉=clamp(S.p.人脉+1,0,人脉上限());
+        S.log.unshift({t:`${S.date.y}年`,h:"职级晋升",kind:"good",
+          d:`经年度考核，你的职级由${职级序列[S.zhijiIdx-1]}晋升为${职级序列[S.zhijiIdx]}，工资相应调整。`});
+      }
+    }
+
+    // 自动晋升
+    if(S.status==="在职"){
+      const ni=nextRankInfo();
+      if(ni.can) doPromote(false);
+      else if(ni.def&&S.p2.任职年>=ni.effMin&&!promoteGateWhy(ni))
+        S.log.unshift({t:`${S.date.y}年`,h:"任职年限已到",kind:"",
+          d:`你在现职级已任职 ${S.p2.任职年} 年，达到最低任职年限，但${perfLabel()}等条件尚未达标，组织暂未启动考察。`});
+    }
+
+    yearWrapUp();
+
+    // 到龄退休 / 年迈离世
+    lifeCheck();
+
+    S.p.人脉=Math.min(S.p.人脉, 人脉上限());
+
+    // ===== 年度总结 =====
+    const 年末=快照();
+    const 明细=差异(年初,年末,true);
+    const 收入=netIncome()*12, 支出=livingCost()*12;
+    const 职名=(i)=> (i<0 ? "科员" : (ladder()[i]?ladder()[i].名:"上级职务"));
+    const 职务变化 = 年末.职务>年初.职务
+      ? `提任 ${职名(年末.职务)}${S._晋升消耗?`（晋升按规矩核减 ${fmt(S._晋升消耗)} ${perfLabel()}）`:""}`
+      : (年末.职务<年初.职务 ? `免去现职，降为${职名(年末.职务)}` : "无变动");
+    S._晋升消耗=0;
+    const 职级变化 = 年末.职级!==年初.职级 ? `${职级序列[年初.职级]} → ${职级序列[年末.职级]}` : "无变动";
+    S.yearSummary={
+      年: S.date.y-1, 年龄: S.p.年龄-1, 职务: rankTitle(), 状态: S.status,
+      明细: 明细, 收入: 收入, 支出: 支出, 租金: 租金, 养车: 养车,
+      结余: 收入-支出+租金-养车, 职务变化: 职务变化, 职级变化: 职级变化,
+      施政数: 本年施政,
+      记录: yearLog.slice().map(x=> x.t===`${S.date.y}年` ? {...x, t:`${S.date.y-1}年`} : x),
+      事件: S._本年事件||[],
+      施政评价: (function(){
+        let 正确=0,模糊=0,失当=0;
+        yearLog.forEach(x=>{ if(/正确处置/.test(x.h)) 正确++; else if(/处置平平/.test(x.h)) 模糊++; else if(/处置失当/.test(x.h)) 失当++; });
+        return {正确,模糊,失当};
+      })(),
+      下一年: nextYearHint()
+    };
+    S._本年事件=[];
+    S._年初快照=年末;
+    yearLog=[];
+
+    toast(`进入 ${S.date.y} 年`);
+    if(!S.over&&curTab!=='事件') curTab='事件';
+    render(); window.scrollTo({top:0,behavior:'smooth'});
+  },
+
+  save:()=>{ try{ localStorage.setItem('rmdmj_save_v1',JSON.stringify(S)); toast("已保存到本机浏览器。"); }catch(e){ toast("保存失败。"); } },
+  load:()=>{ const d=localStorage.getItem('rmdmj_save_v1'); if(!d) return toast("没有找到存档。");
+    S=upgradeSave(JSON.parse(d)); pendingEvent=null; pendingPositions=null; curTab='事件';
+    $('setup').classList.add('hidden'); $('app').classList.remove('hidden'); render(); toast("读取成功。"); },
+  reset:()=>{ if(confirm("重开人生？当前进度将丢失（不含已保存存档）。")){ localStorage.removeItem('rmdmj_save_v1'); location.reload(); } },
+  help:()=>{ alert(
+`【如何游玩】
+· 模拟器按年推进，起始年份为 2040 年。每年 ${ACTIONS_PER_YEAR} 次行动额度，由施政、感情与家庭、协调关系、廉政梳理、在职学习共用。
+· 「施政」每年从题库中随机抽取 ${SHIXI_COUNT} 项，顺序随机；每项每年只能开展一次。
+  选择后需作答处置问题（三个选项位置随机；每个职级阶段有 2 套以上题目），作答正确才会累积晋升条件。
+· 年龄限 18—38 周岁，人人都是应届初入社会、无工作经历。学历由年龄自动匹配；
+  出生地、所在地、家庭背景随机。专业与职业匹配度须高于 80%。
+· 公务员符合条件者可成为选调生，起点为乡科级副职领导岗位，结果在入职时揭晓。
+· 晋升结果不会提前告知，也不会提示如何破格，只能通过六项指标的完成情况自行判断。
+· 职级越高，经手事项的分量越大：同样一项工作，在更高岗位上积累的政绩更多。
+· 晋升岗位会结合你的专业、现单位、现任条线和基层经历来安排，弹窗中标注了每个岗位的级别、条线与推荐理由。
+· 专业与岗位对口（如公安专业走公安条线）会提高晋升把握；副厅级以上，党政领导班子经历是硬杠杠。
+· 岗位也看分量：实权岗位（党政一把手、常委、关键部门正职）比一般岗位更容易出成绩。
+· 六项指标里有四项「表现突出」时，更容易被安排到高配岗位（兼任常委等，含金量高于同层级）。
+· 岗位分「实权」与「二线」：实权岗位在一线管事，政绩与口碑来得快；人大、政协、参事等二线岗位清闲低风险，但不再有实职提拔。
+· 接近退休年龄（男 57—63 / 女 54—60，视职级而定）会陆续转任二线，级别待遇不变，晋升通道关闭。
+· 施政作答：答对增加晋升条件；模棱两可不加不减，但「连续」3 次以上说明处置能力有问题，此后每次都要扣减（答对一次即清零）；答错直接扣减晋升条件。
+· 退休之后不再出现政治类突发事件，改为退休生活事件（健康、人情、子女、旧事）。
+· 健康系统（底部「🩺 健康」页）：每年可免费体检休养一次（+5—10 点）；也可花 1 次行动＋3,000—8,000 元调养（+10—20 点）；
+  或做专业健康管理，花 1 次行动＋20,000—50,000 元（+20—25 点）。每次施政会随机消耗 1—2 点健康，全年三项合计 3—6 点，一次免费休养就能补回来。
+  健康低于 20 强制死亡，低于 30 强制退休；晋升要求健康达到 80，低于 70 会降低晋升可能。
+· 晋升指标共 6 项：政绩、能力、道德、领导评价、人脉、健康。每项都会给出「已达到要求 / 表现突出 / 位列前茅 / 尚需努力」的判断。
+  若四项「表现突出」，组织上会考虑提前 1—2 年提拔；若四项「位列前茅」，可提前 3—4 年。
+· 人脉与领导评价各有各的衡量标准：前者看交往的广度，后者看关键的那一票。
+· 家庭会影响晋升：夫妻关系稳定是加分项，家庭失和是减分项，子女亲子关系也会被计入家风考察。
+· 晋升到最低年限会自动进入考察，也可以主动申请；通过后给出 3—8 个岗位，只能选一个。
+  人脉是六项指标中分量最重的一项。
+· 「人脉」页含感情与家庭系统：好感度达 80 即可结婚，婚后可生育子女，家庭关系影响事业。
+· 工资按现实逻辑结算：应发工资扣除五险一金（22%）与个人所得税后为实发；住房公积金按 24% 缴入个人账户，
+  可用于购房首付与冲还贷；年终考核奖约 1—3 个月工资；每两年晋一档，工资约涨 2%。
+· 「资产」页可买房买车，首付可用公积金抵扣，银行按「实发工资＋公积金」核定还款能力（不超过 55%）。
+  带「超标」标记的房车在体制内会触发纪律审查。
+· 前三年会在事件页显示一份「上手指引」；第一次晋升考察若未通过，不扣政绩也不扣领导评价，只告诉你差距在哪。
+· 每次开局会随机分配到省、市、区、县、乡镇中的一个平台，起点单位与晋升路径随之不同。
+
+· 每次开局会随机分配到省、市、区、县、乡镇中的一个平台，起点单位与晋升路径随之不同。
+  平台不设硬性天花板——理论上任何起点都能走到最高，但差距体现在两处：
+  一是产出，同样一件工作在省厅影响全省、在乡镇只影响一个村，平台越高积累的政绩越多；
+  二是上调，每往上调一层难度翻倍，且要有基层经历与拿得出手的实绩，组织才会考虑。
+· 选调生的人事关系在省委组织部，先下派到市、县或乡镇挂职两到三年，期满回部另行安排。
+· 提任有年龄界限：乡科级 50/48、县处级 53/51、厅局级 57/55、省部级 60/58、国家级副职 63/61（男/女）。超过界限不再提任实职。
+· 达到退休年龄（男 60 / 女 55，省部级男 65 / 女 63）会强制退休；退休或去世后可查看结局面板。
+· 仕途的最高一级是国家级副职。再往上不是靠积累能到的，本模拟器不提供。
+· 廉政：任上会遇到礼金、回扣、干股、配偶代收等选择，收与不收由你决定。每一笔收下的钱都会记入案卷，
+  构成廉政风险的下限，不会随时间冲淡。
+· 纪律审查可能在任上、晋升考察时、转任二线或退休前的离任审计中被触发。处理结果从谈话提醒、诫勉谈话、
+  党纪政务处分、立案审查调查，直至开除党籍、开除公职并移送检察机关，取决于涉案金额、风险与态度。
+  主动交代可以从轻，对抗组织审查会从重。
+· 可随时在「档案」页保存/读取存档。`); }
+};
+function promoteGateWhy(ni){
+  const d=ni.def; if(!d) return true;
+  return S.zhengji>=d.门槛.政绩;
+}
+function nextYearHint(){
+  const ni=nextRankInfo();
+  if(S.status==="退休") return "保重身体，照顾好家人。";
+  if(!ni.def) return "你已在本序列最高职级。";
+  const 缺=[];
+  if(S.p2.任职年<ni.effMin) 缺.push(`还差 ${ni.effMin-S.p2.任职年} 年任职年限`);
+  if(S.zhengji<ni.def.门槛.政绩) 缺.push(`${perfLabel()}尚缺 ${fmt(ni.def.门槛.政绩-S.zhengji)}`);
+  if(S.p.能力<ni.def.门槛.能力) 缺.push("能力还需提升");
+  if(S.p.道德<ni.def.门槛.道德) 缺.push("道德评价还需积累");
+  if(S.p.上司<ni.def.门槛.上司)缺.push("领导评价还需提升");
+  if(S.p.健康<80) 缺.push("健康需回到 80 以上");
+  if(缺.length) return `争取 ${ni.def.名}：`+缺.join("，")+"。";
+  return `条件已具备，明年有望进入 ${ni.def.名} 的考察程序。`;
+}
+function yearWrapUp(){
+  S.riskSnapshot=S.discipline.risk;
+  S.actions=S.actionsMax;
+  S.usedThisYear=[];
+  S.flags['本年免费健康']=false;
+  S.shixiOrder=shuffle(SHIXI.map((_,i)=>i)).slice(0,SHIXI_COUNT);
+}
+function lifeCheck(){
+  if(S.over) return;
+  if(S.p.健康<20){ die("长期积劳成疾，身体终于撑不住了"); return; }
+  if(S.status!=="退休"&&S.p.健康<30){ retire("健康状况不适宜继续任职"); return; }
+  if(S.status!=="退休"&&S.p.年龄>=retireAge()){ retire("到达任职年龄界限"); return; }
+  if(S.status==="退休"){
+    if(S.p.年龄>=80&&Math.random()<0.12+S.p.年龄*0.006){ die("在家中安详离世"); return; }
+    if(S.p.健康<15){ die("久病之后离世"); return; }
+  }
+}
+function retire(why){
+  if(S.discipline.risk>=35 && Math.random()<S.discipline.risk/300){
+    pendingEvent=生成调查事件("你在办理退休手续前，组织上对你进行离任审计");
+    pendingEvent.月=rnd(1,12);
+  }
+  S.status="退休";
+  S.pension=Math.round(S.income.月工资*0.85);
+  S.income.月工资=S.pension;
+  S.log.unshift({t:`${S.date.y}年`,h:"办理退休",kind:"",
+    d:`${why}，你在 ${S.p.年龄} 岁办理了退休手续。\n此后每月领取养老金约 ${fmt(S.pension)} 元。办公室的钥匙交还给了年轻人。`});
+  toast("已办理退休。");
+}
+function die(why){
+  S.over=true; S.status="死亡"; S.endYear=S.date.y;
+  S.log.unshift({t:`${S.date.y}年`,h:"去世",kind:"bad",
+    d:`${S.p.姓名}于 ${S.date.y} 年去世，享年 ${S.p.年龄} 岁。${why}。`});
+  toast("人生已到终点。");
+}
+
+/* =========================================================
+   事件池 / NPC / 城市 / 纪律
+========================================================= */
+function makeEvent(){
+  const pool=[];
+  const r=Math.random();
+  const 官员=S.p.职业==="公务员";
+pool.push({
+    类型:"小事件", 标题:"片区改造摸底材料被退回",
+    描述:"你报上去的《老城更新片区改造前期摸底情况》被分管副主任退了回来，批注只有四个字：“不实，重做。”",
+    背景:"摸底数据里，有一栏“居民同意率”是街道办报上来的，你当时没核实。你隐约知道那栏数字有问题。",
+    选项:[
+      {text:"重新逐户核查，宁可慢一周", hint:"耗时但扎实，可能得罪街道",
+       run(){ applyEffect({政绩:18,道德:4,声望:5,健康:-3, rel:{colleague:{信任:4}, leader:{信任:3,公开:4}}}); return "你带着两个人跑了五个工作日，逐户复核。同意率从纸面上的 92% 变成 71%。材料重报，副主任看了很久，说了一句：“这才叫摸底。”\n街道办的人对你意见很大。"; }},
+      {text:"找街道办重新要一份“真数”，但不上报", hint:"给对方留面子，风险留在自己身上",
+       run(){ applyEffect({政绩:6, 人脉:4, 道德:-2, 廉政风险:0, rel:{colleague:{利益:6,信任:2}}}); S.discipline.risk=clamp(S.discipline.risk+5,0,100); return "街道办重新给了数字，比原来低一些。你按这个数重写了材料，没有说明原因。副主任没再追问。\n你心里清楚，这份材料经不起再查一次。"; }},
+      {text:"按原数上报，只改措辞", hint:"最省事，也最危险",
+       run(){ applyEffect({政绩:-6, 道德:-8, 声望:-4, 廉政风险:0}); S.discipline.risk=clamp(S.discipline.risk+12,0,100); S.discipline.records.unshift(`${S.date.y}年：片区改造摸底材料中「居民同意率」未核实即上报。`); return "材料通过了。三个月后如果这个数字被翻出来，没有人会替你解释。"; }}
+    ]
+  });
+
+  pool.push({
+    类型:"小事件", 标题:"老同学的饭局",
+    描述:"老同学蔡成功约你吃饭，桌上还有两个你不认识的人。席间他提到一个市政项目的招标，问你能不能“帮着问一句”。",
+    背景:"蔡成功是你大学室友，这些年在京州做建筑工程，生意时好时坏。",
+    选项:[
+      {text:"当场拒绝，并把话说明白", hint:"关系会冷，但界线清楚",
+       run(){ applyEffect({rel:{"oldclass":{信任:-6,好感度:10,利益:-5}}, 道德:5, 声望:2}); return "你把话说得很直。蔡成功脸上挂不住，散场时只拍了拍你的肩：“行，我懂了。”\n此后半年，他没主动联系过你。"; }},
+      {text:"不置可否，只说“我不分管这块”", hint:"模糊处理，谁也不得罪",
+       run(){ applyEffect({rel:{"oldclass":{信任:2,利益:4}}, 人脉:2}); return "你既没答应也没拒绝。蔡成功笑着说“懂、懂”。\n你知道这种模糊本身也是一种信号。"; }},
+      {text:"帮忙问一句", hint:"短期人情，长期风险",
+       run(){ applyEffect({rel:{"oldclass":{信任:12,利益:20,好感度:-10}}, 现金:20000, 道德:-6});
+         S.discipline.risk=clamp(S.discipline.risk+15,0,100);
+         S.discipline.records.unshift(`${S.date.y}年：就市政项目招标事宜向蔡成功透露了评标时间安排。`);
+         S.cash+=0; return "你给一个熟人打了电话。第二天，蔡成功送来一个“感谢”的红包，你推了两次，最后收下了。\n钱不多，但事情的性质变了。"; }}
+    ]
+  });
+
+  pool.push({
+    类型:"中型事件", 标题:"群众围堵施工现场",
+    描述:"老城更新片区的一处工地被几十名居民围住，情绪激动，说补偿标准前后不一。现场有两个自媒体在拍视频。",
+    背景:"你所在单位是这个项目的牵头单位之一。分管领导在外地开会，电话打不通。",
+    选项:[
+      {text:"立即到场，先听诉求再谈政策", hint:"风险高，但可能一次性解决",
+       run(){ const r=Math.random();
+         if(r<0.68){ applyEffect({政绩:26,道德:6,声望:8,健康:-4,人脉:3}); S.city.矛盾=clamp(S.city.矛盾-6,0,100); return "你到场后没有先讲政策，先让居民把话说完。两个小时后，你承诺三日内给书面答复并留下电话。\n自媒体拍的视频最后没发出去，但有一家发了，标题是《干部现场记》。\n居民代表第二天真的来了，问题解决了七成。"; }
+         else { applyEffect({政绩:-10,声望:-8,健康:-4,廉政风险:6}); S.city.矛盾=clamp(S.city.矛盾+8,0,100); return "你到场后场面失控，有人推搡，视频当晚就传开了。\n市里要求你单位作出说明。你成了那个“在场的干部”。"; } }},
+      {text:"先电话请示，等领导指示", hint:"程序正确，但群众不会等",
+       run(){ applyEffect({政绩:4, 声望:-3, rel:{leader:{信任:3}}}); S.city.矛盾=clamp(S.city.矛盾+3,0,100); return "你打了四个电话，领导两个小时后回话：“稳妥处理。”\n人群在中午散了，但那条视频发了。评论区说：“干部在等指示。”\n问题没有解决，只是暂时压下去了。"; }},
+      {text:"让街道办先顶住，自己暂不露面", hint:"保住自己，代价由他人承担",
+       run(){ applyEffect({政绩:-4, 道德:-7, 声望:-4, rel:{colleague:{信任:-5}}}); S.city.矛盾=clamp(S.city.矛盾+6,0,100); return "街道办的人在现场站了一整天，被骂得很难听。\n后来这件被写进了季度矛盾排查报告，你的名字出现在“牵头单位责任人”那一栏。"; }}
+    ]
+  });
+
+  pool.push({
+    类型:"小事件", 标题:"一份来路不明的举报信",
+    描述:"纪委转来一封匿名举报，反映你分管领域某企业获得财政补贴的程序问题。信不长，附了三张转账截图。",
+    背景:"截图看不清具体账户，但其中一笔的收款方名字，你好像在蔡成功的公司见过。",
+    选项:[
+      {text:"如实说明情况，主动提供材料", hint:"清白就查清楚，有问题也藏不住",
+       run(){ if(S.discipline.risk>25){ applyEffect({政绩:-10,声望:-8}); S.discipline.risk=clamp(S.discipline.risk+8,0,100);
+             S.discipline.records.unshift(`${S.date.y}年：接受谈话函询一次。`);
+             return "你提供了全部材料。有些地方确实说不清楚——三年前你签过一份“原则同意”的批复。\n组织上让你“作出书面说明”。事情没有定性，但你的名字被记下了。"; }
+           else { applyEffect({政绩:14,道德:5,上司:4,声望:3});
+             return "你提供了完整的材料，包括当时的三次会商记录。核查组的人说：“你这儿挺清楚。”\n举报没有下文。半个月后，副主任在会上说：“经得起查，才敢干事。”——说的是你。"; } }},
+      {text:"找老同学问清楚那笔转账", hint:"先搞清楚再决定，但有串供嫌疑",
+       run(){ applyEffect({rel:{"oldclass":{信任:4,利益:8}}}); S.discipline.risk=clamp(S.discipline.risk+10,0,100);
+         return "蔡成功在电话里沉默了三秒，说：“不是我的账户。”\n你信不信是另一回事。但这通电话，可能已经被记在某份通话记录里了。"; }},
+      {text:"先不动，看组织怎么问", hint:"最保守，也可能最被动",
+       run(){ applyEffect({政绩:3,道德:1}); return "你没有主动做什么。核查组第二次找你时，问的问题比第一次细。\n你意识到，不主动说明，本身也是一种态度。"; }}
+    ]
+  });
+
+  pool.push({
+    类型:"日常事件", 标题:"家里的事",
+    描述:"伴侣打电话来，说孩子（或老人）住院了，问你能不能请假去一趟。你手上有三份材料要在周五前报出去。",
+    背景:"她已经很久没有主动给你打这种电话了。",
+    选项:[
+      {text:"请假去医院，材料交给同事", hint:"欠人一次，但家里记着你来了",
+       run(){ applyEffect({政绩:-6,健康:2,道德:3, rel:{"family":{信任:10,好感度:-8}, colleague:{信任:-2}}});
+         return "你在医院待了一整天。同事帮你把材料赶出来了，但有一处数据错了，被退了回来。\n伴侣没说什么，只是晚上给你买了碗面。"; }},
+      {text:"先把材料赶完，晚上再去", hint:"两难里最常见的选择",
+       run(){ const r=Math.random();
+         if(r<0.5){ applyEffect({政绩:8, rel:{"family":{信任:-8,好感度:10}}}); return "你赶到医院时，已经过了探视时间。她在走廊里坐着，一句话没说。\n回家路上她问：“你到底是忙，还是不想来？”"; }
+         else { applyEffect({政绩:6, rel:{"family":{信任:2,好感度:2}}}); return "你八点赶到医院，她还在。你们在病房外的长椅上坐了一会儿，说了些别的事。\n她说：“我知道你忙。”——这句话你听了很多年。"; } }},
+      {text:"让父母/亲戚先去，自己留下加班", hint:"最理性的安排，最伤人的安排",
+       run(){ applyEffect({政绩:10, rel:{"family":{信任:-14,好感度:16}}, 声望:2});
+         return "你把事情安排妥当了，工作也按时交了。\n但这件事被记住了。此后很久，家里有事不再第一个打给你。"; }}
+    ]
+  });
+
+  pool.push({
+    类型:"微型事件", 标题:"同事的一次“请教”",
+    描述:"同处室的副处长拿着你写的一份方案来找你，说想“借鉴一下思路”，准备写一份类似的材料报给另一位领导。",
+    背景:"你们处只有一个副处长空缺。",
+    选项:[
+      {text:"把思路和盘托出，还帮他改了改", hint:"大度，也可能被抢先",
+       run(){ const r=Math.random();
+         if(r<0.55){ applyEffect({rel:{colleague:{信任:12,利益:2,公开:8}}, 人脉:3}); return "他很感激。后来那份材料报上去，他在署名里加上了你的名字。\n副主任看材料时多问了一句：“这是谁写的？”"; }
+         else { applyEffect({rel:{colleague:{信任:4}}, 政绩:-5, 声望:-2}); return "半个月后，一份和你方案框架几乎一致的材料上会了，署名只有他一个人。\n你才明白，“请教”是什么意思。"; } }},
+      {text:"给框架，不给细节", hint:"留一手",
+       run(){ applyEffect({rel:{colleague:{信任:-2,好感度:4}}, 政绩:4, 能力:1}); return "他拿着框架走了。材料写得比你差一些，但也能用。\n从那以后，他找你的次数少了。"; }},
+      {text:"直接说明这份材料你也在报，建议合作", hint:"把话摆到桌面上",
+       run(){ applyEffect({rel:{colleague:{信任:6,公开:5}}, 政绩:8, 上司:2}); return "他愣了一下，然后笑了：“那就一起报。”\n材料最后是两个人署名的。你们都清楚，这不是友谊，是权衡。"; }}
+    ]
+  });
+
+  // 按身份补充
+  if(S.p.职业==="记者") pool.push({
+    类型:"中型事件", 标题:"一条线索",
+    描述:"一个自称是园区企业会计的人联系你，说某笔财政补贴资金流向有问题，希望记者“关注一下”。他给了一份不完整的台账照片。",
+    背景:"这条线索如果属实，是重大报道；如果不实，你可能被追究。",
+    选项:[
+      {text:"先做外围核实，不动声色", hint:"耗时，但最稳",
+       run(){ applyEffect({能力:4, 政绩:16, 声望:10, 健康:-3}); return "你用两周时间核对了公开的工商、招投标和补贴公示信息，整理出一份可追溯的时间线。\n报道发出后，市里成立了核查组。你没有写任何没有证据的结论。"; }},
+      {text:"直接发稿，抢热度", hint:"快，但可能伤及无辜",
+       run(){ const r=Math.random();
+         if(r<0.45){ applyEffect({声望:16, 政绩:20, 道德:-4}); return "稿子爆了，阅读量过百万。三日里有公司发了律师函，也有核查组进驻。\n你出名了，代价是从此每篇稿子都会被放大审视。"; }
+         else { applyEffect({声望:-14, 政绩:-8, 道德:-6}); return "稿子里的一个关键数字是错的。被点名的企业公开了完整台账。\n你被迫更正并道歉，媒体圈记住了这次失误。"; } }},
+      {text:"把线索转给纪委，自己不发", hint:"放弃独家，换真实结果",
+       run(){ applyEffect({道德:6, 声望:4, 政绩:8, rel:{"discipline":{信任:12,公开:6}}}); return "你把材料整理成一份情况反映交给了市纪委。\n三个月后，那个园区的补贴分配办法被修订。没有任何人提到你的名字。"; }}
+    ]
+  });
+
+  if(S.p.职业==="企业"||S.p.职业==="国企") pool.push({
+    类型:"中型事件", 标题:"一笔到期的贷款",
+    描述:"公司一笔 3000 万的流动资金贷款下周到期，银行方面口风变紧，续贷希望能“再补一些担保”。",
+    背景:"账上现金只够发两个月工资。上游回款已经拖了 90 天。",
+    选项:[
+      {text:"压缩开支，主动找银行谈展期", hint:"慢，但留有余地",
+       run(){ applyEffect({能力:4, 政绩:14, 健康:-4}); return "你砍掉了两个非核心项目，把人员和费用压了 20%。银行同意展期半年，条件是把房产追加抵押。\n公司活下来了，但你的可动用资产少了。"; }},
+      {text:"找关系搭桥，请政府协调", hint:"可能有效，也欠下人情",
+       run(){ applyEffect({政绩:8, 人脉:6, rel:{leader:{利益:8}}, 廉政风险:0}); S.discipline.risk=clamp(S.discipline.risk+6,0,100); return "你通过一个饭局约到了有关部门的处长，他答应“帮着问一句”。\n贷款续上了，但这条线从此存在。"; }},
+      {text:"民间借贷过桥，赌一把回款", hint:"快，风险极高",
+       run(){ const r=Math.random();
+         if(r<0.4){ applyEffect({政绩:20, 能力:2}); S.assets.负债+=200000; S.assets.投资.push("一笔过桥资金（已结清）"); return "过桥资金到位，回款也如期到账。你付了 18 万利息，但公司没出事。\n你出了一身汗。"; }
+         else { applyEffect({政绩:-30, 声望:-12, 健康:-6}); S.assets.负债+=800000; S.cash-=300000; return "回款只到了一半。过桥方开始催债，利息按日算。\n公司仍在，但你已经不是在经营，是在熬。"; } }}
+    ]
+  });
+  return pick(pool);
+}
+/* ===== 纪律审查：处理档次按「涉案金额 + 风险 + 案件数」综合判定 ===== */
+function 影响期内(){
+  return !!(S.discipline && S.discipline.影响期 && S.date.y < S.discipline.影响期);
+}
+function 生成调查事件(触发点){
+  return {
+    类型:"纪律审查",
+    标题:"纪委监委找你谈话",
+    描述:触发点+"。市纪委监委的工作人员请你到谈话室，谈话从上午九点持续到下午三点，问的都是这些年的事——哪一年、哪一笔、谁经的手。",
+    背景:"桌上放着一本台账。你看不清上面写了什么，但你知道那里面有你。",
+    选项:[
+      {text:"主动交代全部问题，包括组织还没有掌握的",hint:"争取从轻处理",
+       run(){
+         const r=处置结果(-1);
+         S.discipline.records.unshift(`${S.date.y}年：主动向组织交代问题，获得从轻处理。`);
+         return "你把能想起来的每一笔都写了下去，一共写了十七页。\n交代完的那一刻，你反而觉得轻松了。\n\n"+r; }},
+      {text:"只说明组织已经掌握的部分",hint:"不说谎，但也不全说",
+       run(){
+         const r=处置结果(0);
+         return "你只承认了台账上有的那几笔，其余的一概说记不清。\n办案人员没有追问，只是把记录推过来让你签字。\n\n"+r; }},
+      {text:"避重就轻，并设法与相关人员统一口径",hint:"对抗组织审查，性质就变了",
+       run(){
+         applyEffect({道德:-6,声望:-8});
+         S.discipline.records.unshift(`${S.date.y}年：对抗组织审查，与他人串供。`);
+         const r=处置结果(1);
+         return "你当晚给人打了两个电话。办案人员后来调取了通话记录——这一步，让你的问题从违纪变成了对抗组织审查。\n\n"+r; }}
+    ]
+  };
+}
+function 处置结果(从轻){
+  const risk=S.discipline.risk;
+  const 金额=涉案金额();
+  const 案数=(S.discipline.案件||[]).length;
+  let 严重=金额/10000 + risk*0.6 + 案数*4 + 从轻*60;
+  严重=Math.max(0, 严重*(0.85+Math.random()*0.3));
+  const 档 = 严重<25?0 : 严重<60?1 : 严重<130?2 : 严重<280?3 : 4;
+  let 文本="";
+  if(档===0){
+    applyEffect({声望:-3,廉政风险:-12});
+    S.discipline.records.unshift(`${S.date.y}年：接受谈话提醒。`);
+    文本="经研究，决定对你进行谈话提醒。\n谈话结束后，你自己走回了办公室。这一次，组织给了你一个机会。";
+  }else if(档===1){
+    S.discipline.影响期=S.date.y+1;
+    applyEffect({声望:-7,上司:-5,廉政风险:-14,道德:-2});
+    S.discipline.records.unshift(`${S.date.y}年：受到诫勉谈话处理，影响期一年。`);
+    文本="经研究，决定给予你诫勉谈话处理，影响期一年。\n影响期内不得提拔或者进一步使用。你的名字从当年的考察名单上被划掉了。";
+  }else if(档===2){
+    S.p2.处分++;
+    S.discipline.已查金额=(S.discipline.已查金额||0)+金额;
+    S.discipline.案件=[];                 // 问题已被查处，旧案了结
+    S.discipline.risk=Math.min(S.discipline.risk, 18);
+    S.discipline.影响期=S.date.y+2;
+    applyEffect({声望:-14,上司:-12,廉政风险:-20,道德:-3});
+    const 处=pick(["党内警告","党内严重警告","记过","记大过"]);
+    S.discipline.records.unshift(`${S.date.y}年：受到${处}处分。`);
+    文本=`经市纪委常委会会议研究并报市委批准，决定给予你${处}处分。\n处分决定在单位全体干部大会上宣读。你坐在第一排，从头到尾没有抬头。`;
+  }else if(档===3){
+    S.p2.处分++;
+    S.discipline.已查金额=(S.discipline.已查金额||0)+金额;
+    S.discipline.案件=[];                 // 立案查处后旧案了结
+    S.discipline.risk=Math.min(S.discipline.risk, 12);
+    S.rankIdx=Math.max(-1, S.rankIdx-2);
+    S.p2.任职年=0;
+    const 处=pick(["撤销党内职务","开除党籍、政务撤职"]);
+    S.discipline.records.unshift(`${S.date.y}年：被立案审查调查，给予${处}处分，免去现职。`);
+    applyEffect({声望:-30,上司:-25,健康:-10,道德:-4});
+    文本=`经省纪委监委立案审查调查，决定给予你${处}处分，并免去现任职务。\n通报在省里发了通稿——严重违纪违法。你从办公室搬走的时候，只带走了两个纸箱。`;
+  }else{
+    S.p2.处分++;
+    S.discipline.移送=true;
+    S.over=true; S.status="死亡"; S.endYear=S.date.y;
+    applyEffect({声望:-45,上司:-30,健康:-20});
+    S.discipline.records.unshift(`${S.date.y}年：严重违纪违法，被开除党籍、开除公职，涉嫌犯罪问题移送检察机关依法审查起诉。`);
+    文本="经省纪委监委立案审查调查，查明你利用职务便利为他人谋取利益，非法收受财物数额特别巨大。\n决定给予你开除党籍、开除公职处分，涉嫌犯罪问题移送检察机关依法审查起诉。\n\n你被带走的那天，办公室的灯还亮着。";
+  }
+  S.log.unshift({t:`${S.date.y}年`,h:"纪律审查",kind:"bad",d:文本});
+  return 文本;
+}
+/* 退休生活事件池：退休之后，世界还在走，但你已经不在牌桌上了 */
+/* ===== 廉政事件：每一次都是一道选择题，收与不收都在你自己 ===== */
+function make腐败事件(){
+  const 官员=["公务员","事业单位","国企"].includes(S.p.职业);
+  if(!官员) return null;
+  const 层=Math.max(0,S.rankIdx);
+  const 系数=1+层*1.5;
+  const 量=(w)=>Math.max(3000, Math.round(w*系数/1000)*1000);
+  const 条=条线Of(S.positions[0]&&S.positions[0].岗位);
+  const 工程口=["住建","交通","发改","自然资源"].includes(条);
+
+  const pool=[
+    {类型:"廉政风险",标题:"逢年过节的“心意”",描述:"春节前，一位长期在你分管领域做生意的老板上门拜年，走的时候留下一个纸袋，说“就是点土特产”。",
+     背景:"你后来发现，袋子里是购物卡和现金，合计约 " + 量(20000) + " 元。他去年刚拿到你审批的一个项目。",
+     选项:[
+       {text:"当场退回去，并且把这件事记进廉政记录",hint:"把钱推回去，也把人推远了",
+        run(){ applyEffect({道德:4,声望:3,人脉:-3,廉政风险:-4});
+          S.discipline.records.unshift(`${S.date.y}年：主动退还管理服务对象所送礼金 ${fmt(量(20000))} 元，并登记报告。`);
+          return "你把纸袋塞回他手里，话说得很客气，态度很硬。他脸上挂不住，此后逢年过节再没来过。\n你在廉政记录上写了这件事——将来若有人问起，这是你的清白。"; }},
+       {text:"收下，但心里记一笔，以后找机会还人情",hint:"钱进了抽屉，事情就不由你说了算",
+        run(){ const 金=量(20000); S.cash+=金;
+          S.discipline.案件.push({年:S.date.y,事由:"收受管理服务对象礼金",金额:金});
+          applyEffect({道德:-6,声望:-2,廉政风险:Math.round(6+金/150000*6)});
+          S.discipline.records.unshift(`${S.date.y}年：收受管理服务对象礼金 ${fmt(金)} 元。`);
+          return `你收下了。${fmt(金)} 元，抵得上你几个月的工资。\n你把纸袋放进抽屉最里面，告诉自己这只是人情往来。但从这一刻起，你和他的关系已经不一样了。`; }},
+       {text:"不收，但也不声张，让人把东西放回去",hint:"留了面子，也留了模糊",
+        run(){ applyEffect({道德:1,人脉:2,廉政风险:2});
+          S.discipline.records.unshift(`${S.date.y}年：退回管理服务对象礼金，未登记报告。`);
+          return "你让司机把东西送了回去，没有惊动任何人。对方懂你的意思，但你也知道，这件事没有白纸黑字，说不清。"; }}
+      ]},
+    {类型:"廉政风险",标题:"项目结算后的“感谢”",描述:"工程结算完成，承包商约你吃饭。散场时他把一张卡塞进你外套口袋：“这些年多亏你关照。”",
+     背景:"工程口历来是高风险岗位，这一单的合同额不小。",
+     选项:[
+       {text:"第二天一早把卡交到单位纪检组",hint:"主动上交，留下书面记录",
+        run(){ applyEffect({道德:5,声望:4,廉政风险:-6,上司:1});
+          S.discipline.records.unshift(`${S.date.y}年：主动上交工程承包方所送财物。`);
+          return "你把卡交到纪检组，做了登记。纪检组长看了你一眼，说：“你这一步走对了。”\n这件事后来被写进了单位的廉政教育材料。"; }},
+       {text:"收下，反正是他自愿给的",hint:"数额不小，风险也不小",
+        run(){ const 金=量(80000); S.cash+=金;
+          S.discipline.案件.push({年:S.date.y,事由:"在工程结算中收受承包方财物",金额:金});
+          applyEffect({道德:-9,声望:-3,廉政风险:Math.round(7+金/120000*6)});
+          S.discipline.records.unshift(`${S.date.y}年：在工程结算中收受承包方财物 ${fmt(金)} 元。`);
+          return `你收下了 ${fmt(金)} 元。\n钱转进了一张不常用的卡里。你告诉自己这是行业惯例——但审计要查的，恰恰就是“惯例”。`; }},
+       {text:"不收，但答应以后多照顾他的项目",hint:"不拿钱，拿承诺",
+        run(){ applyEffect({道德:-3,廉政风险:5,人脉:3});
+          S.discipline.records.unshift(`${S.date.y}年：向承包方作出倾向性承诺。`);
+          return "你没有收钱，但答应了“以后有事说话”。这句话不用写进账目，却同样会被记在别人心里。"; }}
+      ]},
+    {类型:"廉政风险",标题:"为提拔送来的“心意”",描述:"有人找到你，希望能帮他解决一个岗位。他开门见山，说已经准备好了“辛苦费”，事成之后再补一半。",
+     背景:"你手上正好有向上推荐的话语权。",
+     选项:[
+       {text:"明确拒绝，并当场告诉他这属于严重违纪",hint:"断得干净，也断了一条线",
+        run(){ applyEffect({道德:5,声望:3,人脉:-4});
+          S.discipline.records.unshift(`${S.date.y}年：拒绝为他人职务调整收受财物。`);
+          return "你把话说得很死。他走后，你在办公室坐了很久——你知道这种事背后往往不只一个人。"; }},
+       {text:"收下，答应帮忙运作",hint:"这是最要命的一种钱",
+        run(){ const 金=量(150000); S.cash+=金;
+          S.discipline.案件.push({年:S.date.y,事由:"在干部选拔任用中收受财物",金额:金});
+          applyEffect({道德:-12,声望:-4,廉政风险:Math.round(9+金/100000*6),人脉:4});
+          S.discipline.records.unshift(`${S.date.y}年：在干部选拔任用中收受财物 ${fmt(金)} 元。`);
+          return `你收下了第一笔 ${fmt(金)} 元。\n这种事一旦开了口子，就不再是“帮个忙”，而是把柄。`; }},
+       {text:"不置可否，先拖着不办也不退",hint:"看似安全，其实两头落空",
+        run(){ applyEffect({道德:-2,廉政风险:6});
+          return "你既没有答应，也没有退。对方每隔一段时间就来问一次，你越来越难拒绝。"; }}
+      ]},
+    {类型:"廉政风险",标题:"“不用出钱”的干股",描述:"一位老板邀你“入股”他新成立的公司，说不需要你出资，只要“挂个名、在关键时候说句话”。",
+     背景:"这种安排在账面上看不出问题，是近年查处较多的一种形式。",
+     选项:[
+       {text:"拒绝，并提醒对方这属于利益输送",hint:"法律风险最大的诱惑之一",
+        run(){ applyEffect({道德:5,声望:3,廉政风险:-4});
+          return "你直接告诉他：这种“干股”一旦出问题，双方都要担责。他一愣，说“那就算了”。"; }},
+       {text:"接受，让配偶出面持股",hint:"以为绕了一层就安全",
+        run(){ const 金=量(120000); S.cash+=金;
+          S.discipline.案件.push({年:S.date.y,事由:"通过配偶持有非上市公司股份",金额:金});
+          applyEffect({道德:-8,声望:-3,廉政风险:Math.round(8+金/110000*6)});
+          S.discipline.records.unshift(`${S.date.y}年：由配偶代持企业股份。`);
+          return "股份挂在家人名下，每年的“分红”打到另一个账户。\n你以为隔了一层就干净了。办案人员查的，从来都是资金来源与去向。"; }},
+       {text:"不参股，但答应在政策上给予关注",hint:"模糊的承诺也是风险",
+        run(){ applyEffect({道德:-2,廉政风险:5,人脉:3});
+          return "你没有拿股份，但表示“会关注”。这种话在案卷里，通常写成“为他人谋取利益”。"; }}
+      ]},
+    {类型:"廉政风险",标题:"配偶收下的钱",描述:"你出差回来，发现家里多了一笔钱。配偶说，是“一个朋友”送来的，说是“给孩子上学用”。",
+     背景:"对方正是你正在审批的那家企业的负责人。",
+     选项:[
+       {text:"当天联系对方全额退还，并向组织报告",hint:"家里的事也要报告",
+        run(){ applyEffect({道德:4,声望:3,廉政风险:-5, rel:{"family":{好感度:-4}}});
+          S.discipline.records.unshift(`${S.date.y}年：发现家属收受财物后主动退还并报告。`);
+          return "你当晚就把钱送了回去，并书面向组织说明了情况。配偶为此和你吵了一架，说你不近人情。"; }},
+       {text:"让配偶自己处理，你不过问",hint:"装作不知道，就等于知道",
+        run(){ const 金=量(60000); S.cash+=金;
+          S.discipline.案件.push({年:S.date.y,事由:"对家属收受财物知情不报",金额:金});
+          applyEffect({道德:-5,廉政风险:Math.round(6+金/110000*6)});
+          S.discipline.records.unshift(`${S.date.y}年：家属收受财物，本人未报告。`);
+          return "你说了句“你看着办”，就再没提。\n后来办案人员找你谈话时，问的第一个问题就是：“这件事你到底知不知道？”"; }},
+       {text:"退回去，但不在单位留任何记录",hint:"退了钱，没退风险",
+        run(){ applyEffect({道德:2,廉政风险:3});
+          S.discipline.records.unshift(`${S.date.y}年：家属收受财物后自行退还，未报告。`);
+          return "钱退回去了，但没有任何书面记录。将来若被问起，你只能说“记不清了”。"; }}
+      ]},
+    {类型:"廉政风险",标题:"可以“变通”的公款",描述:"单位有一笔项目结余经费，下属提醒你：“反正年底要收回，不如先处理一些不好报销的开支。”",
+     背景:"这类“变通”在基层并不少见，但性质是虚列支出。",
+     选项:[
+       {text:"不同意，要求把结余如实上报",hint:"得罪人，但账目干净",
+        run(){ applyEffect({道德:4,廉政风险:-3, rel:{colleague:{信任:-3}}});
+          S.discipline.records.unshift(`${S.date.y}年：拒绝以虚假名目处理项目结余经费。`);
+          return "你把结余原数上报。下属嘀咕了一句“以前都这么办”，但账目经得起查。"; }},
+       {text:"同意处理，但金额控制在“安全范围”",hint:"小恶也是恶",
+        run(){ applyEffect({道德:-5,廉政风险:9,现金:量(30000)});
+          S.discipline.案件.push({年:S.date.y,事由:"虚列支出处理项目结余",金额:量(30000)});
+          S.discipline.records.unshift(`${S.date.y}年：以虚假名目处理结余经费 ${fmt(量(30000))} 元。`);
+          return "钱处理得很快，账也做得像模像样。\n但审计看的是发票背后的真实业务，不看账做得漂不漂亮。"; }},
+       {text:"先放着，年底再说",hint:"拖过去也许就没人提了",
+        run(){ applyEffect({廉政风险:3});
+          return "你把这件事压了下来。年底一到，这笔钱被财政部门收回，谁也没再提——但下属记住了你的态度。"; }}
+      ]}
+  ];
+  return pick(pool);
+}
+function makeRetiredEvent(){
+  const pool=[
+    {类型:"退休生活",标题:"体检报告上的几个箭头",描述:"今年的体检报告出来了，医生的语气比去年认真：几个指标需要长期用药控制。",
+     背景:"你想起六十岁之前那些通宵写材料的夜晚。",
+     选项:[
+       {text:"按医嘱规律服药，把作息彻底改过来", hint:"花钱、花时间，但身体是自己的",
+        run(){ applyEffect({健康:rnd(8,14),cash:-rnd(3000,12000)}); return "你每天按时吃药、散步。半年后复查，指标回到了临界值以内。"; }},
+       {text:"先观察一段时间，能不吃药就不吃", hint:"省事，但风险留给自己",
+        run(){ applyEffect({健康:-rnd(2,6)}); return "你觉得没什么不舒服。第二年体检时，医生皱了眉头，让你加做两项检查。"; }},
+       {text:"把所有指标都当成大事，四处求医", hint:"过度紧张也有代价",
+        run(){ applyEffect({健康:rnd(2,6),cash:-rnd(20000,60000)}); return "你跑了三家医院，做了两次全身检查，结论都差不多：注意休养即可。钱花了不少。"; }}
+      ]},
+    {类型:"退休生活",标题:"老同事来访",描述:"一位多年不联系的老同事突然登门，坐下之后话锋一转，说他儿子的公司想请你「挂个顾问」。",
+     背景:"对方开出的价码不低，一年二十万，只需要偶尔露个面。",
+     选项:[
+       {text:"当场婉拒，说明退休干部兼职有明确纪律要求", hint:"守住底线，也断了人情",
+        run(){ applyEffect({道德:3,声望:2}); return "你把规定一条条讲给他听。他脸色不太好看，临走时说：「你还是老样子。」"; }},
+       {text:"不置可否，说再考虑考虑", hint:"拖一拖，谁也没得罪",
+        run(){ applyEffect({声望:-2}); return "他没有再来，但这件事在老干部圈子里传开了。"; }},
+       {text:"答应下来，认为自己已经退休，不算违纪", hint:"二十万，但代价在后面",
+        run(){ applyEffect({cash:200000,道德:-6,声望:-8,廉政风险:rnd(15,25)}); return "第一年的钱到账了。第二年，省里开展退休干部违规兼职专项清理，你的名字在名单上。"; }}
+      ]},
+    {类型:"退休生活",标题:"老同学聚会",描述:"大学同学聚会，有人提起当年借你的两千块学费，满桌人都笑了。",
+     背景:"几十年过去，有的人已经不在了。",
+     选项:[
+       {text:"把酒言欢，只说当年的趣事", hint:"纯粹的旧时光",
+        run(){ applyEffect({健康:rnd(1,3),声望:1,人脉:2}); return "你笑得很大声。回家路上，你一个人走了很久。"; }},
+       {text:"借机会打听一下当年项目上的旧事", hint:"放不下的，终究放不下",
+        run(){ applyEffect({健康:-1}); return "你问了几句，老同学含糊过去了。有些事，过去就该让它过去。"; }},
+       {text:"主动把这些年的经历讲给他们听", hint:"讲一次，也算交代一次",
+        run(){ applyEffect({声望:3}); return "你讲了一个多小时，讲到自己犯过的错。散场时有人说：「你这个人，还算实在。」"; }}
+      ]},
+    {类型:"退休生活",标题:"孩子想让你帮忙带孙辈",描述:"子女打电话来，说工作太忙，想请你去城里住一段时间，帮着带孩子。",
+     背景:"你和老伴都七十上下了。",
+     选项:[
+       {text:"去，能帮多少帮多少", hint:"累，但一家人在一起",
+        run(){ applyEffect({健康:-rnd(2,5),cash:-rnd(5000,20000)}); const k=S.family.子女[0]; if(k) k.好感度=clamp(k.好感度+12,0,100);
+          return "你去了半年，每天接送、做饭。孩子和你亲近了不少，你却瘦了八斤。"; }},
+       {text:"商量一个折中办法，寒暑假接过来", hint:"两头兼顾",
+        run(){ const k=S.family.子女[0]; if(k) k.好感度=clamp(k.好感度+6,0,100); applyEffect({健康:-1}); return "寒暑假孩子来住，家里热闹两个月，其余时间你们还过得清静。"; }},
+       {text:"明确拒绝，说身体吃不消", hint:"实话，但会伤人",
+        run(){ const k=S.family.子女[0]; if(k) k.好感度=clamp(k.好感度-10,0,100); applyEffect({健康:2}); return "电话那头沉默了几秒，说「行，我们自己想办法」。此后联系的次数少了。"; }}
+      ]},
+    {类型:"退休生活",标题:"社区请你讲一次党课",描述:"社区党委打电话来，说年轻党员想听你讲讲当年的事。",
+     背景:"你犹豫了一下——要讲真话，还是讲好听的话。",
+     选项:[
+       {text:"讲真的经历，包括自己犯过的错和走过的弯路", hint:"讲真话需要勇气",
+        run(){ applyEffect({声望:6,道德:3}); return "你讲了两个半小时，台下没有一个人看手机。有个年轻人说：「原来那时候是这样。」"; }},
+       {text:"按惯例讲一遍形势与要求", hint:"安全，也无趣",
+        run(){ applyEffect({声望:1}); return "讲了四十分钟，掌声很礼貌，然后就散了。"; }},
+       {text:"推掉，说自己身体不好", hint:"省事",
+        run(){ applyEffect({声望:-2}); return "社区换了一位退休教师来讲。后来你听说，他讲得很好。"; }}
+      ]},
+    {类型:"退休生活",标题:"卖房还是留着",描述:"有人愿意出高价买你多年前买下的那套房子，价格比当年翻了好几倍。",
+     背景:"子女的态度是「你决定就好」。",
+     选项:[
+       {text:"卖掉，把钱分成几份，留一部分给自己看病", hint:"落袋为安",
+        run(){ if(S.assets.房产.length){ S.assets.房产.pop(); } const gain=rnd(600000,1600000); applyEffect({cash:gain});
+          return `房子卖了 ${fmt(gain)} 元。你把钱分了，也给自己留了一笔看病钱。`; }},
+       {text:"留着，这是留给孩子的", hint:"情感价值高于市场价格",
+        run(){ applyEffect({声望:2}); const k=S.family.子女[0]; if(k) k.好感度=clamp(k.好感度+5,0,100); return "你决定不卖。孩子知道后，来看了你一趟。"; }},
+       {text:"不卖，也不告诉孩子具体价格", hint:"各人心里都明白",
+        run(){ return "你把合同收进了抽屉。有些事，说破了反而不好。"; }}
+      ]}
+  ];
+  return pick(pool);
+}
+function retiredMini(){
+  pick([
+    ()=>{ applyEffect({健康:rnd(1,3)}); yearLog.unshift({t:`${S.date.y}年`,h:"晨练",kind:"good",d:"你养成了每天早晨绕公园走两圈的习惯。"}); },
+    ()=>{ applyEffect({cash:-rnd(2000,9000)}); yearLog.unshift({t:`${S.date.y}年`,h:"被推销了保健品",kind:"bad",d:"社区讲座发鸡蛋，你听了两个小时，最后买了两盒保健品。回家才觉得不太值。"}); },
+    ()=>{ applyEffect({声望:1,人脉:1}); yearLog.unshift({t:`${S.date.y}年`,h:"老友相逢",kind:"",d:"在菜市场遇见多年不见的老同事，站着聊了半个多小时。"}); },
+    ()=>{ const k=S.family.子女[0]; if(k) k.好感度=clamp(k.好感度+3,0,100); yearLog.unshift({t:`${S.date.y}年`,h:"一通电话",kind:"good",d:"孩子打来电话，没什么事，就是问问你和老伴的身体。"}); },
+    ()=>{ applyEffect({健康:-rnd(1,3)}); yearLog.unshift({t:`${S.date.y}年`,h:"冬天难熬",kind:"bad",d:"入冬以后关节疼得厉害，晚上睡不好。"}); }
+  ])();
+}
+function miniEvent(){
+  pick([
+    ()=>{ applyEffect({政绩:6,健康:-1}); yearLog.unshift({t:`${S.date.y}年`,h:"临时通知",kind:"",d:"春节期间接到通知，提前结束休假回到单位，把材料重新过了一遍。"}); },
+    ()=>{ applyEffect({人脉:2,cash:-2000}); yearLog.unshift({t:`${S.date.y}年`,h:"人情往来",kind:"",d:"同事的父亲住院，你随了份子，去医院看了一下。"}); },
+    ()=>{ applyEffect({能力:2}); yearLog.unshift({t:`${S.date.y}年`,h:"自我学习",kind:"",d:"你抽空读完了两份行业报告，做了一页笔记。"}); },
+    ()=>{ applyEffect({政绩:-8,声望:-2}); yearLog.unshift({t:`${S.date.y}年`,h:"工作失误",kind:"bad",d:"一份报送材料里出现数据错误，被上级点名。不算大事，但面子上不好看。"}); },
+    ()=>{ applyEffect({健康:-3}); yearLog.unshift({t:`${S.date.y}年`,h:"身体信号",kind:"bad",d:"连续加班后体检报告多了两项异常。你去药店买了点药，没去医院。"}); },
+    ()=>{ applyEffect({政绩:10,上司:1}); yearLog.unshift({t:`${S.date.y}年`,h:"顺手之劳",kind:"good",d:"你帮别的处室补了一份数据，对方记了你的好。"}); }
+  ])();
+}
+function npcTick(){
+  for(const n of S.npcs){
+    if(Math.random()<0.5) n.好感度=clamp(n.好感度+rnd(-3,2),0,100);
+    if(Math.random()<0.35) n.信任=clamp(n.信任+rnd(-2,2),-100,100);
+    if(Math.random()<0.16){
+      pick([
+        ()=>{ n.身份=n.身份.replace(/副处长|处长/,"处长"); n.信任=clamp(n.信任+3,-100,100);
+          S.log.unshift({t:`${S.date.y}年`,h:`${n.姓名} 提任`,kind:"",d:`${n.姓名}被提任为${pick(["处长","调研员","副局长","党委委员"])}。你没有出力，也没有反对。`}); },
+        ()=>{ S.log.unshift({t:`${S.date.y}年`,h:`${n.姓名} 调离`,kind:"",d:`${n.姓名}调往${pick(["省厅","另一个区","开发区管委会","直辖市挂职"])}。此后再见面，身份已经不同。`}); },
+        ()=>{ n.信任=clamp(n.信任-rnd(3,10),-100,100); n.利益=clamp(n.利益+rnd(5,15),-100,100);
+          S.log.unshift({t:`${S.date.y}年`,h:`${n.姓名} 的立场变了`,kind:"bad",d:`因为一次资源分配，${n.姓名}在会上的态度和以前不一样了。关系不会因为一句话永久固定。`}); },
+        ()=>{ n.信任=clamp(n.信任+rnd(3,8),-100,100);
+          S.log.unshift({t:`${S.date.y}年`,h:`${n.姓名} 帮了你一次`,kind:"good",d:`你不在场的一个会上，${n.姓名}替你说了话。你是后来才听说的。`}); }
+      ])();
+      if(S.log.length>90) S.log.pop();
+    }
+  }
+}
+function cityTick(){
+  for(const k in S.city) if(Math.random()<0.5) S.city[k]=clamp(S.city[k]+rnd(-4,4),10,95);
+  S.market=S.market||{房价:1};
+  const drift=((S.city.房地产-50)/100)*0.03 + rnd(-18,22)/1000;
+  S.market.房价=Math.max(0.45, S.market.房价*(1+drift));
+  (S.assets.房产||[]).forEach(x=>{ if(x.购入价) x.市值=Math.round(x.购入价*S.market.房价); });
+  (S.assets.车辆||[]).forEach(v=>{
+    const 车龄=Math.max(0, S.date.y-(v.购入年||S.date.y));
+    // 每年折旧约 15%；超过 15 年的车只剩报废残值
+    v.市值=Math.round((v.总价||0)*(车龄>=15?0.05:Math.pow(0.85,车龄)));
+  });
+}
+function disciplineTick(){
+  const r=S.discipline.risk; if(r<=0) return;
+  if(r>=45 && Math.random()<r/500 && !pendingEvent){
+    pendingEvent=生成调查事件("你在任上，纪委收到了关于你的问题线索");
+    pendingEvent.月=rnd(1,12);
+    return;
+  }
+  if(Math.random()<r/160){
+    if(Math.random()<0.5){
+      S.discipline.records.unshift(`${S.date.y}年：收到与你有关的信访反映，已登记。`);
+      S.discipline.risk=clamp(r+6,0,100); S.p.声望=clamp(S.p.声望-4,0,100);
+      S.log.unshift({t:`${S.date.y}年`,h:"被反映",kind:"bad",d:"纪委收到一条与你有关的信访反映，暂未找你谈话。你从别人口里听到了这件事。"});
+    }else{
+      S.discipline.records.unshift(`${S.date.y}年：接受谈话提醒一次。`);
+      S.discipline.risk=clamp(r-10,0,100); S.p.上司=clamp(S.p.上司-3,0,100);
+      S.log.unshift({t:`${S.date.y}年`,h:"谈话提醒",kind:"bad",d:"一位老领导把你叫到办公室，说了半小时，没提具体的事。你听懂了一半。"});
+    }
+  }
+}
+
+/* =========================================================
+   旧存档兼容
+========================================================= */
+function upgradeSave(s){
+  s.loans=s.loans||[]; s.edu=s.edu||{在读:null,证书:[]};
+  s.assets=s.assets||{房产:[],车辆:[],投资:[]}; s.market=s.market||{房价:1};
+  const 房价表={"城郊刚需小两居":680000,"市区普通两居":1350000,"学区三居":2600000,"改善型大平层":4200000,"独栋/联排别墅":7800000};
+  const 车价表={"经济型代步车":120000,"合资中级车":220000,"豪华品牌轿车":450000,"高端SUV":800000};
+  s.assets.房产=(s.assets.房产||[]).map((x,i)=>{
+    if(typeof x!=="string") return x;
+    const 命=Object.keys(房价表).find(k=>x.indexOf(k)>=0);
+    const 价=命?房价表[命]:1200000;
+    return {名:x.replace(/（[^）]*贷款[^）]*）/g,"").replace(/（超标）/g,""),面积:命?({"城郊刚需小两居":70,"市区普通两居":90,"学区三居":120,"改善型大平层":160,"独栋/联排别墅":280})[命]:90,
+      购入价:价,购入年:(s.date?s.date.y:2040)-5,市值:价,自住:i===0,贷款:/贷款/.test(x)};
+  });
+  s.assets.车辆=(s.assets.车辆||[]).map(x=>{
+    if(typeof x!=="string") return x;
+    const 命=Object.keys(车价表).find(k=>x.indexOf(k)>=0);
+    const 价=命?车价表[命]:150000;
+    return {名:x.replace(/（超标）/g,""),总价:价,购入年:(s.date?s.date.y:2040)-2,市值:Math.round(价*0.7)};
+  });
+  if(s.family&&s.family.配偶){
+    if(s.family.配偶.月收入==null) s.family.配偶.月收入=5200;
+    if(s.family.配偶.养老金==null) s.family.配偶.养老金=0;
+    if(s.family.配偶.退休==null) s.family.配偶.退休=false;
+  }
+  ((s.family&&s.family.子女)||[]).forEach(c=>{ if(c.考上大学==null) c.考上大学=/大学/.test(c.备注||""); if(c.独立==null) c.独立=(c.年龄||0)>=22; });
+  s.positions=s.positions||[]; s.负债=s.负债||0;
+  s.actionsMax=ACTIONS_PER_YEAR;
+  if(s.date&&s.date.m!==undefined) s.date={y:s.date.y||2040};
+  s.p2=s.p2||{};
+  if(s.p2.任职年==null) s.p2.任职年=s.p2.任职月?Math.floor(s.p2.任职月/12):0;
+  if(s.p2.职级年==null) s.p2.职级年=0;
+  if(s.p2.处分==null) s.p2.处分=0;
+  if(s.p2.嘉奖==null) s.p2.嘉奖=0;
+  if(s.p2.初次晋升==null) s.p2.初次晋升=false;
+  if(s.p2.连续模糊==null) s.p2.连续模糊=s.p2.模糊次数||0;
+  if(s.p2.累计模糊==null) s.p2.累计模糊=s.p2.模糊次数||0;
+  s.riskSnapshot=s.riskSnapshot||0;
+  s.quiz=null;
+  if(s.yearSummary===undefined) s.yearSummary=null;
+  if(s._年初快照===undefined) s._年初快照=null;
+  if(s._晋升消耗===undefined) s._晋升消耗=0;
+  if(s.fund==null) s.fund=0;
+  if(!s.p.平台) s.p.平台='市级';
+  if(s.p.挂职===undefined) s.p.挂职=null;
+  if(s.p.上调次数===undefined) s.p.上调次数=0;
+  if(s.yearSummary){
+    if(!s.yearSummary.施政评价) s.yearSummary.施政评价={正确:0,模糊:0,失当:0};
+    if(!Array.isArray(s.yearSummary.事件)) s.yearSummary.事件=[];
+    if(!Array.isArray(s.yearSummary.记录)) s.yearSummary.记录=[];
+  }
+  if(!Array.isArray(s._本年事件)) s._本年事件=[];
+  if(s.p&&s.p.人脉==null) s.p.人脉=28;
+  if(!Array.isArray(s.shixiOrder)||s.shixiOrder.length!==SHIXI_COUNT||s.shixiOrder.some(i=>i>=SHIXI.length))
+    s.shixiOrder=shuffle(SHIXI.map((_,i)=>i)).slice(0,SHIXI_COUNT);
+  if(!Array.isArray(s.usedThisYear)) s.usedThisYear=[];
+  if(!s.family) s.family={婚姻:"单身",配偶:null,子女:[]};
+  if(!s.candidates||!s.candidates.length) s.candidates=makeCandidates(s.p.性别||"男", s.p.年龄||26);
+  s.status=s.status||"在职";
+  if(s.beginYear==null) s.beginYear=2040;
+  if(s.p.学历===undefined){ s.p.学历=EDU_BY_AGE(s.p.年龄||30); s.p.选调生=false; s.p.政治面貌="群众"; s.p.专业匹配度=fitOf(s.p.专业||"法学",s.p.职业||"公务员"); }
+  if(s.p.健康==null) s.p.健康=70;
+  if(!s.housing) s.housing="与人合租的老小区两居";
+  s.npcs.forEach(n=>{ if(n.好感度==null) n.好感度=clamp(100-(n.距离||40),0,100); delete n.距离; if(n.信任==null) n.信任=0; });
+  return s;
+}
+
+/* =========================================================
+   角色创建页
+========================================================= */
+(function initSetup(){
+  const sel=$('f-major');
+  sel.innerHTML=Object.entries(MAJORS).map(([g,list])=>
+    `<optgroup label="${g}">${list.map(m=>`<option>${m}</option>`).join('')}</optgroup>`).join('');
+})();
+function refreshMatch(){
+  const age=clamp(parseInt($('f-age').value||'24',10)||24,18,38);
+  const edu=EDU_BY_AGE(age);
+  const major=$('f-major').value;
+  const jobSel=$('f-job'), prev=jobSel.value;
+  const ok=ALL_JOBS.map(j=>({j,f:fitOf(major,j)})).filter(x=>x.f>80);
+  jobSel.innerHTML=ok.map(x=>`<option value="${x.j}">${x.j}（匹配度 ${x.f}%）</option>`).join('');
+  if(ok.some(x=>x.j===prev)) jobSel.value=prev;
+  const job=jobSel.value, fit=fitOf(major,job);
+  $('match-box').innerHTML =
+   `<div class="mt">系 统 匹 配 结 果</div>
+    <div class="row">
+      <span>匹配学历 <b>${edu}</b></span>
+      <span>专业—职业匹配度 <b>${fit}%</b></span>
+      <span class="ok">应届 · 无工作经历</span>
+    </div>
+    <div class="sm">
+      专业与职业匹配度须高于 80% 方可选择该职业；匹配度越高，入职后的路也越顺。${fit>=90?"你的专业与这一职业高度对口。":""}<br>
+      学历由年龄按国民教育序列自动匹配，出生地、所在地与家庭背景由系统随机匹配；<br>
+      进入体制后（公务员 / 事业单位 / 国企）可在「🎓 进修」页在职、在编、在岗提升学历。
+    </div>`;
+}
+['f-age','f-major','f-job'].forEach(id=>{
+  const el=$(id); if(el){ el.addEventListener('input',refreshMatch); el.addEventListener('change',refreshMatch); }
+});
+$('btn-rand').onclick=()=>{ $('f-name').value=randomName($('f-sex').value); $('f-name-err').textContent=""; };
+$('f-sex').addEventListener('change',()=>{ if($('f-name-err').textContent) $('f-name-err').textContent=""; });
+refreshMatch();
+
+/* =========================================================
+   启动
+========================================================= */
+$('btn-start').onclick=()=>{
+  const name=$('f-name').value.trim();
+  const err=validateName(name);
+  if(err){ $('f-name-err').textContent=err; $('f-name').focus(); return; }
+  $('f-name-err').textContent="";
+  const age=clamp(parseInt($('f-age').value||'24',10)||24,18,38);
+  S=newState({name:name,sex:$('f-sex').value,age:age,major:$('f-major').value,
+    job:$('f-job').value,edu:EDU_BY_AGE(age)});
+  S.beginYear=S.date.y;
+  S._年初快照=快照();
+  $('setup').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  curTab='事件'; render();
+  if(pendingPositions){ /* 不会发生 */ }
+  setTimeout(()=>toast("人生开始。你的选择会留下痕迹。"),400);
+};
+$('btn-help').onclick=()=>ACTIONS.help();
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&pendingEvent) toast("这件事需要你作出决定。"); });
+</script>
+</body>
+</html>
