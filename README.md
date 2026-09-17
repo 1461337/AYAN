@@ -1,75 +1,60 @@
-# React + TypeScript + Vite
+# 人民的名义 · 高自由度人生模拟器
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一款以汉东省为背景的纯前端文字人生模拟游戏：从应届初入社会开始，按年推进，经历施政、晋升、家庭、资产与廉政考验，直到退休或人生终章。
 
-Currently, two official plugins are available:
+**在线游玩：** https://1461337.github.io/AYAN/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 玩法概览
 
-## React Compiler
+- **角色创建**：姓名 / 性别 / 年龄（18—38）/ 专业 / 职业；专业与职业匹配度须高于 80%。出生地、工作平台（省 / 市 / 区 / 县 / 乡镇）与家庭背景随机生成，公务员有机会成为选调生。
+- **年度循环**：每年 5 次行动额度，由施政、感情家庭、协调关系、廉政梳理、在职学习共用；施政题库每年随机抽取 3 项，顺序随机。
+- **施政问答**：每项工作需作答处置问题，分「正确 / 模糊 / 错误」三档；答对累积晋升条件，连续模糊会触发惩罚。
+- **六项晋升指标**：政绩、能力、道德、领导评价、人脉、健康。任职年限到自动进入考察，也可主动申请；通过后从若干拟任岗位中择一。
+- **职级 / 职务双序列**：公务员 12 级职级 + 9 级职务序列，含选调生下派挂职、职级并行、退居二线、提任年龄界限与平台天花板。
+- **经济系统**：应发工资、五险一金、个税、公积金、年终考核奖、房贷车贷、房价涨跌、子女养育与生活支出逐年真实结算。
+- **家庭系统**：婚恋、生育、子女成长，家风会影响到晋升考察。
+- **廉政系统**：礼金、回扣、干股、配偶代收等事件；每一笔收下的钱都会记入案卷，纪律审查将按金额与情节分级处置，直至移送司法。
+- **突发事件**：通用、职业专属、廉政、退休事件池，以及 NPC、城市、纪律的年度变化。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 技术栈
 
-## Expanding the ESLint configuration
+React 19 · TypeScript · Vite · Zustand · Vitest · CSS Modules
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 本地开发
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev      # 启动开发服务器
+npm run build    # 生产构建，输出到 dist/
+npm run lint     # ESLint 检查
+npm test         # Vitest 单元测试
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## 部署
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+推送代码到 `main` 分支后，GitHub Actions 会自动执行构建并把 `dist/` 发布到 `gh-pages` 分支；GitHub Pages 采用「Deploy from a branch → `gh-pages` / (root)」发布。
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+站点访问地址：https://1461337.github.io/AYAN/
+
+> 构建时 base 固定为 `/AYAN/`（见 `vite.config.ts`），若修改仓库名需同步调整。
+
+## 项目结构
 
 ```
+src/
+  domain/       # 纯游戏逻辑：晋升、经济、事件、纪律、年度结算等
+  data/         # 静态数据：施政题库、职级序列、专业、资产、平台等
+  store/        # Zustand 状态与全部游戏动作
+  ui/           # React 组件与九个功能页签
+  persistence/  # localStorage 存档
+  styles/       # 设计 tokens 与全局样式
+```
+
+存档保存在浏览器 `localStorage`，键名为 `rmdmj_save_v2`。
+
+根目录的 `人民的名义.html` 为重构前的单文件 Demo，仅作对照保留。
+
+## 说明
+
+- 本项目为个人练习 / 演示作品，与任何影视、出版、机构无关；游戏中的人物、机构与事件均为虚构。
+- 《人民的名义》相关权利归原权利方所有。
