@@ -29,7 +29,7 @@ export function Study() {
             <div className="bars mt8">
               {Array.from({ length: up.年 }, (_, i) => <i key={i} className={i < up.年 - up.剩 ? 'on' : ''} />)}
             </div>
-            <span className="hint">每年自动占用 1 次行动额度；中途放弃已缴费用不退。</span>
+            <span className="hint">每年占用 1 次行动；中途放弃不退费。</span>
           </div>
           <button className="btn-red gray" onClick={eduCancel}>中 途 放 弃</button>
         </>
@@ -65,7 +65,7 @@ export function Study() {
           </button>
         )
       })}
-      <div className="hint">学历不是万能钥匙，但县级以上的岗位、遴选和调任公告里，“本科及以上”几乎从不缺席。</div>
+      <div className="hint">县级及以上岗位普遍要求本科以上学历。</div>
     </Card>
   )
 }

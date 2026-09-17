@@ -70,7 +70,7 @@ export const useGame = create<StoreState>((set, get) => {
 
   return {
     game: null,
-    curTab: '事件',
+    curTab: '年度',
     toastMsg: '',
     toastId: 0,
     showHelp: false,
@@ -78,7 +78,7 @@ export const useGame = create<StoreState>((set, get) => {
     start: (f) => {
       const g = newState(f)
       g._年初快照 = 快照(g)
-      set({ game: g, curTab: '事件' })
+      set({ game: g, curTab: '年度' })
       finish('人生开始。你的选择会留下痕迹。')
     },
 
@@ -179,7 +179,7 @@ export const useGame = create<StoreState>((set, get) => {
       settlePosition(g, p.名)
       g.pendingPositions = null
       g.pendingPosTitle = ''
-      set({ game: g, curTab: '事件' })
+      set({ game: g, curTab: '年度' })
       finish('已就任：' + p.名)
     },
 
@@ -212,7 +212,7 @@ export const useGame = create<StoreState>((set, get) => {
       const g = { ...s.game }
       g.yearLog = g.yearLog ? g.yearLog.slice() : []
       endYearDomain(g)
-      set({ game: g, curTab: g.over ? s.curTab : '事件' })
+      set({ game: g, curTab: g.over ? s.curTab : '年度' })
       finish(`进入 ${g.date.y} 年`)
     },
 
@@ -267,13 +267,10 @@ export const useGame = create<StoreState>((set, get) => {
       const g = { ...s.game }
       if (g.actions <= 0) return finish('本年行动额度已用完。')
       g.actions--
-      const fresh = makeCandidates(g.p.性别, g.p.年龄)
-      fresh.forEach((c, i) => { c.id = 'cand' + (g.candidates.length + i) })
-      g.candidates.push(...fresh)
-      if (g.candidates.length > 6) g.candidates = g.candidates.slice(0, 6)
-      g.log.unshift({ t: `${g.date.y}年`, h: '经人介绍', kind: '', d: '通过朋友介绍，你认识了几位新朋友。感情需要时间，也需要主动。' })
+      g.candidates = makeCandidates(g.p.性别, g.p.年龄)
+      g.log.unshift({ t: `${g.date.y}年`, h: '经人介绍', kind: '', d: '朋友介绍了两位新朋友，之前的缘分各自有了结果。' })
       set({ game: g })
-      finish('朋友又介绍了新的朋友。')
+      finish('朋友又介绍了两位新朋友。')
     },
 
     date: (id, type) => {
@@ -282,17 +279,16 @@ export const useGame = create<StoreState>((set, get) => {
       const c = s.game.candidates.find((x) => x.id === id)
       if (!c) return
       const g = { ...s.game }
-      if (g.actions <= 0) return finish('本年行动额度已用完。')
       const conf: Record<string, { 钱: number; 加: [number, number]; 文: string }> = {
-        '逛街': { 钱: 300, 加: [4, 9], 文: '你们在商业街逛了一下午，聊起各自的工作和家里的事。' },
-        '电影': { 钱: 200, 加: [5, 10], 文: '看了一场电影，散场后又站在路边聊了很久。' },
+        '散步': { 钱: 300, 加: [4, 9], 文: '你们沿江边走了很久，聊起各自的工作和家里的事。' },
         '吃饭': { 钱: 500, 加: [6, 13], 文: '一起吃了顿饭。对方说，你比介绍人描述的更好相处。' },
+        '电影': { 钱: 200, 加: [5, 10], 文: '看了一场电影，散场后又站在路边聊了很久。' },
         '旅行': { 钱: 3000, 加: [12, 22], 文: '周末短途旅行，两天时间足够看清一个人，也足够让对方看清你。' },
-        '礼物': { 钱: 1000, 加: [6, 15], 文: '你送了对方一件用心的礼物。对方收下了，也记住了价格之外的东西。' },
       }
       const cc = g.candidates.find((x) => x.id === id)!
       if (type === '表白') {
         if (cc.好感度 < 60) return finish('现在说这些还太早，对方有些尴尬。')
+        if (g.actions <= 0) return finish('本年行动额度已用完。')
         g.actions--
         if (Math.random() < 0.5 + cc.好感度 / 400) {
           cc.好感度 = clamp(cc.好感度 + 8, 0, 100)
@@ -310,12 +306,13 @@ export const useGame = create<StoreState>((set, get) => {
       const cfg = conf[type]
       if (!cfg) return
       if (g.cash < cfg.钱) return finish(`现金不足，需要 ${fmt(cfg.钱)} 元。`)
-      g.actions--
+      if (cc.本年约会 && cc.本年约会.includes(type)) return finish(`今年已经和${cc.姓名}${type}过了。`)
       g.cash -= cfg.钱
+      cc.本年约会 = [...(cc.本年约会 || []), type]
       const before = cc.好感度
       cc.好感度 = clamp(cc.好感度 + rnd(cfg.加[0], cfg.加[1]), 0, 100)
       const d = cc.好感度 - before
-      cc.memory.unshift(`${g.date.y}年：你约${cc.姓名}${type === '礼物' ? '送了礼物' : type}，好感度 +${d}。`)
+      cc.memory.unshift(`${g.date.y}年：你们${type}，好感度 +${d}。`)
       if (cc.memory.length > 5) cc.memory.pop()
       g.yearLog.unshift({ t: `${g.date.y}年`, h: `与${cc.姓名}约会 · ${type}`, kind: '', d: cfg.文 })
       set({ game: g })
@@ -579,14 +576,14 @@ export const useGame = create<StoreState>((set, get) => {
     load: () => {
       const g = loadGame()
       if (!g) return finish('没有找到存档。')
-      set({ game: g, curTab: '事件' })
+      set({ game: g, curTab: '年度' })
       finish('读取成功。')
     },
 
     reset: () => {
       if (typeof window !== 'undefined' && !window.confirm('重开人生？当前进度将丢失（不含已保存存档）。')) return
       clearSave()
-      set({ game: null, curTab: '事件' })
+      set({ game: null, curTab: '年度' })
     },
   }
 })

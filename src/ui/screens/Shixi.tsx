@@ -59,7 +59,7 @@ export function Shixi() {
         <span className="hint right">{game.date.y} 年度</span>
       </div>
       <div className="hint mb12">
-        共 3 项年度工作，顺序每年随机；<b>每项每年只能开展一次</b>。答对增加晋升条件；模棱两可不加不减，但连续 3 次以上说明处置能力有问题，此后每次都要扣减，答对一次即清零；答错直接扣减。
+        每年随机 3 项，每项限一次。答对加分；模棱两可不加不减，连续 3 次后每次扣减，答对即清零；答错直接扣减。
       </div>
       {game.shixiOrder.map((idx, i) => {
         const a = SHIXI[idx]
@@ -72,7 +72,7 @@ export function Shixi() {
           </button>
         )
       })}
-      <div className="box mt12">每年共 5 次行动额度，由施政、感情与家庭、协调关系、廉政梳理和在职学习共用。</div>
+      <div className="box mt12">每年 5 次行动，由施政、家庭、关系、廉政与学习共用。</div>
 
       {ni.def ? (
         <>
@@ -88,13 +88,12 @@ export function Shixi() {
             <div className="mt8">
               <div className="bar-row"><span>人脉（晋升中分量最重的一项）</span><b>{Math.round(networkScore(game))}</b></div>
               <div className="bar"><i style={{ width: `${Math.round(networkScore(game))}%` }} /></div>
-              <div className="hint mt6">由综合人脉、关键人物的信任与好感度共同构成。上级、同事、老同学、纪委，每一个都算数。<br />
-                人脉的宽度与岗位层级相匹配：职位越高，能接触到的人越多；在原地待得再久，圈子也不会无限扩大。</div>
+              <div className="hint mt6">由综合人脉、关键人物的信任与好感度构成；职位越高，圈子越大。</div>
             </div>
             <div className="mt8">
               <div className="bar-row"><span>健康（承担更重岗位的身体条件）</span><b className={game.p.健康 < 70 ? 'bad-txt' : game.p.健康 < 80 ? '' : 'ok-txt'}>{game.p.健康}</b></div>
               <div className="bar"><i style={{ width: `${game.p.健康}%` }} /></div>
-              <div className="hint mt6">健康 80 以上才具备承担更重岗位的条件；低于 70 组织上会有所顾虑。</div>
+              <div className="hint mt6">晋升要求 80 以上；低于 70 会明显降低把握。</div>
             </div>
             <div className="hint mt6">
               硬性条件：能力 ≥ {ni.def.门槛.能力}、道德 ≥ {ni.def.门槛.道德}、领导评价 ≥ {ni.def.门槛.上司}
@@ -103,7 +102,7 @@ export function Shixi() {
           </div>
           <button className="btn-line" disabled={game.actions <= 0} onClick={applyPromote}>
             主动申请晋升 · 组织谈话<span className="cost">-1 行动</span>
-            <small>向组织部门正式提出申请，进入考察程序。是否通过，取决于组织对你六个方面情况的综合判断。</small>
+            <small>进入考察程序，结果取决于六项指标。</small>
           </button>
         </>
       ) : null}

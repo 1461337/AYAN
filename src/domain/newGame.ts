@@ -16,7 +16,7 @@ export function makeCandidates(sex: Sex, age: number): Candidate[] {
   const pool = sex === '男' ? 女名池 : 男名池
   const 下限 = Math.max(22, age - 8)
   const 上限 = Math.min(70, age + 6)
-  return shuffle(pool).slice(0, 3).map((nn, i) => {
+  return shuffle(pool).slice(0, 2).map((nn, i) => {
     const jd = pick(婚恋职业池)
     const 身份 = jd.类别 + ' · ' + jd.名
     return {

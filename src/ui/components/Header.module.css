@@ -57,3 +57,15 @@
   .hdr { padding-left: 0; padding-right: 0; }
   .stats { flex-wrap: wrap; overflow: visible; }
 }
+@media (max-width: 640px) {
+  .hdr { padding-left: 10px; padding-right: 10px; }
+  .rankName { font-size: 17px; }
+  .rankMeta { font-size: 11.5px; }
+  .rankNext { font-size: 11.5px; padding: 3px 8px; }
+  .iconBtn { width: 32px; height: 32px; font-size: 15px; }
+  .avatar { width: 38px; height: 38px; font-size: 19px; }
+  .hdrRight { gap: 6px; }
+  .zhiji { font-size: 11px; }
+  .zhiji b { font-size: 14px; }
+  .stats { gap: 5px; padding: 8px 0; }
+}

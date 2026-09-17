@@ -26,20 +26,21 @@ export function ladder(g: GameState): RankDef[] {
 
 export function 条线Of(名: string | undefined | null): string {
   if (!名) return '其他'
-  if (/县长|区长|市长|省长|乡长|镇长|街道办主任|总理|主席/.test(名)) return '主官'
+  if (/人大常委会|政协/.test(名)) return '人大政协'
+  if (/县委书记|区委书记|市委书记|省委书记|县长|区长|市长|省长|乡长|镇长|副乡长|副镇长|副县长|副区长|副市长|副省长|[乡镇]党委书记/.test(名)) return '主官'
   for (const [k, ws] of 条线词表) if (ws.some((w) => 名.includes(w))) return k
-  if (/助理|常务|常委|秘书长|办公室主任/.test(名)) return '综合'
+  if (/助理|常务|常委|秘书长|办公室主任|副书记/.test(名)) return '综合'
   return '其他'
 }
 
 export function 岗位平台(名: string | undefined | null): string {
   if (!名) return '其他'
-  if (/省长|省委/.test(名)) return '省级'
-  if (/省发展和改革委员会|省财政厅|省教育厅|省公安厅|省[^市]*厅|国家|中央/.test(名)) return '省级'
-  if (/市长|市委|市政府|市[^县]*局|市[^县]*委员会/.test(名)) return '市级'
-  if (/区长|区委|区政府|区[^县]*局/.test(名)) return '区级'
-  if (/县长|县委|县政府|县[^乡]*局|县人民政府/.test(名)) return '县级'
-  if (/乡人民政府|镇人民政府|副乡长|副镇长|乡长|镇长|乡镇党委|街道办|街道党工委/.test(名)) return '乡镇级'
+  if (/省长|省委|省高级人民法院|省人民检察院|省纪委|省监委/.test(名)) return '省级'
+  if (/省发展和改革委员会|省财政厅|省教育厅|省公安厅|省司法厅|省[^市]*厅|国家|中央/.test(名)) return '省级'
+  if (/市长|市委|市政府|市中级人民法院|市人民检察院|市纪委|市监委|市[^县]*局|市[^县]*委员会/.test(名)) return '市级'
+  if (/区长|区委|区政府|区人民法院|区人民检察院|区纪委|区监委|区[^县]*局/.test(名)) return '区级'
+  if (/县长|县委|县政府|县人民法院|县人民检察院|县纪委|县监委|县[^乡]*局|县人民政府/.test(名)) return '县级'
+  if (/副乡长|副镇长|乡长|镇长|[乡镇]党委书记|[乡镇]党委副书记|[乡镇]纪委书记|[乡镇]人大主席|乡人民政府|镇人民政府|街道办|街道党工委/.test(名)) return '乡镇级'
   if (平台集合.includes(名 as never)) return 名
   return '其他'
 }
@@ -56,20 +57,29 @@ export function 平台单位(平台: string, 城市: string): string {
   return 城市 + 单位.slice(1)
 }
 
-export const 是高配 = (名: string) => 高配岗位.some((x) => 名 === x || 名.indexOf(x) >= 0)
+export function 是高配(名: string): boolean {
+  if (!名) return false
+  return 高配岗位.some((x) => 名 === x || 名.indexOf(x) >= 0) || /常委|纪委书记|监委主任/.test(名)
+}
 
 export function 是党政班子(名: string | undefined | null): boolean {
   if (!名) return false
-  return /副书记|书记|常委|县长|区长|乡长|镇长|组织部|宣传部|统战部|政法委|党委/.test(名)
+  return /副书记|书记|常委|县长|区长|乡长|镇长|组织部|宣传部|统战部|政法委|党委|纪委书记|监委主任|人民法院院长|人民检察院检察长|公安局局长/.test(名)
 }
 
-export const 是二线 = (名: string | undefined | null): boolean =>
-  !!名 && 二线岗位.some((x) => 名.indexOf(x) >= 0)
+export function 是基层岗位(名: string | undefined | null): boolean {
+  if (!名) return false
+  return /副乡长|副镇长|乡长|镇长|[乡镇]党委书记|[乡镇]党委副书记|[乡镇]纪委书记|[乡镇]人大主席|乡人民政府|镇人民政府|街道办|街道党工委/.test(名)
+}
+
+export function 是二线(名: string | undefined | null): boolean {
+  return !!名 && 二线岗位.some((x) => 名.indexOf(x) >= 0)
+}
 
 export function 是实权(名: string | undefined | null): boolean {
   if (!名) return false
   if (是二线(名)) return false
-  return /县委书记|区委书记|市委书记|省委书记|县长|区长|市长|省长|乡长|镇长|街道办主任|副书记|常委|组织部长|宣传部长|统战部长|政法委书记|公安局|发展和改革委员会主任|财政局局长|财政厅厅长|组织部部长/.test(名)
+  return /县委书记|区委书记|市委书记|省委书记|县长|区长|市长|省长|乡长|镇长|街道办主任|副书记|常委|组织部长|宣传部长|统战部长|政法委书记|公安局|发展和改革委员会主任|财政局局长|财政厅厅长|组织部部长|纪委书记|监委主任|人民法院院长|人民检察院检察长|司法局局长/.test(名)
 }
 
 export function 提任年龄上限(g: GameState, idx: number): number {

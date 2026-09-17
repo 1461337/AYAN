@@ -1,13 +1,10 @@
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
-import { ladder, rankTitle } from '../../domain/selectors'
+import { rankTitle } from '../../domain/selectors'
 import { 职级序列 } from '../../data/static'
 
 export function Archive() {
   const game = useGame((s) => s.game)!
-  const save = useGame((s) => s.save)
-  const load = useGame((s) => s.load)
-  const reset = useGame((s) => s.reset)
 
   const pos = game.positions.length
     ? game.positions.map((p, i) => <span key={i}>· {p.年}年　{p.职级}　{p.岗位}<br /></span>)
@@ -49,12 +46,6 @@ export function Archive() {
           <div className="t">{x.t}</div><div className="h">{x.h}</div><div className="d">{x.d}</div>
         </div>
       ))}
-      <div className="btn-row">
-        <button className="btn-ghost" onClick={save}>保存存档</button>
-        <button className="btn-ghost" onClick={load}>读取存档</button>
-        <button className="btn-ghost" onClick={reset}>重开人生</button>
-      </div>
-      <div className="hint mt8">当前职位：{rankTitle(game)}（{ladder(game).length} 级序列中的第 {game.rankIdx + 1} 级）</div>
     </Card>
   )
 }

@@ -1,6 +1,7 @@
 import type { GameState } from '../domain/types'
 
 export const SAVE_KEY = 'rmdmj_save_v2'
+const SAVE_TIME_KEY = 'rmdmj_save_v2_time'
 
 export function stripTransient(g: GameState): Record<string, unknown> {
   const copy: Record<string, unknown> = { ...g }
@@ -14,10 +15,18 @@ export function stripTransient(g: GameState): Record<string, unknown> {
 export function saveGame(g: GameState): boolean {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(stripTransient(g)))
+    localStorage.setItem(SAVE_TIME_KEY, String(Date.now()))
     return true
   } catch {
     return false
   }
+}
+
+export function lastSaveTime(): string | null {
+  const t = localStorage.getItem(SAVE_TIME_KEY)
+  if (!t) return null
+  const d = new Date(Number(t))
+  return Number.isNaN(d.getTime()) ? null : d.toLocaleString('zh-CN')
 }
 
 export function hasSave(): boolean {
@@ -51,4 +60,5 @@ export function loadGame(): GameState | null {
 
 export function clearSave(): void {
   localStorage.removeItem(SAVE_KEY)
+  localStorage.removeItem(SAVE_TIME_KEY)
 }

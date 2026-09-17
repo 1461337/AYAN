@@ -201,7 +201,7 @@ export function endYear(g: GameState): void {
       g.yearLog.unshift({ t: `${g.date.y}年`, h: `${c.姓名}的孝养`, kind: 'good', d: `${c.姓名}给你转了 ${fmt(孝养)} 元，说让你别太省。` })
     }
   })
-  g.candidates.forEach((c) => { c.年龄++ })
+  g.candidates.forEach((c) => { c.年龄++; c.本年约会 = [] })
   g._候选年数 = (g._候选年数 || 0) + 1
   if (g.status !== '退休' && g.p.年龄 <= 66 && (!g.candidates.length || (g._候选年数 || 0) >= 8)) {
     g.candidates = makeCandidatesLocal(g)

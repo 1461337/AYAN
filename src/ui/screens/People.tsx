@@ -121,7 +121,7 @@ export function People() {
       {!game.family.配偶 ? (
         <>
           <div className="sec-title mt14">感情 · 认识与相处</div>
-          <div className="hint mb12">好感度达到 80 即可登记结婚。婚后若长期疏于陪伴，关系同样会变冷。</div>
+          <div className="hint mb12">约会不消耗行动点，每项每年一次；表白与结婚各消耗 1 次行动。好感度 ≥ 80 可登记结婚。</div>
           {game.candidates.map((c) => (
             <NpcCard
               key={c.id}
@@ -136,26 +136,25 @@ export function People() {
               extra={c.好感度 >= 80 ? '对方已经在等你开口了。' : undefined}
               actions={
                 <>
-                  <button onClick={() => date(c.id, '逛街')}>逛街散步<br /><small>1 行动·300元</small></button>
-                  <button onClick={() => date(c.id, '电影')}>看电影<br /><small>1 行动·200元</small></button>
-                  <button onClick={() => date(c.id, '吃饭')}>一起吃饭<br /><small>1 行动·500元</small></button>
-                  <button onClick={() => date(c.id, '旅行')}>短途旅行<br /><small>1 行动·3000元</small></button>
-                  <button onClick={() => date(c.id, '礼物')}>送礼物<br /><small>1 行动·1000元起</small></button>
-                  <button onClick={() => date(c.id, '表白')}>坦诚表白<br /><small>需好感度 ≥ 60</small></button>
-                  <button onClick={() => marry(c.id)}>登记结婚<br /><small>需好感度 ≥ 80</small></button>
+                  <button disabled={c.本年约会?.includes('散步')} onClick={() => date(c.id, '散步')}>散步<br /><small>{c.本年约会?.includes('散步') ? '本年已约' : '300元'}</small></button>
+                  <button disabled={c.本年约会?.includes('吃饭')} onClick={() => date(c.id, '吃饭')}>吃饭<br /><small>{c.本年约会?.includes('吃饭') ? '本年已约' : '500元'}</small></button>
+                  <button disabled={c.本年约会?.includes('电影')} onClick={() => date(c.id, '电影')}>看电影<br /><small>{c.本年约会?.includes('电影') ? '本年已约' : '200元'}</small></button>
+                  <button disabled={c.本年约会?.includes('旅行')} onClick={() => date(c.id, '旅行')}>短途旅行<br /><small>{c.本年约会?.includes('旅行') ? '本年已约' : '3000元'}</small></button>
+                  <button onClick={() => date(c.id, '表白')}>坦诚表白<br /><small>1 行动 · 好感 ≥ 60</small></button>
+                  <button onClick={() => marry(c.id)}>登记结婚<br /><small>1 行动 · 好感 ≥ 80</small></button>
                 </>
               }
             />
           ))}
           <button className="btn-line" disabled={game.actions <= 0} onClick={meetMore}>
-            请朋友再介绍几位<span className="cost">-1 行动</span>
-            <small>重新认识 3 位可以相处的人，原有关系会保留</small>
+            请朋友再介绍两位<span className="cost">-1 行动</span>
+            <small>重新认识 2 位可以相处的人</small>
           </button>
         </>
       ) : null}
 
       <div className="sec-title mt14">工作与社会关系</div>
-      <div className="hint mb12">人脉是晋升中分量最重的一项。每次互动消耗 1 次行动。</div>
+      <div className="hint mb12">人脉是晋升中分量最重的一项，每次互动消耗 1 次行动。</div>
       {game.npcs.map((n) => (
         <NpcCard
           key={n.id}

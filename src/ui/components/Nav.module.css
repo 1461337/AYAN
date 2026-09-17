@@ -23,8 +23,14 @@
   .nl { font-size: 14px; }
 }
 @media (min-width: 768px) and (max-width: 1023px) {
-  .nav { grid-template-columns: repeat(9, 1fr); padding: 6px 6px calc(4px + var(--safe-b)); }
+  .nav { grid-template-columns: repeat(6, 1fr); padding: 6px 6px calc(4px + var(--safe-b)); }
   .ni { font-size: 20px; }
   .nl { font-size: 10.5px; letter-spacing: 0; }
   .tab { padding: 5px 1px; }
+}
+@media (max-width: 640px) {
+  .nav { padding: 5px 4px calc(4px + var(--safe-b)); }
+  .tab { padding: 4px 2px; }
+  .ni { font-size: 19px; }
+  .nl { font-size: 10.5px; letter-spacing: 0; }
 }

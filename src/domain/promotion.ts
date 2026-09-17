@@ -4,11 +4,12 @@ import { chance, pick, rnd } from './rng'
 import { applyEffect } from './effects'
 import {
   ladder, majorGroup, networkScore, nextRankInfo, 提任年龄上限, 二线年龄,
-  indicatorList, 条线Of, 岗位平台, 是高配, 是党政班子, 是二线, 是实权, 专业条线匹配,
+  indicatorList, 条线Of, 岗位平台, 是高配, 是党政班子, 是二线, 是实权, 是基层岗位, 专业条线匹配,
   zhijiFloorOf, 家庭系数, eduIdxOf,
 } from './selectors'
 import { 专业偏好条线, 职务阶梯 } from '../data/static'
 import { 生成调查事件 } from './discipline'
+import { 晋升职位池 } from './positions'
 
 export interface PromoteResult {
   kind: 'toast' | 'modal' | 'none'
@@ -129,11 +130,12 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
   const L = ladder(g)
   const def = L[idx]
   if (!def) return []
-  const pool: string[] = (def.例 && def.例.length) ? def.例.slice() : [def.名]
+  let pool: { 名: string }[] = 晋升职位池(g, idx)
   if (g.p.年龄 >= 二线年龄(g)) {
-    pool.splice(0, pool.length, '人大常委会副主任', '人大专门委员会主任委员', '政协副主席', '政协秘书长', '政府参事')
+    pool = ['人大常委会副主任', '人大专门委员会主任委员', '政协副主席', '政协秘书长', '政府参事'].map((名) => ({ 名 }))
   }
-  while (pool.length < 3) pool.push(def.名 + '（' + pick(['综合', '业务', '行政']) + '）')
+  if (!pool.length) pool = [{ 名: def.名 }]
+  while (pool.length < 3) pool.push({ 名: def.名 + '（' + pick(['综合', '业务', '行政']) + '）' })
 
   const 专业 = (专业偏好条线[majorGroup(g.p.专业) || ''] || []).slice()
   const 现条线 = 条线Of(g.positions[0] && g.positions[0].岗位)
@@ -141,6 +143,7 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
   const 有基层经历 = !!g.flags['基层经历']
   const 有党政经历 = !!g.flags['党政班子经历']
   const 现平台 = g.p.平台 || '市级'
+  const 现城市 = g.p.城市
   const 序号: Record<string, number> = { '乡镇级': 0, '县级': 1, '区级': 1, '市级': 2, '省级': 3 }
 
   let 突出数 = 0
@@ -149,16 +152,17 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
     if (d) indicatorList(g, d).forEach((x) => { if (x.已达20) 突出数++ })
   }
   const 高配概率 = 突出数 >= 4 ? 0.75 : 突出数 >= 2 ? 0.4 : 0.12
-  const 有本级 = pool.some((x) => 岗位平台(x) === 现平台)
+  const 有本级 = pool.some((x) => 岗位平台(x.名) === 现平台)
 
-  const 评分 = pool.map((名) => {
+  const 评分 = pool.map(({ 名 }) => {
     let sc = rnd(0, 4)
     const 理由: string[] = []
     const 条 = 条线Of(名)
     const 岗台 = 岗位平台(名)
-    const 基层 = /乡长|镇长|街道办|乡政府|镇政府|乡镇党委|街道党工委/.test(名)
+    const 基层 = 是基层岗位(名)
     const 高层 = /省|部|国家|中央/.test(名)
     const 主官 = (条 === '主官')
+    const 组宣统 = /组织部|宣传部|统战部/.test(名)
     const 党政 = 是党政班子(名)
     const 高配 = 是高配(名)
     const 二线 = 是二线(名)
@@ -178,11 +182,13 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
       } else sc -= 12
     } else if (d >= 2) sc -= 16
     else sc -= 4
-    if (条 !== '综合' && 条 !== '主官' && 条 !== '其他' && 专业.includes(条)) { sc += 4; 理由.push('与你的专业对口') }
+    if (名.includes(现城市)) { sc += 4; 理由.push('就地提任，熟悉本地情况') }
+    if (条 !== '综合' && 条 !== '主官' && 条 !== '其他' && 条 !== '人大政协' && 专业.includes(条)) { sc += 4; 理由.push('与你的专业对口') }
     else if (条 === '综合' && 专业.includes('综合')) { sc += 2; 理由.push('综合管理岗位，与你所学相近') }
-    if (主官) { sc += 专业.includes('综合') ? 2 : 0; 理由.push('主官岗位，综合性强') }
-    if (条 === 现条线 && 条 !== '其他') { sc += 3; 理由.push('延续你现在的条线') }
-    if (条 === 单位条线 && 条 !== '其他') { sc += 2; 理由.push('与所在单位业务相通') }
+    if (主官) { sc += 专业.includes('综合') ? 4 : 2; 理由.push('党政主官岗位') }
+    if (组宣统 && !主官) { sc += 2; 理由.push('党委组宣统序列') }
+    if (条 === 现条线 && 条 !== '其他' && 条 !== '人大政协') { sc += 3; 理由.push('延续你现在的条线') }
+    if (条 === 单位条线 && 条 !== '其他' && 条 !== '人大政协') { sc += 2; 理由.push('与所在单位业务相通') }
     if (基层) {
       if (有基层经历) { sc += 1; 理由.push('你已有基层经历，回去是压担子') }
       else { sc += 3; 理由.push('需要到基层历练一段') }
@@ -210,7 +216,7 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
     if (g.p.选调生) sc += 1
     return {
       名, sc, 高配, 党政, 二线, 实权, 平台: 岗台, 级别: def.名, 条线: 条,
-      理由: 理由.length ? Array.from(new Set(理由)) : ['组织统一安排'],
+      理由: 理由.length ? Array.from(new Set(理由)).slice(0, 3) : ['组织统一安排'],
     }
   })
   评分.sort((a, b) => b.sc - a.sc)
@@ -225,14 +231,14 @@ export function posHint(p: AdvicePosition): string {
   const 理由 = (p && p.理由) ? p.理由.join('、') : ''
   const 补: string[] = []
   if (p && p.党政) 补.push('党委序列')
-  if (/乡长|镇长|街道办|乡政府|镇政府/.test(名)) 补.push('基层一线，直接面对群众')
+  if (是基层岗位(名)) 补.push('基层一线，直接面对群众')
   if (/省|部|国家|中央/.test(名)) 补.push('离决策层近，人脉提升快')
   if (/县|区/.test(名) && !/省|市/.test(名)) 补.push('承上启下，事务最杂')
   return [理由].concat(补).filter(Boolean).join('；')
 }
 
 export function posEffect(g: GameState, 名: string): string {
-  if (/乡长|镇长|街道办|乡政府|镇政府/.test(名)) {
+  if (是基层岗位(名)) {
     applyEffect(g, { 道德: 2, 声望: 4, 政绩: 60, 人脉: 1, 健康: -2 })
     return '基层的两年，你走遍了辖区的每个村。群众认得你，也愿意跟你说实话。'
   }
@@ -251,7 +257,7 @@ export function posEffect(g: GameState, 名: string): string {
 export function settlePosition(g: GameState, pos: string): void {
   const L = ladder(g)
   const 职级名 = (g.rankIdx >= 0 && L[g.rankIdx]) ? L[g.rankIdx].名 : (g.rankIdx < 0 ? '科员' : '—')
-  if (/乡长|镇长|街道办|乡政府|镇政府|乡镇党委|街道党工委/.test(pos)) g.flags['基层经历'] = true
+  if (是基层岗位(pos)) g.flags['基层经历'] = true
   if (是党政班子(pos)) g.flags['党政班子经历'] = true
   if (是高配(pos)) g.flags['高配经历'] = true
   const 新台 = 岗位平台(pos)

@@ -98,6 +98,7 @@ export interface Candidate {
   面: string
   memory: string[]
   notes: string
+  本年约会?: string[]
 }
 
 export interface Spouse {
@@ -389,4 +390,4 @@ export interface GameState {
   yearLog: LogEntry[]
 }
 
-export type TabId = '事件' | '施政' | '城建' | '人脉' | '进修' | '资产' | '廉政' | '档案' | '健康'
+export type TabId = '年度' | '政务' | '人脉' | '生活' | '资产' | '档案'

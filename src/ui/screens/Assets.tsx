@@ -37,7 +37,7 @@ export function Assets() {
         五险一金：<b className="dn">-{fmt(五险一金(game))}</b> 元　个人所得税：<b className="dn">-{fmt(个税(game))}</b> 元<br />
         <b>实发工资：{fmt(实发(game))} 元 / 月</b>　社会保险与公积金按规定比例代扣<br />
         住房公积金账户：<b className="ok-txt">{fmt(game.fund || 0)}</b> 元（单位与个人各缴 12%，可用于购房与还贷）<br />
-        <span className="hint">年终考核奖另计，约为 1—3 个月应发工资；每两年晋一档，工资约涨 2%。</span>
+        <span className="hint">年终奖约 1—3 个月工资；每两年晋档，工资约涨 2%。</span>
       </div>
       <div className="sec-title">每年收支</div>
       <div className="box">
@@ -140,7 +140,7 @@ export function Assets() {
       })}
       <div className="sec-title">投资与产业</div>
       <div className="box">{a.投资.length ? a.投资.map((x, i) => <span key={i}>· {x}<br /></span>) : '暂无合法投资。'}</div>
-      <div className="hint">不能出现无来源的巨额财富变化。所有资产、贷款、月供都会逐年真实结算；逾期会形成不良记录并影响声誉。</div>
+      <div className="hint">资产、贷款与月供逐年真实结算；逾期会形成不良记录并影响声誉。</div>
     </Card>
   )
 }

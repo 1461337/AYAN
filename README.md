@@ -45,7 +45,7 @@ src/
   domain/       # 纯游戏逻辑：晋升、经济、事件、纪律、年度结算等
   data/         # 静态数据：施政题库、职级序列、专业、资产、平台等
   store/        # Zustand 状态与全部游戏动作
-  ui/           # React 组件与九个功能页签
+  ui/           # React 组件与六个功能页签（年度 / 政务 / 人脉 / 生活 / 资产 / 档案）
   persistence/  # localStorage 存档
   styles/       # 设计 tokens 与全局样式
 ```

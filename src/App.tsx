@@ -7,28 +7,22 @@ import { HelpModal } from './ui/components/HelpModal'
 import { Toast } from './ui/components/Toast'
 import { Setup } from './ui/screens/Setup'
 import { Events } from './ui/screens/Events'
-import { Shixi } from './ui/screens/Shixi'
-import { City } from './ui/screens/City'
+import { Politics } from './ui/screens/Politics'
 import { People } from './ui/screens/People'
-import { Study } from './ui/screens/Study'
+import { Life } from './ui/screens/Life'
 import { Assets } from './ui/screens/Assets'
-import { Integrity } from './ui/screens/Integrity'
-import { Archive } from './ui/screens/Archive'
-import { Health } from './ui/screens/Health'
+import { Records } from './ui/screens/Records'
 import { End } from './ui/screens/End'
 import type { TabId } from './domain/types'
 import styles from './App.module.css'
 
 const VIEWS: Record<TabId, () => React.ReactElement> = {
-  事件: Events,
-  施政: Shixi,
-  城建: City,
+  年度: Events,
+  政务: Politics,
   人脉: People,
-  进修: Study,
+  生活: Life,
   资产: Assets,
-  廉政: Integrity,
-  档案: Archive,
-  健康: Health,
+  档案: Records,
 }
 
 export default function App() {

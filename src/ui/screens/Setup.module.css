@@ -51,3 +51,10 @@
   .gridForm { grid-template-columns: 1fr 1fr; }
   .fieldName, .fieldJob { grid-column: 1 / -1; }
 }
+@media (max-width: 640px) {
+  .overlay { padding: 18px 10px calc(24px + var(--safe-b)); }
+  .title { font-size: 23px; }
+  .setupCard { padding: 16px 13px 18px; }
+  .gridForm { grid-template-columns: 1fr; gap: 0; }
+  .fieldName, .fieldJob { grid-column: auto; }
+}

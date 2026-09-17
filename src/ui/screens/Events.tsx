@@ -1,7 +1,31 @@
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
 import { nextRankInfo, indicatorList } from '../../domain/selectors'
+import { lastSaveTime } from '../../persistence/save'
 import { fmt } from '../../utils/format'
+
+function SaveCard() {
+  const save = useGame((s) => s.save)
+  const load = useGame((s) => s.load)
+  const reset = useGame((s) => s.reset)
+  useGame((s) => s.toastId)
+  const t = lastSaveTime()
+  return (
+    <div className="card" style={{ borderColor: '#e8c56a', background: '#fffdf4', marginBottom: 12 }}>
+      <div className="card-bd" style={{ padding: '11px 13px' }}>
+        <div className="ap-row" style={{ marginBottom: 8 }}>
+          <span className="sec-title" style={{ margin: 0, color: '#9a7a24', borderLeftColor: '#e8c56a' }}>存档</span>
+          <span className="hint" style={{ margin: 0 }}>上次保存：{t || '尚未保存'}</span>
+        </div>
+        <div className="btn-row" style={{ marginTop: 0 }}>
+          <button className="btn-plain" onClick={save}>保存存档</button>
+          <button className="btn-plain" onClick={load}>读取存档</button>
+          <button className="btn-plain" onClick={reset}>重开人生</button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function Events() {
   const game = useGame((s) => s.game)!
@@ -12,43 +36,43 @@ export function Events() {
 
   if (pendingEvent) {
     return (
-      <Card icon="⚠️" title="突发事件 · 待决策">
-        <div className="tags">
-          <span className="tag red">待你决定</span>
-          <span className="tag gray">{pendingEvent.类型}</span>
-          <span className="tag gray">{game.date.y} 年 {pendingEvent.月 || '?'} 月</span>
-        </div>
-        <div className="sec-title">{pendingEvent.标题}</div>
-        <div className="txt"><p>{pendingEvent.描述}</p></div>
-        {pendingEvent.背景 ? <div className="box">{pendingEvent.背景}</div> : null}
-        <div className="mt6">
-          {pendingEvent.月 ? <div className="hint mb12">这件事发生在 {game.date.y} 年 {pendingEvent.月} 月。不同的处置方式，会带来不同的奖励与后果。</div> : null}
-          {pendingEvent.选项.map((o, i) => (
-            <button className="btn-line" key={i} onClick={() => chooseEvent(i)}>
-              {o.text}
-              {o.hint ? <small>{o.hint}</small> : null}
-            </button>
-          ))}
-        </div>
-        <div className="hint">每个选项都会留下痕迹。系统不会告诉你哪个“正确”。</div>
-      </Card>
+      <>
+        <SaveCard />
+        <Card icon="⚠️" title="突发事件 · 待决策">
+          <div className="tags">
+            <span className="tag red">待你决定</span>
+            <span className="tag gray">{pendingEvent.类型}</span>
+            <span className="tag gray">{game.date.y} 年 {pendingEvent.月 || '?'} 月</span>
+          </div>
+          <div className="sec-title">{pendingEvent.标题}</div>
+          <div className="txt"><p>{pendingEvent.描述}</p></div>
+          {pendingEvent.背景 ? <div className="box">{pendingEvent.背景}</div> : null}
+          <div className="mt6">
+            {pendingEvent.月 ? <div className="hint mb12">这件事发生在 {game.date.y} 年 {pendingEvent.月} 月。不同的处置方式，会带来不同的奖励与后果。</div> : null}
+            {pendingEvent.选项.map((o, i) => (
+              <button className="btn-line" key={i} onClick={() => chooseEvent(i)}>
+                {o.text}
+                {o.hint ? <small>{o.hint}</small> : null}
+              </button>
+            ))}
+          </div>
+          <div className="hint">每个选项都会留下痕迹。系统不会告诉你哪个“正确”。</div>
+        </Card>
+      </>
     )
   }
 
   const ni = nextRankInfo(game)
   return (
     <>
+      <SaveCard />
       {game.date.y - (game.beginYear || game.date.y) < 3 && game.status !== '退休' ? (
         <div className="card" style={{ borderColor: '#e8d5a8', background: '#fffdf4', marginBottom: 12 }}>
           <div className="card-bd" style={{ padding: '13px 14px' }}>
             <div className="sec-title" style={{ color: '#9a7a24', borderLeftColor: '#e8c56a' }}>上手指引（前三年显示）</div>
-            <div className="hint" style={{ margin: 0, lineHeight: 1.85 }}>
-              每年有 <b>5 次行动</b>，建议这样分配：<b>3 次施政</b>（做实事，积累政绩）
-              ＋ <b>1 次向领导汇报</b>（提升领导评价）＋ <b>剩下的留给家庭、健康或廉政梳理</b>。<br />
-              晋升要看 <b>六项指标</b>：政绩、能力、道德、领导评价、人脉、健康。点开「🧰 施政」页能看到每一项的完成情况与差距。<br />
-              任职年限一到会自动进入考察；考察没通过也不会白费，补齐差距可以再申请。<br />
-              第一次晋升的把握本来就不小，先把政绩和领导评价养起来，再去申请。<br />
-              <b>岗位的轻重，组织上不会明说</b>——同样是"副市长"，市委常委和普通副市长分量完全不同。哪一步值得走，要你自己判断。
+            <div className="hint" style={{ margin: 0, lineHeight: 1.75 }}>
+              每年 5 次行动，建议 3 次施政 + 1 次向领导汇报，其余留给家庭、健康或廉政。<br />
+              晋升看六项指标，完成情况见「🏛️ 政务」页；任职年限一到自动进入考察。
             </div>
           </div>
         </div>
@@ -64,7 +88,7 @@ export function Events() {
         <div className="box">
           当前健康：<b className={game.p.健康 < 30 ? 'bad-txt' : game.p.健康 < 80 ? '' : 'ok-txt'}>{game.p.健康}</b>
           <div className="bar"><i style={{ width: `${game.p.健康}%` }} /></div>
-          <span className="hint">健康是六项晋升指标之一。可免费休养 +5—10，或花行动与现金调养 +10—20、专业健康管理 +20—25，详见「🩺 健康」页。</span>
+          <span className="hint">健康是六项晋升指标之一，可免费休养 +5—10，详见「🌿 生活」页。</span>
         </div>
 
         {game.status !== '退休' && ni.def ? (
@@ -89,15 +113,14 @@ export function Events() {
                 )
               })}
             </div>
-            <div className="hint">六项指标中，若四项「表现突出」，组织上会考虑提前 1—2 年提拔；若四项「位列前茅」，可提前 3—4 年。</div>
+            <div className="hint">四项「表现突出」可提前 1—2 年提拔，四项「位列前茅」可提前 3—4 年。</div>
           </>
         ) : null}
 
         <div className="sec-title mt14">本年度工作安排</div>
         <div className="txt">
-          <p>本模拟器<b>按年推进</b>：每年一次工作安排，共 <b>5 次</b>行动额度。</p>
-          <p>行动用于施政、感情与家庭、协调关系、廉政梳理和在职学习；用完后点「结束本年」。</p>
-          <p>职务晋升有最低任职年限，<b>年限一到会自动进入考察程序</b>，也可以主动申请。</p>
+          <p>每年 5 次行动，由施政、家庭、关系、廉政与学习共用；用完后结束本年。</p>
+          <p>任职年限一到自动进入考察，也可主动申请；岗位大概率在本地区产生。</p>
         </div>
         <div className="ap-row">
           本年剩余行动：<b>{game.actions} / {game.actionsMax} 次</b>
@@ -107,7 +130,7 @@ export function Events() {
           ? <button className="btn-red gray" onClick={endYear}>结束本年 · 推进时间 →</button>
           : (
             <>
-              <button className="btn-red" onClick={() => setTab('施政')}>前往安排本年工作 →</button>
+              <button className="btn-red" onClick={() => setTab('政务')}>前往安排本年工作 →</button>
               <button className="btn-red gray" onClick={endYear}>结束本年 · 推进时间 →</button>
             </>
           )}

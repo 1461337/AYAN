@@ -24,7 +24,7 @@ export function Integrity() {
       {lux > 0 && isPub ? (
         <div className="box warn-box">
           <b className="bad-txt">超标资产提示</b><br />
-          名下 {lux} 项资产明显超出正常工资水平。每年组织考察阶段都可能有纪律审查、监察调查，请自行判断是否处置。
+          名下 {lux} 项资产明显超出正常工资水平，每年考察都可能被要求说明来源。
         </div>
       ) : null}
       {game.discipline.案件 && game.discipline.案件.length ? (
@@ -33,7 +33,7 @@ export function Integrity() {
           <div className="box warn-box">
             <b className="bad-txt">已掌握在案 {game.discipline.案件.length} 笔，合计 {fmt(涉案金额(game))} 元</b><br />
             {game.discipline.案件.slice(-4).map((c, i) => <span key={i}>· {c.年}年　{c.事由}　{fmt(c.金额)} 元<br /></span>)}
-            <span className="hint">每一笔都记在案上。风险指数以此为底线，不会随时间冲淡。被调查时，这些就是证据。</span>
+            <span className="hint">每一笔都记在案上，构成风险下限，不会随时间冲淡。</span>
           </div>
         </>
       ) : null}
@@ -43,10 +43,10 @@ export function Integrity() {
       <div className="box">
         {game.discipline.records.length ? game.discipline.records.map((x, i) => <span key={i}>· {x}<br /></span>) : '暂无异常记录。'}
       </div>
-      <div className="hint">纪律不会因为你是主角而自动放过问题。过去的行为不会因为“想洗白”就消失。</div>
+      <div className="hint">过去的行为不会消失，收下的每一笔都会留在案卷里。</div>
       <button className="btn-line" disabled={game.actions <= 0 || game.status === '退休'} onClick={audit}>
         主动梳理本人及分管领域的廉政风险点<span className="cost">-1 行动</span>
-        <small>耗时一整段工作时间。可能降低风险、积累口碑，也可能反而暴露更多问题。</small>
+        <small>可能降低风险，也可能暴露更多问题。</small>
       </button>
     </Card>
   )
