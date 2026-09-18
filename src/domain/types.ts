@@ -68,6 +68,8 @@ export interface ShixiItem {
   职业?: Job[]
   /** 适用职级（含端点），缺省则不限 */
   职级范围?: [number, number]
+  /** 适用岗位条线（如 宣传、公安、纪检）；缺省为通用题 */
+  条线?: string[]
 }
 
 export interface Npc {

@@ -49,8 +49,8 @@ const 职业最低年: Record<string, number[]> = {
 export function 条线Of(名: string | undefined | null): string {
   if (!名) return '其他'
   if (/人大常委会|政协/.test(名)) return '人大政协'
-  if (/县委书记|区委书记|市委书记|省委书记|县长|区长|市长|省长|乡长|镇长|副乡长|副镇长|副县长|副区长|副市长|副省长|[乡镇]党委书记|国务委员|副总理/.test(名)) return '主官'
   for (const [k, ws] of 条线词表) if (ws.some((w) => 名.includes(w))) return k
+  if (/县委书记|区委书记|市委书记|省委书记|县长|区长|市长|省长|乡长|镇长|副乡长|副镇长|副县长|副区长|副市长|副省长|[乡镇]党委书记|国务委员|副总理/.test(名)) return '主官'
   if (/助理|常务|常委|秘书长|办公室主任|副书记/.test(名)) return '综合'
   return '其他'
 }

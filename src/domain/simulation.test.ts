@@ -5,7 +5,7 @@ import { endYear } from './year'
 import { applyEffect, 快照, 案件风险底 } from './effects'
 import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
 import { genPositions, doPromote, settlePosition, 向上社交 } from './promotion'
-import { nextRankInfo, ladder } from './selectors'
+import { nextRankInfo, ladder, 条线Of } from './selectors'
 import { disciplineTick, 处置结果, 生成调查事件 } from './discipline'
 import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, retiredMini, npcTick, cityTick, 政府事件标题 } from './events'
 import { makeShixiOrder, ALL_SHIXI, 可用题目, 题目套 } from './quiz'
@@ -863,6 +863,30 @@ describe('本地化晋升', () => {
         }
       }
     }
+  })
+
+  it('行动题库按岗位条线匹配：宣传岗出宣传题、纪检岗出纪检题', () => {
+    setRandomSource(mulberry32(105))
+    const mk = (岗位: string) => {
+      const g = newState({ name: '周正', sex: '男', age: 52, major: '法学', job: '公务员' })
+      g.rankIdx = 6
+      g.p.平台 = '省级'
+      g.positions = [{ 年: g.date.y, 职级: '省部级副职', 岗位, 条线: 条线Of(岗位) }]
+      return 可用题目(g).map((i) => ALL_SHIXI[i].名)
+    }
+    const 宣传 = mk('省委常委、宣传部部长兼省委网信办主任')
+    expect(宣传).toContain('意识形态与舆情·省部')
+    expect(宣传).not.toContain('纪检监察与作风·省部')
+    expect(宣传).not.toContain('公安与治安·省部')
+    const 纪检 = mk('省纪委书记、省监委主任')
+    expect(纪检).toContain('纪检监察与作风·省部')
+    expect(纪检).not.toContain('意识形态与舆情·省部')
+    const 公安 = mk('副省长、省公安厅厅长')
+    expect(公安).toContain('公安与治安·省部')
+    expect(宣传.length).toBeGreaterThanOrEqual(3)
+    // 高级领导通用题（巡视下级等）任何岗位都应出现
+    expect(宣传).toContain('巡视巡察下级·省部')
+    expect(公安).toContain('听取汇报与督查·省部')
   })
 
   it('人大/政协正职属二线不得再提拔，兼任不算', () => {

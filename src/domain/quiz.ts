@@ -4,27 +4,32 @@ import { SHIXI_EXTRA } from '../data/shixiExtra'
 import { SHIXI_HIGH } from '../data/shixiHigh'
 import { SHIXI_COUNT } from '../data/static'
 import { shuffle } from './rng'
+import { 条线Of } from './selectors'
 
 export const ALL_SHIXI = [...SHIXI, ...SHIXI_EXTRA, ...SHIXI_HIGH]
 const 公务池: Job[] = ['公务员', '事业单位', '国企']
 
 export function 可用题目(g: GameState): number[] {
   const job = g.p.职业
-  const list = ALL_SHIXI
+  const 条 = 条线Of(g.positions[0]?.岗位 || g.p.单位 || '')
+  const 基础 = ALL_SHIXI
     .map((it, i) => ({ it, i }))
     .filter(({ it }) => {
       const 职业 = it.职业
       if (职业 && 职业.length && !职业.includes(job)) return false
-      if (!职业 || !职业.length) {
-        if (!公务池.includes(job)) return false
-      }
+      if ((!职业 || !职业.length) && !公务池.includes(job)) return false
       if (it.职级范围) {
         const [低, 高] = it.职级范围
         if (g.rankIdx < 低 || g.rankIdx > 高) return false
       }
       return true
     })
-    .map((x) => x.i)
+  // 岗位条线匹配的题优先，通用题保底
+  const 命中 = 基础.filter(({ it }) => it.条线 && it.条线.includes(条))
+  const 通用 = 基础.filter(({ it }) => !it.条线 || !it.条线.length)
+  const 合并 = [...命中, ...通用]
+  const 选 = 合并.length >= 3 ? 合并 : 基础
+  const list = 选.map((x) => x.i)
   return list.length ? list : ALL_SHIXI.map((_, i) => i)
 }
 
