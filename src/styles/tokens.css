@@ -24,6 +24,14 @@ body {
   text-rendering: optimizeLegibility;
   overscroll-behavior-y: none;
 }
+/* 触屏设备去掉 fixed 背景，滚动更顺滑 */
+@media (hover: none), (pointer: coarse) {
+  body { background-attachment: scroll; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  html { scroll-behavior: auto; }
+}
 .hidden { display: none !important; }
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; transition: transform .12s ease, box-shadow .15s ease, background .15s ease, color .15s ease, opacity .15s ease; touch-action: manipulation; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--gold-dim); outline-offset: 2px; }
@@ -43,11 +51,11 @@ select {
 /* ============ 通用卡片 ============ */
 .card {
   background: var(--card); border: 1px solid var(--line); border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(90, 60, 20, .05), var(--shadow); margin-bottom: 12px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(90, 60, 20, .05), var(--shadow); margin-bottom: 10px; overflow: hidden;
   transition: box-shadow .2s ease, border-color .2s ease;
 }
 .card-hd {
-  padding: 14px 14px 12px; border-bottom: 1px solid #f0e7d4;
+  padding: 12px 14px 11px; border-bottom: 1px solid #f0e7d4;
   display: flex; align-items: center; gap: 9px; background: linear-gradient(180deg, #fffdf6, #fbf5e7);
 }
 .card-hd .ic { font-size: 19px; }
@@ -71,7 +79,7 @@ select {
 .tag.gray { color: var(--muted); border: 1.5px solid var(--line); background: #f7f3ea; }
 .tag-xd { background: rgba(255, 215, 120, .3); color: #fff5d8; }
 .sec-title {
-  font-size: 15.5px; font-weight: 800; color: #1f6b45; letter-spacing: .5px; margin: 16px 0 10px;
+  font-size: 15.5px; font-weight: 800; color: #1f6b45; letter-spacing: .5px; margin: 14px 0 8px;
   padding-left: 9px; border-left: 3px solid #9ecfb0; line-height: 1.35;
 }
 .sec-title:first-child { margin-top: 0; }
@@ -88,7 +96,7 @@ select {
 .txt .gm { color: var(--green); font-weight: 800; }
 .box {
   background: #fdf6e6; border-radius: 10px; padding: 11px 13px; font-size: 13.5px; line-height: 1.7;
-  color: #6c5a3d; margin-bottom: 12px; word-break: break-word;
+  color: #6c5a3d; margin-bottom: 10px; word-break: break-word;
 }
 .box b { color: #4a3d28; }
 .box.sm { padding: 8px 10px; font-size: 12.5px; }
@@ -100,9 +108,9 @@ select {
 .btn-main {
   width: 100%; min-height: 52px; padding: 14px; border-radius: 13px; font-size: 16px; font-weight: 800; letter-spacing: 2px;
   color: #fff6dd; background: linear-gradient(180deg, #c02623, #8f1414);
-  box-shadow: 0 6px 0 #5e0b0c, 0 8px 18px rgba(0, 0, 0, .3);
+  box-shadow: 0 5px 0 #5e0b0c, 0 6px 14px rgba(0, 0, 0, .22);
 }
-.btn-main:active { transform: translateY(2px); box-shadow: 0 4px 0 #5e0b0c; }
+.btn-main:active { transform: translateY(2px); box-shadow: 0 3px 0 #5e0b0c; }
 .btn-ghost {
   padding: 9px 14px; border-radius: 9px; border: 1px solid var(--gold-dim); color: #f0d99a;
   background: rgba(255, 255, 255, .06); font-size: 13px; font-weight: 700;
@@ -115,12 +123,12 @@ select {
 .btn-red {
   display: block; width: 100%; text-align: center; padding: 14px; border-radius: 11px;
   color: #fff6dd; font-weight: 800; letter-spacing: 1.5px; font-size: 15.5px;
-  background: linear-gradient(180deg, #c02623, #8f1414); box-shadow: 0 7px 0 #5e0b0c;
+  background: linear-gradient(180deg, #c02623, #8f1414); box-shadow: 0 5px 0 #5e0b0c;
   margin-bottom: 8px;
 }
-.btn-red:active { transform: translateY(3px); box-shadow: 0 4px 0 #5e0b0c; }
-.btn-red.gray { background: linear-gradient(180deg, #9c9184, #6f665c); box-shadow: 0 7px 0 #4e463e; }
-.btn-red:disabled { opacity: .45; box-shadow: 0 4px 0 #5e0b0c; transform: none; }
+.btn-red:active { transform: translateY(2px); box-shadow: 0 3px 0 #5e0b0c; }
+.btn-red.gray { background: linear-gradient(180deg, #9c9184, #6f665c); box-shadow: 0 5px 0 #4e463e; }
+.btn-red:disabled { opacity: .45; box-shadow: 0 3px 0 #5e0b0c; transform: none; }
 .btn-line {
   display: block; width: 100%; min-height: 48px; text-align: left; padding: 12px 13px; border-radius: 12px;
   border: 1px solid var(--line); background: var(--paper); margin-bottom: 9px; font-size: 14.5px;
@@ -245,12 +253,12 @@ select {
 
 /* ============ 折叠 ============ */
 .collapse {
-  border: 1px solid var(--line); border-radius: 10px; margin-bottom: 12px;
+  border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px;
   overflow: hidden; background: #fffdf7;
 }
 .collapse-head {
   width: 100%; display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 12px; font-size: 13.5px; font-weight: 700; color: #5d5147;
+  padding: 11px 13px; font-size: 13.5px; font-weight: 700; color: #5d5147;
 }
 .collapse-arrow { color: var(--muted); font-size: 15px; line-height: 1; }
 .collapse-body { padding: 0 12px 12px; }
