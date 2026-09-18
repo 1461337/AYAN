@@ -1,6 +1,6 @@
 .nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-  background: linear-gradient(180deg, rgba(255, 253, 247, .99), rgba(250, 244, 230, .99));
+  background: var(--nav-bg);
   backdrop-filter: blur(10px);
   border-top: 1px solid var(--line); box-shadow: 0 -3px 16px rgba(90, 60, 20, .1);
   display: grid; grid-template-columns: repeat(3, 1fr);
@@ -16,8 +16,8 @@
 .ni { font-size: 22px; line-height: 1.1; display: block; }
 .nl { font-size: 11.5px; font-weight: 700; letter-spacing: .5px; }
 .on {
-  color: var(--red-700); background: linear-gradient(180deg, #fdf3e2, #fbe9d2);
-  box-shadow: inset 0 0 0 1px #f0dcc0, 0 2px 6px rgba(165, 28, 28, .08);
+  color: var(--red-700); background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--line), 0 2px 6px rgba(0, 0, 0, .05);
 }
 .on .nl { color: var(--red-700); }
 

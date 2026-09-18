@@ -3,7 +3,7 @@
   background:
     radial-gradient(700px 380px at 88% -6%, rgba(255, 214, 130, .16), transparent 62%),
     radial-gradient(620px 420px at 6% 104%, rgba(0, 0, 0, .28), transparent 60%),
-    linear-gradient(170deg, #5e0b0c, #8c1313 45%, #6f0d0e);
+    linear-gradient(170deg, var(--btn-3d), var(--hdr-c) 45%, var(--hdr-a));
   padding: 26px 14px calc(30px + var(--safe-b));
 }
 .wrap { max-width: 760px; margin: 0 auto; }

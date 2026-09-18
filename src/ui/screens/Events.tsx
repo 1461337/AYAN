@@ -41,6 +41,17 @@ function SaveCard() {
   )
 }
 
+function ThemeSwitch() {
+  const theme = useGame((s) => s.theme)
+  const setTheme = useGame((s) => s.setTheme)
+  return (
+    <div className="theme-switch">
+      <button className={theme === 'red' ? 'on' : ''} onClick={() => setTheme('red')}>汉东政务红</button>
+      <button className={theme === 'blue' ? 'on' : ''} onClick={() => setTheme('blue')}>现代政务蓝</button>
+    </div>
+  )
+}
+
 export function Events() {
   const game = useGame((s) => s.game)!
   const chooseEvent = useGame((s) => s.chooseEvent)
@@ -51,6 +62,7 @@ export function Events() {
   if (pendingEvent) {
     return (
       <>
+        <ThemeSwitch />
         <SaveCard />
         <Card icon="⚠️" title="突发事件 · 待决策">
           <div className="tags">
@@ -77,6 +89,7 @@ export function Events() {
   const ni = nextRankInfo(game)
   return (
     <>
+      <ThemeSwitch />
       <SaveCard />
       {game.date.y - (game.beginYear || game.date.y) < 3 && game.status !== '退休' ? (
         <Collapse title="上手指引（前三年显示）">

@@ -1,5 +1,5 @@
 .hdr {
-  background: linear-gradient(160deg, #6f0d0e, #a51c1c 55%, #8c1313);
+  background: linear-gradient(160deg, var(--hdr-a), var(--hdr-b) 55%, var(--hdr-c));
   color: #fff;
   padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 0;
   position: relative;

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>UI 预览 · 宣纸墨韵</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:#f3efe4; font-family:'Songti SC','Noto Serif SC','Source Han Serif SC',serif; color:#2c2a26; display:flex; justify-content:center; min-height:100vh}
+.phone{width:100%; max-width:430px; min-height:100vh; display:flex; flex-direction:column; position:relative; box-shadow:0 0 60px rgba(0,0,0,.12)}
+.hdr{background:linear-gradient(160deg,#2b2b2b,#3d3a35 60%,#242320); color:#f6f1e4; padding:14px 14px 10px}
+.name{font-size:19px; font-weight:800; letter-spacing:1px}
+.name small{font-size:11px;font-weight:600;background:rgba(255,255,255,.08);border:1px solid rgba(214,146,88,.5);color:#c9c0ab;padding:2px 8px;border-radius:20px;margin-left:8px}
+.meta{font-size:12.5px;color:#c9c0ab;margin-top:4px;line-height:1.5}
+.next{margin-top:8px;display:inline-block;font-size:12px;color:#c9c0ab;background:rgba(255,255,255,.08);border:1px solid rgba(214,146,88,.5);border-radius:8px;padding:4px 10px}
+.chips{display:flex;gap:6px;margin-top:10px;overflow-x:auto;padding-bottom:4px}
+.chip{flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(214,146,88,.5);border-radius:8px;padding:4px 10px;font-size:11.5px;color:#c9c0ab;white-space:nowrap}
+.chip b{color:#f6f1e4;font-size:14.5px;margin-left:4px}
+.main{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card{background:#fbf8f0;border:1px solid #ddd6c4;border-radius:8px;box-shadow:0 1px 6px rgba(60,50,30,.10);overflow:hidden}
+.row{padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13.5px;font-weight:700;color:#8a8272}
+.hd{padding:12px 14px;border-bottom:1px solid #ddd6c4;font-weight:800;font-size:15.5px;color:#a63a2a}
+.bd{padding:13px 14px}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tag{font-size:11px;padding:3px 9px;border-radius:8px;border:1px solid #ddd6c4;color:#8a8272}
+.tag.a{border-color:#a63a2a;color:#a63a2a;background:#f6ece6;font-weight:700}
+.ind{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed #ddd6c4;font-size:13px}
+.ind:last-child{border-bottom:none}
+.ind i{font-style:normal;flex:0 0 62px;color:#8a8272;font-weight:700}
+.ind b{flex:1;font-size:14.5px}
+.ind em{font-style:normal;font-size:11px;border-radius:20px;padding:2px 8px;background:#f6ece6;color:#a63a2a}
+.ind em.ok{background:rgba(47,122,79,.12);color:#4a6b45}
+.btns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.btn{display:block;width:100%;text-align:center;padding:13px;border:none;border-radius:5px;font-size:15px;font-weight:800;letter-spacing:1px;color:#fff;background:#a63a2a;box-shadow:0 1px 6px rgba(60,50,30,.10)}
+.btn.ghost{color:#a63a2a;background:#f6ece6;border:1px solid #ddd6c4}
+.nav{position:sticky;bottom:0;margin-top:auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px;background:#fbf8f0;border-top:1px solid #ddd6c4;padding:8px 6px 10px}
+.nav div{text-align:center;font-size:10.5px;color:#8a8272;font-weight:700}
+.nav div span{display:block;font-size:18px;margin-bottom:2px}
+.nav div.on{color:#a63a2a}
+.badge{position:absolute;top:12px;right:12px;font-size:11px;background:rgba(0,0,0,.35);color:#fff;padding:3px 10px;border-radius:20px}
+</style></head>
+<body>
+<div class="phone">
+  <div class="badge">宣纸墨韵</div>
+  <div class="hdr">
+    <div class="name">陆承宇<small>一级主任科员</small></div>
+    <div class="meta">省发展和改革委员会 · 京州市 · 省级 · 2040年 · 24岁 · 本科</div>
+    <div class="next">下一职级：乡科级副职　最低任职 3 年（已任 0 年）</div>
+    <div class="chips">
+      <div class="chip">能力<b>52</b></div><div class="chip">道德<b>64</b></div>
+      <div class="chip">人脉<b>33</b></div><div class="chip">上司<b>44</b></div>
+      <div class="chip">声望<b>48</b></div><div class="chip">健康<b>73</b></div>
+      <div class="chip">廉政风险<b>0</b></div><div class="chip">现金<b>70,537</b></div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="card"><div class="row"><span>存档 · 自动保存（上次：2040 年）</span><span>+</span></div></div>
+    <div class="card">
+      <div class="hd">年度生活与工作</div>
+      <div class="bd">
+        <div class="tags"><span class="tag a">2040 年度</span><span class="tag">高质量发展与产业升级</span><span class="tag">行动 5/5</span></div>
+        <div class="ind"><i>政绩</i><b>0<span style="color:#8a8272;font-size:12px"> / 150</span></b><em>差距较大</em></div>
+        <div class="ind"><i>能力</i><b>52<span style="color:#8a8272;font-size:12px"> / 45</span></b><em class="ok">已达到要求</em></div>
+        <div class="ind"><i>道德</i><b>64<span style="color:#8a8272;font-size:12px"> / 50</span></b><em class="ok">已达到要求</em></div>
+        <div class="ind"><i>领导评价</i><b>44<span style="color:#8a8272;font-size:12px"> / 45</span></b><em>尚需努力</em></div>
+        <div class="ind"><i>人脉</i><b>33<span style="color:#8a8272;font-size:12px"> / 35</span></b><em>尚需努力</em></div>
+        <div class="ind"><i>健康</i><b>73<span style="color:#8a8272;font-size:12px"> / 80</span></b><em>尚需努力</em></div>
+        <div class="btns">
+          <button class="btn">前往安排本年工作 →</button>
+          <button class="btn ghost">结束本年 · 推进时间 →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="on"><span>📅</span>年度</div><div><span>🏛️</span>政务</div><div><span>🕸️</span>人脉</div>
+    <div><span>🌿</span>生活</div><div><span>💰</span>资产</div><div><span>🗂️</span>档案</div>
+  </div>
+</div>
+</body></html>

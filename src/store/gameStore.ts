@@ -12,9 +12,28 @@ import { clamp, fmt } from '../utils/format'
 import { rnd, pick } from '../domain/rng'
 import { clearSave, exportSaveFile, loadGame, parseSave, saveGame } from '../persistence/save'
 
+export type Theme = 'red' | 'blue'
+
+const 初始主题: Theme = (() => {
+  try {
+    if (typeof location !== 'undefined') {
+      const q = new URLSearchParams(location.search).get('theme')
+      if (q === 'blue' || q === 'red') return q
+    }
+    if (typeof localStorage !== 'undefined') {
+      const s = localStorage.getItem('rmdmj_theme')
+      if (s === 'blue' || s === 'red') return s
+    }
+  } catch { /* 忽略读取失败 */ }
+  return 'red'
+})()
+if (typeof document !== 'undefined') document.documentElement.dataset.theme = 初始主题
+
 export interface StoreState {
   game: GameState | null
   curTab: TabId
+  theme: Theme
+  setTheme: (t: Theme) => void
   toastMsg: string
   toastId: number
   showHelp: boolean
@@ -77,6 +96,14 @@ export const useGame = create<StoreState>((set, get) => {
   return {
     game: null,
     curTab: '年度',
+    theme: 初始主题,
+    setTheme: (t) => {
+      set({ theme: t })
+      if (typeof document !== 'undefined') document.documentElement.dataset.theme = t
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.setItem('rmdmj_theme', t)
+      } catch { /* 忽略存储失败 */ }
+    },
     toastMsg: '',
     toastId: 0,
     showHelp: false,

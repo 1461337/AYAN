@@ -49,6 +49,15 @@ describe('存档与感情线动作', () => {
     }
   })
 
+  it('主题可在汉东红与现代蓝之间切换并生效', () => {
+    const before = useGame.getState().theme
+    expect(['red', 'blue']).toContain(before)
+    useGame.getState().setTheme('blue')
+    expect(useGame.getState().theme).toBe('blue')
+    useGame.getState().setTheme('red')
+    expect(useGame.getState().theme).toBe('red')
+  })
+
   it('科员开局只出科员科级题，不出厅局省部题', () => {
     useGame.getState().start({ name: '测试', sex: '男', age: 24, major: '法学', job: '公务员' })
     const g = useGame.getState().game!

@@ -8,6 +8,8 @@ export function Header() {
   const game = useGame((s) => s.game)
   const setHelp = useGame((s) => s.setHelp)
   const save = useGame((s) => s.save)
+  const theme = useGame((s) => s.theme)
+  const setTheme = useGame((s) => s.setTheme)
   if (!game) return null
   const t = rankTitle(game)
   const ni = nextRankInfo(game)
@@ -43,6 +45,7 @@ export function Header() {
             </div>
           </div>
           <div className={styles.hdrRight}>
+            <button className={styles.iconBtn} title={`主题：${theme === 'blue' ? '现代政务蓝' : '汉东政务红'}（点击切换）`} onClick={() => setTheme(theme === 'blue' ? 'red' : 'blue')}>🎨</button>
             <button className={styles.iconBtn} title="保存存档" onClick={save}>💾</button>
             <button className={styles.iconBtn} title="说明" onClick={() => setHelp(true)}>?</button>
             <div className={styles.avatar}>{avatar}</div>
