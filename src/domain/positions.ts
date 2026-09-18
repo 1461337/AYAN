@@ -1,6 +1,6 @@
 import type { GameState, Job, PlatformName } from './types'
 import { 平台表, 职务阶梯 } from '../data/static'
-import { 职业机构 } from '../data/careers'
+import { 职业机构, 职业职称名, 教师高校职称, 教师中小学职称, 医生职称序列 } from '../data/careers'
 import { 政治扩展职位 } from '../data/positionsLib'
 import { shuffle } from './rng'
 
@@ -20,6 +20,11 @@ const 序平台: PlatformName[] = ['乡镇级', '县级', '市级', '省级']
 const 本地最高: number[] = [1, 3, 5, 8]
 /* 非公务员职业各平台可到的最高职级：基层 / 县区 / 市级 / 省级 */
 const 职业最高: number[] = [1, 3, 5, 99]
+/* 教师/医生按职称与医院等级体系单独设顶：市三甲可到医院正副职，省属高校可到院校长 */
+const 职业最高表: Partial<Record<Job, number[]>> = {
+  '教师': [1, 3, 5, 8],
+  '医生': [1, 3, 7, 8],
+}
 
 interface LocalPos {
   名: string
@@ -346,13 +351,21 @@ function 职业职位名(机构: string, 职称: string, 单元: string): string
   return `${机构}${单元}${职称}`
 }
 
-function 职业本层(职业: Job, 序号: number, 职称: string): PoolPos[] {
+const 高校单元 = ['文学院', '理学院', '工学院', '医学院', '教育学院', '经济学院']
+
+function 职业本层(职业: Job, 序号: number, idx: number): PoolPos[] {
   const 机构 = 职业机构(职业, 序号)
   const 单元s = 职业单元[职业] || ['综合部']
   const out: PoolPos[] = []
   机构.forEach((j, ji) => {
-    const 单元 = 单元s[ji % 单元s.length]
-    const 单元2 = 单元s[(ji + 1) % 单元s.length]
+    const 高校 = /大学|学院/.test(j)
+    const 序列 = 职业 === '教师' ? (高校 ? 教师高校职称 : 教师中小学职称) : 职业 === '医生' ? 医生职称序列 : null
+    // 该机构没有这一级岗位（如中小学没有教授/院长序列）
+    if (序列 && idx >= 序列.length) return
+    const 职称 = 序列 ? 序列[Math.min(idx, 序列.length - 1)] : (职业职称名(职业, idx, j) || ladderName(职业, idx))
+    const 单元池 = 职业 === '教师' && 高校 ? 高校单元 : 单元s
+    const 单元 = 单元池[ji % 单元池.length]
+    const 单元2 = 单元池[(ji + 1) % 单元池.length]
     out.push({ 名: 职业职位名(j, 职称, 单元), 序号, 本地: false })
     if (!/总经理|校长|院长|总编辑|处长|科长|主任|经理/.test(职称)) {
       out.push({ 名: 职业职位名(j, 职称, 单元2), 序号, 本地: false })
@@ -412,17 +425,15 @@ function 公务员职位池(g: GameState, idx: number): PoolPos[] {
 function 职业职位池(g: GameState, idx: number): PoolPos[] {
   const 职业 = g.p.职业
   const 现序 = 平台序[g.p.平台]
-  const 上限 = 职业最高[现序]
-  const L = ladderName(职业, idx)
-  if (!L) return []
+  const 上限 = (职业最高表[职业] || 职业最高)[现序]
   const out: PoolPos[] = []
   if (idx <= 上限) {
-    out.push(...职业本层(职业, 现序, L).map((p) => ({ ...p, 本地: true })))
+    out.push(...职业本层(职业, 现序, idx).map((p) => ({ ...p, 本地: true })))
   } else {
     // 一次晋升最多上跨一级平台
     let 目标 = Math.min(3, 现序 + 1)
-    while (目标 < 3 && 职业本层(职业, 目标, L).length === 0) 目标++
-    out.push(...职业本层(职业, 目标, L))
+    while (目标 < 3 && 职业本层(职业, 目标, idx).length === 0) 目标++
+    out.push(...职业本层(职业, 目标, idx))
   }
   return 补齐(out)
 }
@@ -458,7 +469,7 @@ export function 晋升职位池(g: GameState, idx: number): PoolPos[] {
 /* 由岗位名推断所属机构（用于晋升后同步单位） */
 export function 机构Of(名: string, 城市: string, 平台: PlatformName, 职业: Job): string {
   if (职业 !== '公务员') {
-    const m = 名.match(/^(.+?(?:医院|卫生院|融媒体中心|服务中心|疾控中心|中心(?!医院)|学院|学校|中学|小学|日报社|电视台|记者站|集团|公司|企业|研究院|设计院|图书馆|博物馆|文化馆|站))/)
+    const m = 名.match(/^(.+?(?:医院|卫生院|融媒体中心|服务中心|疾控中心|中心(?!医院)|大学|学院|学校|中学|小学|日报社|电视台|记者站|集团|公司|企业|研究院|设计院|图书馆|博物馆|文化馆|站))/)
     return m ? m[1] : 名
   }
   const 条 = 条线OfLocal(名)

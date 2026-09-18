@@ -5,13 +5,13 @@ import { endYear } from './year'
 import { applyEffect, 快照, 案件风险底 } from './effects'
 import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
 import { genPositions, doPromote, settlePosition, 向上社交 } from './promotion'
-import { nextRankInfo } from './selectors'
+import { nextRankInfo, ladder } from './selectors'
 import { disciplineTick, 处置结果, 生成调查事件 } from './discipline'
 import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, retiredMini, npcTick, cityTick, 政府事件标题 } from './events'
 import { makeShixiOrder, ALL_SHIXI } from './quiz'
 import { SHIXI } from '../data/shixi'
 import { SHIXI_EXTRA } from '../data/shixiExtra'
-import { 政治本地职位, 平台序, 机构Of } from './positions'
+import { 政治本地职位, 平台序, 机构Of, 晋升职位池 } from './positions'
 import { ALL_JOBS, 职务阶梯 } from '../data/static'
 import type { AdvicePosition, GameEvent, GameState, Job } from './types'
 
@@ -685,9 +685,45 @@ describe('本地化晋升', () => {
 
   it('非公务员机构识别优先匹配完整后缀（市中心医院）', () => {
     expect(机构Of('市中心医院儿科主任', '京州市', '市级', '医生')).toBe('市中心医院')
+    expect(机构Of('市第一人民医院（三甲）内科主任', '京州市', '市级', '医生')).toBe('市第一人民医院')
     expect(机构Of('市融媒体中心摄影部副主任', '京州市', '市级', '记者')).toBe('市融媒体中心')
     expect(机构Of('乡镇综合服务中心业务科科员', '岩台县', '乡镇级', '事业单位')).toBe('乡镇综合服务中心')
     expect(机构Of('市第二人民医院外科主任', '林城市', '市级', '医生')).toBe('市第二人民医院')
+    expect(机构Of('省师范大学文学院教授', '京州市', '省级', '教师')).toBe('省师范大学')
+  })
+
+  it('教师分中小学与高校双轨，高校可晋升到教授与院校长', () => {
+    setRandomSource(mulberry32(85))
+    const g = newState({ name: '程知远', sex: '男', age: 40, major: '汉语言文学', job: '教师' })
+    g.p.平台 = '省级'
+    g.p.城市 = '京州市'
+    g.p.单位 = '省师范大学'
+    g.rankIdx = 2
+    expect(ladder(g).length).toBe(8)
+    expect(ladder(g)[2].名).toBe('副教授')
+    expect(ladder(g)[7].名).toBe('校长')
+    const 教授岗 = 晋升职位池(g, 3).map((p) => p.名).join('|')
+    expect(教授岗).toContain('教授')
+    g.p.单位 = '省实验中学'
+    expect(ladder(g).length).toBe(6)
+    expect(ladder(g)[5].名).toBe('校长')
+  })
+
+  it('医生按医院等级晋升：市三甲可到副院长/院长', () => {
+    setRandomSource(mulberry32(87))
+    const g = newState({ name: '裴景行', sex: '男', age: 45, major: '临床医学', job: '医生' })
+    g.p.平台 = '市级'
+    g.p.城市 = '京州市'
+    g.p.单位 = '市第一人民医院'
+    expect(ladder(g).length).toBe(8)
+    expect(ladder(g)[7].名).toBe('院长')
+    const 院级岗 = 晋升职位池(g, 6).map((p) => p.名).join('|')
+    expect(院级岗).toContain('三甲')
+    expect(院级岗).toContain('副院长')
+    g.p.平台 = '县级'
+    g.rankIdx = 3
+    const 越层岗 = 晋升职位池(g, 4).map((p) => p.名).join('|')
+    expect(越层岗).toMatch(/三甲|二甲/)
   })
 
   it('人大/政协正职属二线不得再提拔，兼任不算', () => {

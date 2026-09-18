@@ -8,6 +8,7 @@ import {
   zhijiFloorOf, 家庭系数, eduIdxOf, 专业条线匹配,
 } from './selectors'
 import { 专业偏好条线, 职级序列, 平台表 } from '../data/static'
+import { 职业职称名 } from '../data/careers'
 import { 生成调查事件 } from './discipline'
 import { 晋升职位池, 机构Of, 平台序, type PoolPos } from './positions'
 import { makeNpc, makeNpcs, 刷新人脉职务 } from './newGame'
@@ -282,6 +283,15 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
       if (g.p.专业匹配度 >= 90) { sc += 2 }
       if (g.p.单位 && 名.startsWith(g.p.单位)) { sc += 3; 理由.push('留在原单位') }
       else if (同系统(g.p.单位, 名)) { sc += 5; 理由.push('留在本系统') }
+      // 医院等级与高校教职的学历门槛
+      if (g.p.职业 === '医生' && /三甲/.test(名)) {
+        if (eduIdxOf(g.p.学历) >= 3) { sc += 4; 理由.push('三甲医院岗位，学历与科研更占优') }
+        else { sc -= 6; 理由.push('三甲医院岗位普遍要求硕士以上') }
+      }
+      if (g.p.职业 === '教师' && /大学|学院/.test(名)) {
+        if (eduIdxOf(g.p.学历) >= 3) { sc += 4; 理由.push('高校教职，研究生学历是硬门槛') }
+        else { sc -= 6; 理由.push('高校岗位普遍要求硕士以上') }
+      }
     }
     return {
       名, sc, 高配, 党政, 二线, 实权, 平台: 岗台, 级别: def.名, 条线: 条,
@@ -363,7 +373,14 @@ export function settlePosition(g: GameState, pos: AdvicePosition): void {
   const 政治 = g.p.职业 === '公务员'
   const 新序 = pos.序号 ?? 平台序[g.p.平台] ?? 1
   const L = ladder(g)
-  const 职级名 = (g.rankIdx >= 0 && L[g.rankIdx]) ? L[g.rankIdx].名 : (g.rankIdx < 0 ? '科员' : '—')
+  let 职级名 = (g.rankIdx >= 0 && L[g.rankIdx]) ? L[g.rankIdx].名 : (g.rankIdx < 0 ? '科员' : '—')
+  // 教师/医生跨机构时，职级名按目标机构的职称序列取（高校/中小学、医院等级）
+  if ((g.p.职业 === '教师' || g.p.职业 === '医生') && g.rankIdx >= 0) {
+    const 目标城 = pos.城市 || g.p.城市
+    const 机构 = 机构Of(名, 目标城, 平台FromCity(新序, 目标城), g.p.职业)
+    const 职称 = 职业职称名(g.p.职业, g.rankIdx, 机构)
+    if (职称) 职级名 = 职称
+  }
 
   if (政治 && 是基层岗位(名)) g.flags['基层经历'] = true
   if (政治 && 是党政班子(名)) g.flags['党政班子经历'] = true

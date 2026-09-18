@@ -3,6 +3,7 @@ import {
   职务阶梯, LADDERS, mkLadder, 条线词表, 高配岗位, 二线岗位, 提任年龄表,
   ZHIJI_CAP, ZHIJI_FLOOR, MAJOR_FIT, MAJORS, 平台表, 平台集合, 专业偏好条线, EDU_LEVEL,
 } from '../data/static'
+import { 教师高校职称, 教师中小学职称, 医生职称序列 } from '../data/careers'
 import { clamp, fmt } from '../utils/format'
 import { pick } from './rng'
 import { 影响期内, perfLabel } from './effects'
@@ -17,8 +18,20 @@ export function fitOf(major: string, job: string): number {
   return (g && (MAJOR_FIT[g] as Record<string, number>)[job]) || 0
 }
 
+function 附年资(L: RankDef[], 年资: number[]): RankDef[] {
+  return L.map((d, i) => (年资[i] ? { ...d, 最低年: 年资[i] } : d))
+}
+
+/* 教师：中小学职称序列（校长为顶）与高校序列（助教—教授—院系管理）双轨 */
+const 教师中小学阶梯 = 附年资(mkLadder(教师中小学职称, 6200), [3, 4, 5, 3, 3, 4])
+const 教师高校阶梯 = 附年资(mkLadder(教师高校职称, 6600), [3, 4, 5, 5, 3, 3, 4, 5])
+/* 医生：住院—主治—副高—正高，之后是科室与院级管理职务 */
+const 医生阶梯 = 附年资(mkLadder(医生职称序列, 7000), [3, 5, 5, 5, 3, 4, 4, 5])
+
 export function ladder(g: GameState): RankDef[] {
   if (g.p.职业 === '公务员') return 职务阶梯
+  if (g.p.职业 === '教师') return /大学|学院/.test(g.p.单位 || '') ? 教师高校阶梯 : 教师中小学阶梯
+  if (g.p.职业 === '医生') return 医生阶梯
   const L = LADDERS[g.p.职业]
   const base = L || LADDERS['事业单位']
   const 基础 = mkLadder(base.map((x) => x[0]), base[0][1])
@@ -27,10 +40,8 @@ export function ladder(g: GameState): RankDef[] {
   return 基础.map((d, i) => (年资[i] ? { ...d, 最低年: 年资[i] } : d))
 }
 
-/* 职称/职务年资下限：医生、教师等专业序列不该两三年一级 */
+/* 职称/职务年资下限：专业序列不该两三年一级（教师/医生已按轨并入上方阶梯） */
 const 职业最低年: Record<string, number[]> = {
-  '医生': [3, 5, 5, 5, 3, 4],
-  '教师': [3, 4, 5, 3, 3, 4],
   '记者': [3, 2, 3, 3, 3, 4, 4],
   '事业单位': [3, 2, 3, 4, 4, 4],
 }
