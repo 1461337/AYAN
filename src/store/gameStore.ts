@@ -108,7 +108,15 @@ export const useGame = create<StoreState>((set, get) => {
       const 劳损 = rnd(1, 2)
       g.p.健康 = clamp(g.p.健康 - 劳损, 0, 100)
       g.yearLog.unshift({ t: `${g.date.y}年`, h: a.名, kind: '', d: a.desc + `（耗费精力，健康 -${劳损}）` })
-      g.quiz = { item: idx, tier, variant: rnd(0, variants.length - 1), order: [0, 1, 2].sort(() => Math.random() - 0.5) }
+      // 同一职级有多套题时优先抽没做过的，保证每次施政题目随机且不重样
+      const 键 = (v: number) => `${idx}:${tier}:${v}`
+      const 近期 = g._近期题目 || []
+      const 全集 = variants.map((_, i) => i)
+      const 未做 = 全集.filter((i) => !近期.includes(键(i)))
+      const 抽 = 未做.length ? 未做 : 全集
+      const variant = 抽[rnd(0, 抽.length - 1)]
+      g._近期题目 = [...近期.filter((k) => !k.startsWith(`${idx}:${tier}:`)), 键(variant)].slice(-24)
+      g.quiz = { item: idx, tier, variant, order: [0, 1, 2].sort(() => Math.random() - 0.5) }
       set({ game: g })
     },
 

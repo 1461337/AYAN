@@ -111,6 +111,7 @@ export function newState(f: SetupForm): GameState {
     city: { 财政收入: 62, 就业: 58, 房地产: 55, 产业: 54, 公共服务: 60, 交通: 52, 舆论: 60, 矛盾: 38 },
     npcs: [], log: [], flags: {}, over: false,
     pendingEvent: null, pendingPositions: null, pendingPosTitle: '', yearLog: [],
+    _近期事件: [], _近期题目: [],
   }
 
   for (const m of [bg.bonus, JOB_BONUS[f.job] || {}]) {

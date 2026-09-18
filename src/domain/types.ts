@@ -405,6 +405,8 @@ export interface GameState {
   _年初快照?: Snapshot | null
   _晋升消耗?: number
   _本年事件?: string[]
+  _近期事件?: string[]
+  _近期题目?: string[]
   _候选年数?: number
   浪漫方式?: string[]
   pendingEvent: GameEvent | null

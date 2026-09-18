@@ -7,8 +7,10 @@ import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
 import { genPositions, doPromote, settlePosition, 向上社交 } from './promotion'
 import { nextRankInfo } from './selectors'
 import { disciplineTick, 处置结果 } from './discipline'
-import { makeEvent, make腐败事件, makeRetiredEvent, npcTick } from './events'
+import { makeEvent, make腐败事件, makeRetiredEvent, npcTick, 政府事件标题 } from './events'
 import { makeShixiOrder } from './quiz'
+import { SHIXI } from '../data/shixi'
+import { SHIXI_EXTRA } from '../data/shixiExtra'
 import { 政治本地职位, 平台序, 机构Of } from './positions'
 import { 职务阶梯 } from '../data/static'
 import type { GameState, Job } from './types'
@@ -275,17 +277,45 @@ describe('逻辑一致性', () => {
     g.family.配偶 = null
     for (let i = 0; i < 200; i++) {
       expect(makeEvent(g).标题).not.toBe('家里的事')
-      expect(make腐败事件(g)!.标题).not.toBe('配偶收下的钱')
+      const ev = make腐败事件(g)
+      if (ev) expect(ev.标题).not.toBe('配偶收下的钱')
     }
   })
 
   it('非体制内不出现政府类事件', () => {
     setRandomSource(mulberry32(73))
     const g = newState({ name: '周正', sex: '男', age: 26, major: '计算机科学与技术', job: '企业' })
-    const 政府事件 = ['片区改造摸底材料被退回', '群众围堵施工现场', '一份来路不明的举报信']
     for (let i = 0; i < 200; i++) {
-      expect(政府事件).not.toContain(makeEvent(g).标题)
+      expect(政府事件标题).not.toContain(makeEvent(g).标题)
     }
+  })
+
+  it('行动题库每个职级阶段至少三套，且按职级随机抽题', () => {
+    for (const it of SHIXI) {
+      expect(it.asks.length).toBeGreaterThanOrEqual(3)
+      for (const tier of it.asks) expect(tier.length).toBeGreaterThanOrEqual(3)
+    }
+    const 职业s: Job[] = ['事业单位', '国企', '企业', '记者', '教师', '医生']
+    for (const job of 职业s) {
+      const items = SHIXI_EXTRA.filter((it) => !it.职业 || it.职业.includes(job))
+      for (let tier = 0; tier < 3; tier++) {
+        const 题量 = items.reduce((a, it) => a + (it.asks[Math.min(tier, it.asks.length - 1)]?.length || 0), 0)
+        expect(题量).toBeGreaterThanOrEqual(3)
+      }
+    }
+  })
+
+  it('突发事件近期不重复，池子足够大', () => {
+    setRandomSource(mulberry32(79))
+    const g = newState({ name: '周正', sex: '男', age: 30, major: '法学', job: '公务员' })
+    const 标题s: string[] = []
+    for (let i = 0; i < 12; i++) 标题s.push(makeEvent(g).标题)
+    expect(new Set(标题s).size).toBeGreaterThanOrEqual(9)
+    const 退休 = newState({ name: '林远', sex: '男', age: 66, major: '法学', job: '公务员' })
+    退休.status = '退休'
+    const 退休题: string[] = []
+    for (let i = 0; i < 6; i++) 退休题.push(makeRetiredEvent(退休).标题)
+    expect(new Set(退休题).size).toBeGreaterThanOrEqual(5)
   })
 
   it('无子女无房产时不出现对应退休剧情', () => {
