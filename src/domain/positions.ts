@@ -18,8 +18,8 @@ export const 平台序: Record<string, number> = { '乡镇级': 0, '县级': 1, 
 const 序平台: PlatformName[] = ['乡镇级', '县级', '市级', '省级']
 /* 各平台本地可到的最高职级（职级名次） */
 const 本地最高: number[] = [1, 3, 5, 8]
-/* 非公务员职业各平台可到的最高职级 */
-const 职业最高: number[] = [1, 2, 4, 99]
+/* 非公务员职业各平台可到的最高职级：基层 / 县区 / 市级 / 省级 */
+const 职业最高: number[] = [1, 3, 5, 99]
 
 interface LocalPos {
   名: string
@@ -414,7 +414,7 @@ function ladderName(职业: Job, idx: number): string {
   return L && L[idx] ? L[idx] : ''
 }
 
-const LADDER_NAMES: Record<string, string[]> = {
+export const LADDER_NAMES: Record<string, string[]> = {
   '事业单位': ['科员', '副科长', '科长', '副处长', '处长', '副主任'],
   '国企': ['职员', '业务主管', '部门副经理', '部门经理', '副总经理', '总经理', '集团副总经理'],
   '企业': ['业务员', '业务主管', '部门经理', '总监', '副总经理', '总经理'],

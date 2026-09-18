@@ -170,12 +170,10 @@ export function People() {
 
       <div className="sec-title mt14">工作与社会关系</div>
       <div className="hint mb12">每次互动消耗 1 次行动；人脉影响晋升。</div>
-      {game.flags['首升换圈'] ? (
-        <button className="btn-line" disabled={game.actions <= 0} onClick={向上社交}>
-          向上社交 · 结识更高层级的人<span className="cost">-1 行动</span>
-          <small>替换掉好感度最低的两位人脉</small>
-        </button>
-      ) : null}
+      <button className="btn-line" disabled={game.actions <= 0} onClick={向上社交}>
+        向上社交 · 结识更高层级的人<span className="cost">-1 行动</span>
+        <small>替换好感度最低的两位，新的人脉层级随你晋升上移</small>
+      </button>
       {game.npcs.map((n) => (
         <NpcCard
           key={n.id}

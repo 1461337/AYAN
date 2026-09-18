@@ -1,6 +1,7 @@
 import type { Candidate, Edu, GameState, Npc, Sex, Job } from './types'
 import { 单姓, 复姓, 男名, 女名, 男名池, 女名池, 婚恋职业池, 婚恋收入, 婚恋性格, BACKGROUNDS, JOB_BONUS, BASE_PAY, JOB_UNIT_FIXED, 平台表, 平台集合, ACTIONS_PER_YEAR, 职务阶梯 } from '../data/static'
 import { makeShixiOrder } from './quiz'
+import { LADDER_NAMES } from './positions'
 import { clamp } from '../utils/format'
 import { pick, rnd, shuffle } from './rng'
 import { fitOf, 平台单位, 条线Of } from './selectors'
@@ -180,40 +181,44 @@ export function newState(f: SetupForm): GameState {
 const 领导名池 = ['高育良', '李达康', '季昌明', '孙连城', '丁义珍', '陈海', '赵东来', '田国福', '沙瑞金', '侯亮平', '钟小艾', '易学习']
 const 老板名池 = ['蔡成功', '王大路', '郑胜利', '刘新建', '孙广志', '赵瑞龙', '高小凤', '张树立', '程度']
 
-function 领导级别(g: GameState, offset: number): string {
+function 职业级别(g: GameState, offset: number): string {
+  const idx = Math.max(-1, g.rankIdx + offset)
   if (g.p.职业 === '公务员') {
-    const idx = Math.min(职务阶梯.length - 1, Math.max(0, g.rankIdx + offset))
-    return 职务阶梯[idx].名
+    if (idx < 0) return '科员'
+    return 职务阶梯[Math.min(职务阶梯.length - 1, idx)].名
   }
-  if (g.p.职业 === '事业单位') return ['科级', '科级', '处级', '处级', '厅级'][Math.min(4, Math.max(0, g.rankIdx + offset))] + '负责人'
-  return '同行业资深人士'
+  const names = LADDER_NAMES[g.p.职业]
+  if (!names || !names.length) return '资深从业者'
+  return names[Math.min(names.length - 1, Math.max(0, idx))]
 }
 
-export function makeNpc(g: GameState, id: string): Npc {
+export function makeNpc(g: GameState, id: string, 职级偏移 = 0): Npc {
   const age = g.p.年龄
   if (id === 'leader') {
     return {
-      id, 姓名: pick(领导名池), 身份: `分管领导（${领导级别(g, 2)}）`, 年龄: Math.max(38, age + rnd(10, 22)), 面: '🧔', 层级: '上级',
+      id, 姓名: pick(领导名池), 身份: `分管领导（${职业级别(g, 2 + 职级偏移)}）`, 年龄: Math.max(38, age + rnd(10, 22)), 面: '🧔', 层级: '上级',
       信任: rnd(26, 40), 利益: 0, 公开: rnd(12, 26), 好感度: rnd(52, 66), 性格: pick(['爱惜羽毛，重文字材料', '雷厉风行，只看结果', '谨小慎微，不担责任', '用人不疑，讲情面']),
       memory: [], notes: '你的直接领导，晋升时最有分量的一票。',
     }
   }
   if (id === 'colleague') {
     return {
-      id, 姓名: pick(男名池.concat(女名池)), 身份: '同处室同批同事', 年龄: Math.max(24, age + rnd(0, 4)), 面: '👨‍💼', 层级: '同事',
+      id, 姓名: pick(男名池.concat(女名池)), 身份: `同批同事（${职业级别(g, 职级偏移)}）`, 年龄: Math.max(24, age + rnd(0, 4)), 面: '👨‍💼', 层级: '同事',
       信任: rnd(40, 55), 利益: 0, 公开: rnd(35, 55), 好感度: rnd(62, 80), 性格: pick(['业务熟，话不多', '热情，爱张罗', '较真，认死理', '圆滑，谁也不得罪']),
       memory: [], notes: '和你同一条船，也和你争同一个位置。',
     }
   }
   if (id === 'oldclass') {
+    const 生意 = g.rankIdx >= 5 ? '集团董事长' : g.rankIdx >= 3 ? '公司总经理' : '民营公司老板'
     return {
-      id, 姓名: pick(老板名池), 身份: '民营企业经营者', 年龄: Math.max(26, age + rnd(1, 5)), 面: '🧑‍💼', 层级: '社会',
+      id, 姓名: pick(老板名池), 身份: `民营企业经营者（${生意}）`, 年龄: Math.max(26, age + rnd(1, 5)), 面: '🧑‍💼', 层级: '社会',
       信任: rnd(50, 62), 利益: rnd(18, 34), 公开: rnd(32, 46), 好感度: rnd(68, 82), 性格: pick(['讲义气，也讲利益，胆子偏大', '生意人，先算账后谈情', '低调，不显山露水']),
       memory: [], notes: '你的老同学，做工程生意。',
     }
   }
-  const 监督身份 = (['公务员', '事业单位', '国企'] as string[]).includes(g.p.职业)
-    ? `${g.p.城市}纪委监委监督检查室副主任`
+  const 体制内 = (['公务员', '事业单位', '国企'] as string[]).includes(g.p.职业)
+  const 监督身份 = 体制内
+    ? (g.rankIdx >= 4 ? '省纪委监委监督检查室主任' : `${g.p.城市}纪委监委监督检查室${g.rankIdx >= 1 ? '主任' : '副主任'}`)
     : g.p.职业 === '教师'
       ? `${g.p.城市}教育局督导室工作人员`
       : g.p.职业 === '医生'
@@ -230,4 +235,13 @@ export function makeNpc(g: GameState, id: string): Npc {
 
 export function makeNpcs(g: GameState): Npc[] {
   return ['leader', 'colleague', 'oldclass', 'discipline'].map((id) => makeNpc(g, id))
+}
+
+/* 晋升后同步既有人脉的职级与职务（保留姓名、记忆与关系数值） */
+export function 刷新人脉职务(g: GameState): void {
+  for (const n of g.npcs) {
+    const fresh = makeNpc(g, n.id)
+    n.身份 = fresh.身份
+    n.notes = fresh.notes
+  }
 }

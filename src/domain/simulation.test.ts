@@ -1,10 +1,10 @@
 import { describe, expect, it, afterEach } from 'vitest'
 import { resetRandomSource, setRandomSource } from './rng'
-import { newState } from './newGame'
+import { newState, 刷新人脉职务 } from './newGame'
 import { endYear } from './year'
 import { 快照, 案件风险底 } from './effects'
 import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
-import { genPositions, doPromote, settlePosition } from './promotion'
+import { genPositions, doPromote, settlePosition, 向上社交 } from './promotion'
 import { disciplineTick } from './discipline'
 import { makeEvent, make腐败事件, makeRetiredEvent } from './events'
 import { makeShixiOrder } from './quiz'
@@ -171,6 +171,45 @@ describe('逻辑一致性', () => {
     g.usedThisYear = [first]
     const order = makeShixiOrder(g)
     expect(order[0]).not.toBe(first)
+  })
+
+  it('向上社交常驻，且人脉层级随晋升上移', () => {
+    setRandomSource(mulberry32(91))
+    const g = newState({ name: '周正', sex: '男', age: 30, major: '法学', job: '公务员' })
+    g.rankIdx = 2
+    const 前 = g.npcs.find((n) => n.id === 'leader')!.身份
+    刷新人脉职务(g)
+    const 后 = g.npcs.find((n) => n.id === 'leader')!.身份
+    expect(后).not.toBe(前)
+    expect(后).toContain('分管领导（')
+
+    g.npcs[0].好感度 = 1
+    g.npcs[1].好感度 = 2
+    const 名字 = 向上社交(g)
+    expect(名字).toContain('（')
+    expect(g.npcs.length).toBe(4)
+  })
+
+  it('公务员处级提任要求本科及以上学历', () => {
+    setRandomSource(mulberry32(95))
+    const g = newState({ name: '周正', sex: '男', age: 32, major: '法学', job: '公务员' })
+    装备晋升条件(g)
+    g.rankIdx = 1
+    g.p.学历 = '大专'
+    const res = doPromote(g, true)
+    expect(res.kind).toBe('toast')
+    expect(res.msg || '').toContain('学历')
+  })
+
+  it('非公务员在市级平台可本地上到更高职级', () => {
+    setRandomSource(mulberry32(93))
+    const g = newState({ name: '苏晚', sex: '女', age: 30, major: '临床医学', job: '医生' })
+    g.rankIdx = 4
+    g.p.平台 = '市级'
+    g.p.城市 = '京州市'
+    const list = genPositions(g, 5)
+    expect(list.length).toBeGreaterThanOrEqual(3)
+    expect(list.every((p) => (p.序号 ?? 2) === 2)).toBe(true)
   })
 
   it('单身不出现家庭/配偶相关事件', () => {

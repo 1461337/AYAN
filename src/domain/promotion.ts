@@ -10,7 +10,7 @@ import {
 import { 专业偏好条线, 职级序列, 平台表 } from '../data/static'
 import { 生成调查事件 } from './discipline'
 import { 晋升职位池, 机构Of, 平台序, type PoolPos } from './positions'
-import { makeNpc, makeNpcs } from './newGame'
+import { makeNpc, makeNpcs, 刷新人脉职务 } from './newGame'
 import { makeShixiOrder } from './quiz'
 
 export interface PromoteResult {
@@ -42,6 +42,13 @@ export function promoteRate(g: GameState, idx: number): number {
   r += 家庭系数(g)
   r -= g.discipline.risk / 100 * 0.45
   r -= g.p2.处分 * 0.07
+  // 职业特性：不同赛道看重的条件不同
+  if (g.p.职业 === '教师') r += clamp(g.p.道德 - 60, 0, 40) / 40 * 0.05
+  else if (g.p.职业 === '医生') r += clamp(g.p.能力 - 60, 0, 40) / 40 * 0.05 + clamp(g.p.声望 - 50, 0, 50) / 50 * 0.03
+  else if (g.p.职业 === '记者') r += clamp(g.p.声望 - 50, 0, 50) / 50 * 0.07
+  else if (g.p.职业 === '企业') r += Math.min(1, g.zhengji / Math.max(1, need.政绩)) * 0.05
+  else if (g.p.职业 === '国企') r += clamp(g.p.上司 - need.上司, 0, 45) / 45 * 0.04
+  else if (g.p.职业 === '事业单位') r += eduIdxOf(g.p.学历) >= 2 ? 0.03 : 0
   if (!g.p2.初次晋升) r = Math.max(r, 0.80 + clamp(g.p.专业匹配度 - 80, 0, 20) / 20 * 0.10)
   return clamp(r, 0.03, 0.96)
 }
@@ -68,6 +75,13 @@ export function doPromote(g: GameState, _manual: boolean): PromoteResult {
   }
   if (g.zhengji < ni.def.门槛.政绩) return { kind: 'toast', msg: '基本条件尚有缺口，组织暂不列入考虑。' }
   if (g.p.健康 < 50) return { kind: 'toast', msg: '身体条件不适宜承担更重岗位，组织暂不列入考虑。' }
+  if (g.p.职业 === '公务员' && ni.idx >= 2 && eduIdxOf(g.p.学历) < 2) {
+    g.log.unshift({
+      t: `${g.date.y}年`, h: '学历未达提任要求', kind: '',
+      d: `拟提任${ni.def.名}要求本科及以上学历，你当前为${g.p.学历}。组织上暂不列入考虑。`,
+    })
+    return { kind: 'toast', msg: '学历未达到提任要求（本科及以上）。' }
+  }
   if (g.p.职业 === '公务员' && g.p.年龄 > 提任年龄上限(g, ni.idx)) {
     g.log.unshift({
       t: `${g.date.y}年`, h: '到龄不再提任', kind: '',
@@ -373,6 +387,7 @@ export function settlePosition(g: GameState, pos: AdvicePosition): void {
     d: `经组织研究，任命你为${名}（${职级名}）。${g.p.选调生 ? '作为选调生，你比同批人快了一步，也比同批人更容易被盯着。' : ''}\n${extra}`,
   })
   配偶随晋(g)
+  刷新人脉职务(g)
 }
 
 function 序平台名(序: number): string {
@@ -403,13 +418,13 @@ export function 配偶随晋(g: GameState): void {
   }
 }
 
-/* 向上社交：换掉好感度最低的两位人脉 */
+/* 向上社交：换掉好感度最低的两位人脉，新人的层级高于当前职级 */
 export function 向上社交(g: GameState): string {
   const sorted = g.npcs.slice().sort((a, b) => a.好感度 - b.好感度)
   const 换掉 = sorted.slice(0, 2).map((n) => n.id)
-  const 新 = 换掉.map((id) => makeNpc(g, id))
+  const 新 = 换掉.map((id) => makeNpc(g, id, 1))
   g.npcs = g.npcs.map((n) => 新.find((x) => x.id === n.id) || n)
-  return 新.map((n) => n.姓名).join('、')
+  return 新.map((n) => `${n.姓名}（${n.身份}）`).join('、')
 }
 
 export function rankName(g: GameState): RankDef | null {

@@ -552,13 +552,12 @@ export const useGame = create<StoreState>((set, get) => {
       const s = get()
       if (!s.game) return
       const g = { ...s.game }
-      if (!g.flags['首升换圈']) return finish('还没有进入新的圈层。')
       if (g.actions <= 0) return finish('本年行动额度已用完。')
       g.actions--
       const 名字 = 向上社交Domain(g)
-      g.log.unshift({ t: `${g.date.y}年`, h: '向上社交', kind: '', d: `你通过饭局与走访，结识了 ${名字}。关系网换了一部分。` })
+      g.log.unshift({ t: `${g.date.y}年`, h: '向上社交', kind: '', d: `你通过饭局与走访，结识了 ${名字}。关系网换了一批更高层级的人。` })
       set({ game: g })
-      finish(`结识了新的人脉：${名字}`)
+      finish(`结识了更高层级的人脉：${名字}`)
     },
 
     eduStart: (i) => {
