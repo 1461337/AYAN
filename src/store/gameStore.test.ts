@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { useGame } from './gameStore'
-import { ALL_SHIXI } from '../domain/quiz'
+import { ALL_SHIXI, makeShixiOrder, 可用题目, 题目套 } from '../domain/quiz'
 import type { Job } from '../domain/types'
 
 describe('存档与感情线动作', () => {
@@ -47,6 +47,29 @@ describe('存档与感情线动作', () => {
     } else {
       expect(g1.actions).toBe(行动前 - 1)
     }
+  })
+
+  it('职级变化后旧题库条目会被拦截并刷新', () => {
+    useGame.getState().start({ name: '测试', sex: '男', age: 52, major: '法学', job: '公务员' })
+    const g = useGame.getState().game!
+    g.rankIdx = 6
+    g.shixiOrder = makeShixiOrder(g)
+    const 高条目 = g.shixiOrder.find((i) => (ALL_SHIXI[i].职级范围?.[0] ?? 0) >= 4)
+    expect(高条目).toBeDefined()
+    g.rankIdx = 2
+    useGame.getState().shixi(高条目!)
+    const g2 = useGame.getState().game!
+    expect(g2.quiz).toBeNull()
+    const 池 = 可用题目(g2)
+    expect(g2.shixiOrder.every((i) => 池.includes(i))).toBe(true)
+  })
+
+  it('高职级题套只出对应阶段的题', () => {
+    const 省部 = ALL_SHIXI.findIndex((x) => x.名.includes('·省部'))
+    const 厅局 = ALL_SHIXI.findIndex((x) => x.名.includes('·厅局'))
+    expect(题目套(省部, 7).tier).toBe(4)
+    expect(题目套(厅局, 4).tier).toBe(3)
+    expect(题目套(厅局, 2).tier).toBe(3)
   })
 
   it('配偶与子女有免费互动，子女成年后不再只聊学校', () => {

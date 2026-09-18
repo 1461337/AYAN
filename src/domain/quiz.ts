@@ -52,6 +52,12 @@ export function tierOfRank(rankIdx: number): number {
 
 export function 题目套(item: number, rankIdx: number) {
   const it = ALL_SHIXI[item]
-  const tier = Math.min(tierOfRank(rankIdx), it.asks.length - 1)
+  let tier = Math.min(tierOfRank(rankIdx), it.asks.length - 1)
+  // 高阶段题套固定取本阶段题目，防止职级异常时回落到低阶段题
+  if (it.职级范围) {
+    const [低] = it.职级范围
+    if (低 >= 6) tier = Math.min(4, it.asks.length - 1)
+    else if (低 >= 4) tier = Math.min(3, it.asks.length - 1)
+  }
   return { item: it, tier, variants: it.asks[tier] }
 }

@@ -1,7 +1,7 @@
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
 import { Collapse } from '../components/Collapse'
-import { ALL_SHIXI, 题目套 } from '../../domain/quiz'
+import { ALL_SHIXI, 题目套, 可用题目 } from '../../domain/quiz'
 import { nextRankInfo, networkScore, TIER_NAME } from '../../domain/selectors'
 import { fmt } from '../../utils/format'
 
@@ -56,7 +56,7 @@ export function Shixi() {
         <span className="hint right">{game.date.y} 年度</span>
       </div>
       <div className="hint mb12">每年随机 3 项，每项限一次；答对加分，答错扣分；连续模糊 3 次后每次扣分。</div>
-      {game.shixiOrder.map((idx, i) => {
+      {game.shixiOrder.filter((idx) => 可用题目(game).includes(idx)).map((idx, i) => {
         const a = ALL_SHIXI[idx]
         if (!a) return null
         const used = game.usedThisYear.includes(idx)

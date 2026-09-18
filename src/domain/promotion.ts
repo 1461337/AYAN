@@ -480,6 +480,8 @@ export function settlePosition(g: GameState, pos: AdvicePosition): void {
   })
   配偶随晋(g)
   刷新人脉职务(g)
+  // 岗位/条线变化后同步施政题库
+  g.shixiOrder = makeShixiOrder(g)
 }
 
 function 序平台名(序: number): string {

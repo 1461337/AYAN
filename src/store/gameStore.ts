@@ -6,7 +6,7 @@ import { nextRankInfo } from '../domain/selectors'
 import { doPromote, settlePosition, 向上社交 as 向上社交Domain } from '../domain/promotion'
 import { buyAsset, sellAsset, repayDebt, repayLoan, netIncome, 切换房产用途 } from '../domain/economy'
 import { endYear as endYearDomain } from '../domain/year'
-import { 题目套 } from '../domain/quiz'
+import { 题目套, 可用题目, makeShixiOrder } from '../domain/quiz'
 import { 夫妻免费互动, 亲子免费互动, 子女阶段, EDU_UP, CERTS, 免费互动 } from '../data/static'
 import { clamp, fmt } from '../utils/format'
 import { rnd, pick } from '../domain/rng'
@@ -101,6 +101,12 @@ export const useGame = create<StoreState>((set, get) => {
       if (!a) return
       const g = { ...s.game }
       if (g.status !== '在职') return finish('已退休，不再开展施政工作。')
+      // 职级/岗位变化后，旧清单里的题可能已不匹配，先拦截并刷新
+      if (!可用题目(g).includes(idx)) {
+        g.shixiOrder = makeShixiOrder(g)
+        set({ game: g })
+        return finish('岗位或职级已变化，工作清单已刷新，请重新选择。')
+      }
       if (g.actions <= 0) return finish('本年行动额度已用完，请结束本年。')
       if (g.usedThisYear.includes(idx)) return finish('本年度该项工作已经开展过了。')
       g.actions--

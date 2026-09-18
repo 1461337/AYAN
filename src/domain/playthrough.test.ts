@@ -3,7 +3,7 @@ import { it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import { useGame } from '../store/gameStore'
-import { ALL_SHIXI } from './quiz'
+import { ALL_SHIXI, 可用题目 } from './quiz'
 import { nextRankInfo } from './selectors'
 import { 快照 } from './effects'
 import { resetRandomSource, setRandomSource } from './rng'
@@ -241,6 +241,11 @@ function 跑一局(c: 模拟配置): 模拟结果 {
       if (s.game && s.game.positions.length !== 升迁记录.length) {
         const 新 = s.game.positions.slice(0, s.game.positions.length - 升迁记录.length)
         for (const p of 新.reverse()) 升迁记录.push(`${p.年}年 ${p.职级} · ${p.岗位}`)
+      }
+      // 不变量：施政清单必须与当前职级/岗位匹配
+      if (s.game) {
+        const 池 = 可用题目(s.game)
+        expect(s.game.shixiOrder.every((i) => 池.includes(i))).toBe(true)
       }
     }
 

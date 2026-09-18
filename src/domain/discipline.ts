@@ -2,6 +2,7 @@ import type { GameEvent, GameState } from './types'
 import { clamp, fmt } from '../utils/format'
 import { chance, pick, rnd } from './rng'
 import { applyEffect, 涉案金额, 同步风险底线 } from './effects'
+import { makeShixiOrder } from './quiz'
 
 export function 处置结果(g: GameState, 从轻: -1 | 0 | 1): string {
   const risk = g.discipline.risk
@@ -42,6 +43,7 @@ export function 处置结果(g: GameState, 从轻: -1 | 0 | 1): string {
     g.discipline.risk = Math.min(g.discipline.risk, 12)
     g.rankIdx = Math.max(-1, g.rankIdx - 2)
     g.p2.任职年 = 0
+    g.shixiOrder = makeShixiOrder(g)
     const 处 = pick(['撤销党内职务', '开除党籍、政务撤职'])
     g.discipline.records.unshift(`${g.date.y}年：被立案审查调查，给予${处}处分，免去现职${追缴 > 0 ? `，追缴违纪所得 ${fmt(追缴)} 元` : ''}。`)
     applyEffect(g, { 声望: -30, 上司: -25, 健康: -10, 道德: -4 })
