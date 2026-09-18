@@ -552,6 +552,7 @@ export const useGame = create<StoreState>((set, get) => {
       const s = get()
       if (!s.game) return
       const g = { ...s.game }
+      if (g.status === '退休') return finish('已退休，不再有新的圈层。')
       if (g.actions <= 0) return finish('本年行动额度已用完。')
       g.actions--
       const 名字 = 向上社交Domain(g)

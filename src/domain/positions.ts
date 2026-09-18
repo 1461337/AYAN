@@ -176,7 +176,7 @@ function 市级(城市: string, idx: number): LocalPos[] {
   }
   if (idx === 3) {
     return [
-      ...市直局.map((g) => ({ 名: `${城市}${g}${g.endsWith('委员会') ? '主任' : '局长'}` })),
+      ...市直局.filter((g) => g !== '公安局').map((g) => ({ 名: `${城市}${g}${g.endsWith('委员会') ? '主任' : '局长'}` })),
       { 名: `${城市}公安局常务副局长` },
       { 名: `${城市}政府副秘书长` },
       { 名: `${城市}委组织部副部长` },
@@ -442,24 +442,29 @@ export function 机构Of(名: string, 城市: string, 平台: PlatformName, 职�
     const m = 名.match(/^(.+?(?:中心|学院|学校|中学|小学|医院|卫生院|日报社|电视台|记者站|融媒体中心|集团|公司|企业|研究院|设计院|图书馆|博物馆|文化馆|服务中心|站))/)
     return m ? m[1] : 名
   }
-  const 短 = 城市.slice(-1)
   const 条 = 条线OfLocal(名)
   const 省 = 平台 === '省级'
+  const 党委前缀 = 省 ? '省委' : `${城市}委`
+  // 中央/国家层面岗位单独映射
+  if (/中央组织部/.test(名)) return '中共中央组织部'
+  if (/中央宣传部/.test(名)) return '中共中央宣传部'
+  if (/国务院|国务委员|国家副主席/.test(名)) return '国务院'
+  if (/全国/.test(名)) return /政协/.test(名) ? '全国政协' : '全国人大'
   switch (条) {
     case '纪检': return 省 ? '省纪委监委' : `${城市}纪委监委`
     case '法院': return 省 ? '省高级人民法院' : `${城市}人民法院`
     case '检察': return 省 ? '省人民检察院' : `${城市}人民检察院`
     case '公安': return 省 ? '省公安厅' : `${城市}公安局`
     case '司法': return 省 ? '省司法厅' : `${城市}司法局`
-    case '组工': return `${城市}委组织部`
-    case '宣传': return `${城市}委宣传部`
-    case '统战': return `${城市}委统战部`
-    case '政法': return `${城市}委政法委`
+    case '组工': return `${党委前缀}组织部`
+    case '宣传': return `${党委前缀}宣传部`
+    case '统战': return `${党委前缀}统战部`
+    case '政法': return `${党委前缀}政法委`
     case '财政': return 省 ? '省财政厅' : `${城市}财政局`
-    case '发改': return `${城市}发展和改革${省 ? '委员会' : '局'}`
+    case '发改': return 省 ? '省发展和改革委员会' : `${城市}发展和改革局`
     case '教育': return 省 ? '省教育厅' : `${城市}教育局`
     case '住建': return 省 ? '省住房和城乡建设厅' : `${城市}住房和城乡建设局`
-    case '卫健': return `${城市}卫生健康${省 ? '委员会' : '局'}`
+    case '卫健': return 省 ? '省卫生健康委员会' : `${城市}卫生健康局`
     case '交通': return 省 ? '省交通运输厅' : `${城市}交通运输局`
     case '工信': return 省 ? '省工业和信息化厅' : `${城市}工业和信息化局`
     case '农业': return 省 ? '省农业农村厅' : `${城市}农业农村局`
@@ -467,9 +472,15 @@ export function 机构Of(名: string, 城市: string, 平台: PlatformName, 职�
     case '审计': return 省 ? '省审计厅' : `${城市}审计局`
     case '市场监管': return 省 ? '省市场监督管理局' : `${城市}市场监督管理局`
     case '自然资源': return 省 ? '省自然资源厅' : `${城市}自然资源局`
-    case '人大政协': return /政协/.test(名) ? `${城市}政协` : `${城市}人大常委会`
-    case '主官': return /书记|副书记/.test(名) ? `${城市}委` : `${城市}${短}政府`
-    default: return `${城市}政府办公室`
+    case '人大政协':
+      if (省) return /政协/.test(名) ? '省政协' : '省人大常委会'
+      return /政协/.test(名) ? `${城市}政协` : `${城市}人大常委会`
+    case '主官': {
+      const 党 = /书记|副书记/.test(名)
+      if (省) return 党 ? '省委' : '省政府'
+      return 党 ? `${城市}委` : `${城市}政府`
+    }
+    default: return 省 ? '省政府办公厅' : `${城市}政府办公室`
   }
 }
 

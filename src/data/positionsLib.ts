@@ -144,8 +144,7 @@ function 法检公司岗位(序: number, idx: number, city: string): LibPos[] {
     }
     return out
   }
-  if (序 === 2) {
-    if (idx <= 1) {
+  if (序 === 2) {    if (idx <= 1) {
       const k = idx === 0 ? '副' : ''
       out.push(
         { 名: `${法}${k}庭长` }, { 名: `${检}第一检察部${k}主任` },
@@ -193,7 +192,7 @@ function 法检公司岗位(序: number, idx: number, city: string): LibPos[] {
         { 名: `${法}副院长` }, { 名: `${检}副检察长` },
         { 名: '省公安厅常务副厅长' }, { 名: '省司法厅厅长' },
       )
-    } else {
+    } else if (idx === 6) {
       out.push({ 名: `${法}院长` }, { 名: `${检}检察长` })
     }
     return out
@@ -371,7 +370,7 @@ export function 政治扩展职位(平台: PlatformName, idx: number, city: stri
       out.push(...人大政协组)
     } else if (idx === 3) {
       out.push(...党委.map((d) => ({ 名: 党委正职(d) })))
-      out.push(...政府.map((d) => ({ 名: 政府正职(d) })))
+      out.push(...政府.filter((d) => !/公安局$/.test(d.名)).map((d) => ({ 名: 政府正职(d) })))
       out.push(...群团s.map((d) => ({ 名: 群团正职(d) })))
       out.push(...人大政协正)
     } else if (idx === 4) {

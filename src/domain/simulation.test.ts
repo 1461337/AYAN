@@ -7,9 +7,9 @@ import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
 import { genPositions, doPromote, settlePosition, 向上社交 } from './promotion'
 import { nextRankInfo } from './selectors'
 import { disciplineTick } from './discipline'
-import { makeEvent, make腐败事件, makeRetiredEvent } from './events'
+import { makeEvent, make腐败事件, makeRetiredEvent, npcTick } from './events'
 import { makeShixiOrder } from './quiz'
-import { 政治本地职位, 平台序 } from './positions'
+import { 政治本地职位, 平台序, 机构Of } from './positions'
 import { 职务阶梯 } from '../data/static'
 import type { GameState, Job } from './types'
 
@@ -200,6 +200,28 @@ describe('逻辑一致性', () => {
     const res = doPromote(g, true)
     expect(res.kind).toBe('toast')
     expect(res.msg || '').toContain('学历')
+  })
+
+  it('高平台岗位的单位映射正确', () => {
+    expect(机构Of('中央组织部部长', '京州市', '省级', '公务员')).toBe('中共中央组织部')
+    expect(机构Of('中央宣传部部长', '京州市', '省级', '公务员')).toBe('中共中央宣传部')
+    expect(机构Of('省长', '京州市', '省级', '公务员')).toBe('省政府')
+    expect(机构Of('省委书记', '京州市', '省级', '公务员')).toBe('省委')
+    expect(机构Of('省政协主席', '京州市', '省级', '公务员')).toBe('省政协')
+    expect(机构Of('省纪委书记、省监委主任', '京州市', '省级', '公务员')).toBe('省纪委监委')
+    expect(机构Of('京州市市长', '京州市', '市级', '公务员')).toBe('京州市政府')
+    expect(机构Of('岩台县委书记', '岩台县', '县级', '公务员')).toBe('岩台县委')
+  })
+
+  it('人脉更替不会出现重名', () => {
+    setRandomSource(mulberry32(99))
+    const g = newState({ name: '周正', sex: '男', age: 40, major: '法学', job: '公务员' })
+    for (let i = 0; i < 300; i++) {
+      g.npcs.forEach((n) => { n.年龄 = 62 })
+      npcTick(g)
+    }
+    const 名s = g.npcs.map((n) => n.姓名)
+    expect(new Set(名s).size).toBe(名s.length)
   })
 
   it('学历不足会阻止考察并写入轨迹', () => {
@@ -526,12 +548,24 @@ describe('本地化晋升', () => {
 
     const 市3 = 政治本地职位('市级', 3, '京州市').map((p) => p.名).join('|')
     expect(市3).toMatch(/中级人民法院副院长|委组织部副部长/)
+    expect(市3).not.toMatch(/京州市公安局局长/)
+    expect(市3).toMatch(/公安局副局长|公安局常务副局长/)
 
     const 县0 = 政治本地职位('县级', 0, '岩台县').map((p) => p.名).join('|')
     expect(县0).not.toMatch(/人民法院副院长|人民检察院副检察长|委组织部副部长/)
 
     const 县1 = 政治本地职位('县级', 1, '岩台县').map((p) => p.名).join('|')
     expect(县1).toMatch(/人民法院副院长|委组织部副部长/)
+
+    const 法检越级 = [
+      ['县级', 3, '人民法院院长'],
+      ['市级', 5, '中级人民法院院长'],
+      ['省级', 8, '高级人民法院院长'],
+    ] as const
+    for (const [平台, idx, 禁] of 法检越级) {
+      const names = 政治本地职位(平台, idx, '京州市').map((p) => p.名).join('|')
+      expect(names).not.toContain(禁)
+    }
   })
 
   it('doPromote 成功后同步题库与圈子', () => {

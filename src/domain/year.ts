@@ -6,6 +6,7 @@ import { doPromote } from './promotion'
 import { nextRankInfo, ladder, rankTitle, promoteGateWhy } from './selectors'
 import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, npcTick, cityTick, retiredMini } from './events'
 import { disciplineTick, 生成调查事件 } from './discipline'
+import { 机构Of } from './positions'
 import { 浪漫方式池 } from '../data/static'
 import { makeCandidates } from './newGame'
 import { makeShixiOrder } from './quiz'
@@ -285,9 +286,14 @@ export function endYear(g: GameState): void {
       g.pendingEvent.月 = rnd(1, 12)
     } else if (chance(0.35 + 超龄 * 0.12)) {
       const 现任 = g.positions[0]
-      const 二线名 = (['人大常委会副主任', '政协副主席', '政协秘书长', '政府参事'] as const)[Math.floor(Math.random() * 4)]
+      const 前缀 = g.p.平台 === '省级' ? '省' : g.p.城市
+      const 二线候选 = g.rankIdx >= 6
+        ? ['全国人大常委会委员', '全国政协常委', '全国人大专门委员会副主任委员', '全国政协专门委员会副主任']
+        : ['人大常委会副主任', '政协副主席', '政协秘书长', '政府参事'].map((n) => `${前缀}${n}`)
+      const 二线名 = 二线候选[Math.floor(Math.random() * 二线候选.length)]
       const 级别名 = 现任 ? 现任.职级 : rankTitle(g)
       g.positions.unshift({ 年: g.date.y, 职级: 级别名, 岗位: 二线名, 条线: '综合' })
+      g.p.单位 = 机构Of(二线名, g.p.城市, g.p.平台, g.p.职业)
       g.flags['二线'] = true
       g.p.声望 = clamp(g.p.声望 + 3, 0, 100)
       g.p.健康 = clamp(g.p.健康 + 4, 0, 100)

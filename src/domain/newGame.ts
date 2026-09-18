@@ -192,18 +192,24 @@ function 职业级别(g: GameState, offset: number): string {
   return names[Math.min(names.length - 1, Math.max(0, idx))]
 }
 
+function 唯一姓名(g: GameState, id: string, pool: string[]): string {
+  const used = new Set(g.npcs.filter((n) => n.id !== id).map((n) => n.姓名))
+  const 可选 = pool.filter((n) => !used.has(n))
+  return pick(可选.length ? 可选 : pool)
+}
+
 export function makeNpc(g: GameState, id: string, 职级偏移 = 0): Npc {
   const age = g.p.年龄
   if (id === 'leader') {
     return {
-      id, 姓名: pick(领导名池), 身份: `分管领导（${职业级别(g, 2 + 职级偏移)}）`, 年龄: Math.max(38, age + rnd(10, 22)), 面: '🧔', 层级: '上级',
+      id, 姓名: 唯一姓名(g, id, 领导名池), 身份: `分管领导（${职业级别(g, 2 + 职级偏移)}）`, 年龄: Math.max(38, age + rnd(10, 22)), 面: '🧔', 层级: '上级',
       信任: rnd(26, 40), 利益: 0, 公开: rnd(12, 26), 好感度: rnd(52, 66), 性格: pick(['爱惜羽毛，重文字材料', '雷厉风行，只看结果', '谨小慎微，不担责任', '用人不疑，讲情面']),
       memory: [], notes: '你的直接领导，晋升时最有分量的一票。',
     }
   }
   if (id === 'colleague') {
     return {
-      id, 姓名: pick(男名池.concat(女名池)), 身份: `同批同事（${职业级别(g, 职级偏移)}）`, 年龄: Math.max(24, age + rnd(0, 4)), 面: '👨‍💼', 层级: '同事',
+      id, 姓名: 唯一姓名(g, id, 男名池.concat(女名池)), 身份: `同批同事（${职业级别(g, 职级偏移)}）`, 年龄: Math.max(24, age + rnd(0, 4)), 面: '👨‍💼', 层级: '同事',
       信任: rnd(40, 55), 利益: 0, 公开: rnd(35, 55), 好感度: rnd(62, 80), 性格: pick(['业务熟，话不多', '热情，爱张罗', '较真，认死理', '圆滑，谁也不得罪']),
       memory: [], notes: '和你同一条船，也和你争同一个位置。',
     }
@@ -211,7 +217,7 @@ export function makeNpc(g: GameState, id: string, 职级偏移 = 0): Npc {
   if (id === 'oldclass') {
     const 生意 = g.rankIdx >= 5 ? '集团董事长' : g.rankIdx >= 3 ? '公司总经理' : '民营公司老板'
     return {
-      id, 姓名: pick(老板名池), 身份: `民营企业经营者（${生意}）`, 年龄: Math.max(26, age + rnd(1, 5)), 面: '🧑‍💼', 层级: '社会',
+      id, 姓名: 唯一姓名(g, id, 老板名池), 身份: `民营企业经营者（${生意}）`, 年龄: Math.max(26, age + rnd(1, 5)), 面: '🧑‍💼', 层级: '社会',
       信任: rnd(50, 62), 利益: rnd(18, 34), 公开: rnd(32, 46), 好感度: rnd(68, 82), 性格: pick(['讲义气，也讲利益，胆子偏大', '生意人，先算账后谈情', '低调，不显山露水']),
       memory: [], notes: '你的老同学，做工程生意。',
     }
@@ -227,7 +233,7 @@ export function makeNpc(g: GameState, id: string, 职级偏移 = 0): Npc {
           ? '省新闻工作者协会工作人员'
           : '市场监管部门工作人员'
   return {
-    id, 姓名: pick(男名池.concat(女名池)), 身份: 监督身份, 年龄: Math.max(40, age + 8), 面: '🕵️', 层级: '监督',
+    id, 姓名: 唯一姓名(g, id, 男名池.concat(女名池)), 身份: 监督身份, 年龄: Math.max(40, age + 8), 面: '🕵️', 层级: '监督',
     信任: rnd(14, 24), 利益: 0, 公开: rnd(10, 20), 好感度: rnd(34, 46), 性格: '程序至上，只认证据',
     memory: [], notes: '目前和你没有交集，但你知道他存在。',
   }
