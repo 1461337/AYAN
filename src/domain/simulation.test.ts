@@ -233,6 +233,42 @@ describe('逻辑一致性', () => {
     }
     expect(出现).toBe(true)
   })
+
+  it('腐败事件只在合理职级与条线出现', () => {
+    setRandomSource(mulberry32(85))
+    const 高阶 = ['规划指标上的“办法”', '信封里的“推荐”', '亲属的“生意”']
+    const g = newState({ name: '周正', sex: '男', age: 28, major: '法学', job: '公务员' })
+    g.rankIdx = 0
+    g.positions = [{ 年: g.date.y, 职级: '乡科级副职', 岗位: '平塘镇副镇长', 条线: '主官' }]
+    for (let i = 0; i < 300; i++) {
+      expect(高阶).not.toContain(make腐败事件(g)!.标题)
+    }
+
+    const g2 = newState({ name: '周正', sex: '男', age: 32, major: '法学', job: '公务员' })
+    g2.rankIdx = 1
+    g2.positions = [{ 年: g2.date.y, 职级: '乡科级正职', 岗位: '岩台县教育局局长', 条线: '教育' }]
+    for (let i = 0; i < 300; i++) {
+      const 名 = make腐败事件(g2)!.标题
+      expect(名).not.toBe('检查发现后的“通融”')
+      expect(名).not.toBe('招投标前的“招呼”')
+    }
+  })
+
+  it('临近退休才出现“最后一把”事件', () => {
+    setRandomSource(mulberry32(87))
+    const g = newState({ name: '林远', sex: '男', age: 40, major: '法学', job: '公务员' })
+    g.rankIdx = 1
+    g.positions = [{ 年: g.date.y, 职级: '乡科级正职', 岗位: '岩台县财政局局长', 条线: '财政' }]
+    for (let i = 0; i < 200; i++) {
+      expect(make腐败事件(g)!.标题).not.toBe('退休前的“最后一把”')
+    }
+    g.p.年龄 = 58
+    let 出现 = false
+    for (let i = 0; i < 300 && !出现; i++) {
+      if (make腐败事件(g)!.标题 === '退休前的“最后一把”') 出现 = true
+    }
+    expect(出现).toBe(true)
+  })
 })
 
 describe('本地化晋升', () => {

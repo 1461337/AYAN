@@ -285,12 +285,23 @@ export interface GameEventOption {
   resolve: (g: GameState) => string
 }
 
+export interface Event门槛 {
+  最低职级?: number
+  最高职级?: number
+  条线?: string[]
+  需配偶?: boolean
+  需子女?: boolean
+  需房产?: boolean
+  需临近退休?: boolean
+}
+
 export interface GameEvent {
   类型: string
   标题: string
   描述: string
   背景?: string
   月?: number
+  门槛?: Event门槛
   选项: GameEventOption[]
 }
 
