@@ -83,6 +83,7 @@ export function 是实权(名: string | undefined | null): boolean {
 }
 
 export function 提任年龄上限(g: GameState, idx: number): number {
+  if (g && g.p && g.p.职业 !== '公务员') return 70
   const 女 = g && g.p && g.p.性别 === '女'
   const v = 提任年龄表[idx] || [63, 61]
   return 女 ? v[1] : v[0]

@@ -4,9 +4,9 @@ import { newState } from './newGame'
 import { endYear } from './year'
 import { 快照 } from './effects'
 import { monthly } from './economy'
-import { genPositions } from './promotion'
-import { 本地职位 } from './positions'
-import type { GameState } from './types'
+import { genPositions, doPromote } from './promotion'
+import { 政治本地职位 } from './positions'
+import type { GameState, Job } from './types'
 
 function mulberry32(seed: number) {
   let a = seed
@@ -27,6 +27,19 @@ function resolvePending(g: GameState) {
   g.pendingEvent = null
 }
 
+function 装备晋升条件(g: GameState) {
+  g.zhengji = 999999
+  g.p.能力 = 100
+  g.p.道德 = 100
+  g.p.上司 = 100
+  g.p.人脉 = 100
+  g.p.健康 = 95
+  g.p2.任职年 = 8
+  g.p2.初次晋升 = true
+  g.flags['基层经历'] = true
+  g._年初快照 = 快照(g)
+}
+
 describe('人生模拟冒烟测试', () => {
   afterEach(() => resetRandomSource())
 
@@ -39,6 +52,7 @@ describe('人生模拟冒烟测试', () => {
     expect(g.p.专业匹配度).toBeGreaterThan(80)
     expect(g.npcs).toHaveLength(4)
     expect(g.shixiOrder).toHaveLength(3)
+    expect(g.candidates.length).toBe(2)
     expect(g.log.length).toBeGreaterThan(0)
     expect(g.actions).toBe(5)
   })
@@ -62,14 +76,18 @@ describe('人生模拟冒烟测试', () => {
     expect(years).toBeGreaterThan(5)
   })
 
-  it('各职业开局与推进均可运行', () => {
-    const jobs = ['事业单位', '国企', '企业', '记者', '教师', '医生'] as const
+  it('七种职业各自推进并完成晋升，参数合法', () => {
+    const jobs: Job[] = ['公务员', '事业单位', '国企', '企业', '记者', '教师', '医生']
     let seed = 7
     for (const job of jobs) {
       setRandomSource(mulberry32(seed++))
       const g = newState({ name: '周正', sex: '男', age: 26, major: '法学', job })
-      g._年初快照 = 快照(g)
-      for (let i = 0; i < 10 && !g.over; i++) {
+      装备晋升条件(g)
+      for (let i = 0; i < 20 && !g.over; i++) {
+        if (g.pendingPositions) {
+          expect(g.pendingPositions.length).toBeGreaterThanOrEqual(7)
+          g.pendingPositions = null
+        }
         resolvePending(g)
         if (g.quiz) g.quiz = null
         endYear(g)
@@ -89,8 +107,9 @@ describe('经济公式', () => {
 
 describe('本地化晋升', () => {
   it('县区职位覆盖党政主官、组宣统与纪检法检公司', () => {
-    const names = 本地职位('县级', 2, '岩台县').map((p) => p.名).join('|')
+    const names = 政治本地职位('县级', 2, '岩台县').map((p) => p.名).join('|')
     expect(names).toContain('岩台县副县长')
+    expect(names).toContain('常务副县长')
     expect(names).toContain('岩台县委常委、组织部部长')
     expect(names).toContain('岩台县委常委、宣传部部长')
     expect(names).toContain('岩台县委常委、统战部部长')
@@ -102,7 +121,7 @@ describe('本地化晋升', () => {
   })
 
   it('省级职位覆盖纪检、法院、检察院方向', () => {
-    const names = 本地职位('省级', 6, '京州市').map((p) => p.名).join('|')
+    const names = 政治本地职位('省级', 6, '京州市').map((p) => p.名).join('|')
     expect(names).toContain('省纪委书记、省监委主任')
     expect(names).toContain('省高级人民法院院长')
     expect(names).toContain('省人民检察院检察长')
@@ -119,8 +138,59 @@ describe('本地化晋升', () => {
     g.p2.任职年 = 5
     g.zhengji = 100000
     const list = genPositions(g, 2)
-    expect(list.length).toBeGreaterThanOrEqual(3)
+    expect(list.length).toBeGreaterThanOrEqual(7)
     const local = list.filter((p) => p.名.includes('岩台县')).length
     expect(local).toBeGreaterThanOrEqual(Math.ceil(list.length / 2))
+  })
+
+  it('县局级以上晋升必含一个二线岗位', () => {
+    setRandomSource(mulberry32(23))
+    const g = newState({ name: '林远', sex: '男', age: 40, major: '法学', job: '公务员' })
+    g.rankIdx = 2
+    g.p.平台 = '县级'
+    g.p.城市 = '岩台县'
+    g.zhengji = 100000
+    const list = genPositions(g, 3)
+    expect(list.length).toBeGreaterThanOrEqual(7)
+    expect(list.some((p) => p.二线)).toBe(true)
+  })
+
+  it('平台不会越级：乡镇升处级只会给到县级平台', () => {
+    setRandomSource(mulberry32(31))
+    const g = newState({ name: '方军', sex: '男', age: 35, major: '法学', job: '公务员' })
+    g.rankIdx = 1
+    g.p.平台 = '乡镇级'
+    g.p.城市 = '平塘镇'
+    g.zhengji = 100000
+    g.flags['基层经历'] = true
+    const list = genPositions(g, 2)
+    expect(list.length).toBeGreaterThanOrEqual(7)
+    expect(list.every((p) => (p.序号 ?? 1) <= 1)).toBe(true)
+    expect(list.some((p) => p.名.includes('县') || p.名.includes('区'))).toBe(true)
+  })
+
+  it('非公务员岗位来自本职业序列', () => {
+    setRandomSource(mulberry32(5))
+    const g = newState({ name: '苏晚', sex: '女', age: 30, major: '临床医学', job: '医生' })
+    g.rankIdx = 0
+    g.p.平台 = '县级'
+    const list = genPositions(g, 1)
+    expect(list.length).toBeGreaterThanOrEqual(7)
+    expect(list.some((p) => /医院|卫生院/.test(p.名))).toBe(true)
+    expect(list.some((p) => /主治医师/.test(p.名))).toBe(true)
+  })
+
+  it('doPromote 成功后同步题库与圈子', () => {
+    setRandomSource(mulberry32(77))
+    const g = newState({ name: '程亦然', sex: '男', age: 28, major: '法学', job: '公务员' })
+    装备晋升条件(g)
+    g.shixiOrder = []
+    const res = doPromote(g, true)
+    expect(['modal', 'toast']).toContain(res.kind)
+    if (res.kind === 'modal') {
+      expect(g.pendingPositions && g.pendingPositions.length).toBeGreaterThanOrEqual(7)
+      expect(g.flags['首升换圈']).toBe(true)
+      expect(g.shixiOrder.length).toBe(3)
+    }
   })
 })

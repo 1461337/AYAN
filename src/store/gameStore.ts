@@ -2,15 +2,15 @@ import { create } from 'zustand'
 import type { Effect, GameState, TabId } from '../domain/types'
 import { newState, makeCandidates, type SetupForm } from '../domain/newGame'
 import { applyEffect, 快照, 差异, perfLabel } from '../domain/effects'
-import { tierOf, nextRankInfo } from '../domain/selectors'
-import { doPromote, settlePosition } from '../domain/promotion'
-import { buyAsset, sellAsset, netIncome } from '../domain/economy'
+import { nextRankInfo } from '../domain/selectors'
+import { doPromote, settlePosition, 向上社交 as 向上社交Domain } from '../domain/promotion'
+import { buyAsset, sellAsset, repayDebt, repayLoan, netIncome } from '../domain/economy'
 import { endYear as endYearDomain } from '../domain/year'
-import { SHIXI } from '../data/shixi'
-import { EDU_UP, CERTS } from '../data/static'
+import { 题目套 } from '../domain/quiz'
+import { EDU_UP, CERTS, 免费互动 } from '../data/static'
 import { clamp, fmt } from '../utils/format'
-import { rnd, shuffle } from '../domain/rng'
-import { clearSave, loadGame, saveGame } from '../persistence/save'
+import { rnd } from '../domain/rng'
+import { clearSave, exportSaveFile, loadGame, parseSave, saveGame } from '../persistence/save'
 
 export interface StoreState {
   game: GameState | null
@@ -39,15 +39,20 @@ export interface StoreState {
   birth: () => void
   child: (id: string, type: string) => void
   rel: (id: string, type: string) => void
-  buyHouse: (i: number) => void
-  buyCar: (i: number) => void
+  向上社交: () => void
+  buyHouse: (i: number, mode: 'full' | 'loan') => void
+  buyCar: (i: number, mode: 'full' | 'loan') => void
   sell: (kind: '房' | '车', i: number) => void
+  还负债: () => void
+  结清贷款: (i: number) => void
   eduStart: (i: number) => void
   eduCancel: () => void
   certStart: (i: number) => void
   audit: () => void
   save: () => void
   load: () => void
+  exportSave: () => void
+  importGame: (text: string) => void
   reset: () => void
 }
 
@@ -91,7 +96,7 @@ export const useGame = create<StoreState>((set, get) => {
     shixi: (idx) => {
       const s = get()
       if (!s.game) return
-      const a = SHIXI[idx]
+      const { item: a, tier, variants } = 题目套(idx, s.game.rankIdx)
       if (!a) return
       const g = { ...s.game }
       if (g.status !== '在职') return finish('已退休，不再开展施政工作。')
@@ -103,8 +108,7 @@ export const useGame = create<StoreState>((set, get) => {
       const 劳损 = rnd(1, 2)
       g.p.健康 = clamp(g.p.健康 - 劳损, 0, 100)
       g.yearLog.unshift({ t: `${g.date.y}年`, h: a.名, kind: '', d: a.desc + `（耗费精力，健康 -${劳损}）` })
-      const tier = tierOf(g)
-      g.quiz = { item: idx, tier, variant: rnd(0, a.asks[tier].length - 1), order: shuffle([0, 1, 2]) }
+      g.quiz = { item: idx, tier, variant: rnd(0, variants.length - 1), order: [0, 1, 2].sort(() => Math.random() - 0.5) }
       set({ game: g })
     },
 
@@ -113,8 +117,8 @@ export const useGame = create<StoreState>((set, get) => {
       if (!s.game || !s.game.quiz) return
       const quiz = s.game.quiz
       const g = { ...s.game }
-      const item = SHIXI[quiz.item]
-      const set_ = item.asks[quiz.tier][quiz.variant]
+      const { item, variants } = 题目套(quiz.item, g.rankIdx)
+      const set_ = variants[Math.min(quiz.variant, variants.length - 1)]
       const a = set_.a[quiz.order[k]]
       if (!a) return
       const mark = a.判 === '正确' ? ['正确处置', 'good'] : a.判 === '模糊' ? ['处置平平', ''] : ['处置失当', 'bad']
@@ -176,7 +180,7 @@ export const useGame = create<StoreState>((set, get) => {
       const g = { ...s.game }
       const p = pending[i]
       if (!p) return finish('请选择一个岗位。')
-      settlePosition(g, p.名)
+      settlePosition(g, p)
       g.pendingPositions = null
       g.pendingPosTitle = ''
       set({ game: g, curTab: '年度' })
@@ -212,8 +216,9 @@ export const useGame = create<StoreState>((set, get) => {
       const g = { ...s.game }
       g.yearLog = g.yearLog ? g.yearLog.slice() : []
       endYearDomain(g)
+      saveGame(g)
       set({ game: g, curTab: g.over ? s.curTab : '年度' })
-      finish(`进入 ${g.date.y} 年`)
+      finish(`进入 ${g.date.y} 年 · 已自动保存`)
     },
 
     healthFree: () => {
@@ -266,11 +271,15 @@ export const useGame = create<StoreState>((set, get) => {
       if (!s.game) return
       const g = { ...s.game }
       if (g.actions <= 0) return finish('本年行动额度已用完。')
+      if (g.candidates.length >= 6) return finish('同时认识的人已经够多了，先把关系理一理。')
       g.actions--
-      g.candidates = makeCandidates(g.p.性别, g.p.年龄)
-      g.log.unshift({ t: `${g.date.y}年`, h: '经人介绍', kind: '', d: '朋友介绍了两位新朋友，之前的缘分各自有了结果。' })
+      const add = Math.min(6 - g.candidates.length, 2)
+      const fresh = makeCandidates(g.p.性别, g.p.年龄).slice(0, add)
+      fresh.forEach((c, i) => { c.id = 'cand' + Date.now() + i })
+      g.candidates.push(...fresh)
+      g.log.unshift({ t: `${g.date.y}年`, h: '经人介绍', kind: '', d: `朋友又介绍了 ${fresh.length} 位朋友。感情需要时间，也需要主动。` })
       set({ game: g })
-      finish('朋友又介绍了两位新朋友。')
+      finish(`朋友介绍了 ${fresh.length} 位新朋友。`)
     },
 
     date: (id, type) => {
@@ -280,10 +289,12 @@ export const useGame = create<StoreState>((set, get) => {
       if (!c) return
       const g = { ...s.game }
       const conf: Record<string, { 钱: number; 加: [number, number]; 文: string }> = {
-        '散步': { 钱: 300, 加: [4, 9], 文: '你们沿江边走了很久，聊起各自的工作和家里的事。' },
+        '散步': { 钱: 0, 加: [2, 5], 文: '你们沿江边走了很久，聊起各自的工作和家里的事。' },
         '吃饭': { 钱: 500, 加: [6, 13], 文: '一起吃了顿饭。对方说，你比介绍人描述的更好相处。' },
-        '电影': { 钱: 200, 加: [5, 10], 文: '看了一场电影，散场后又站在路边聊了很久。' },
-        '旅行': { 钱: 3000, 加: [12, 22], 文: '周末短途旅行，两天时间足够看清一个人，也足够让对方看清你。' },
+        '看电影': { 钱: 200, 加: [5, 10], 文: '看了一场电影，散场后又站在路边聊了很久。' },
+        '短途旅行': { 钱: 3000, 加: [12, 22], 文: '周末短途旅行，两天时间足够看清一个人，也足够让对方看清你。' },
+        '看展': { 钱: 100, 加: [3, 7], 文: '你们在美术馆待了一下午，聊了很多与工作无关的事。' },
+        '一起运动': { 钱: 0, 加: [2, 5], 文: '你们一起打了场球，出了一身汗，距离近了不少。' },
       }
       const cc = g.candidates.find((x) => x.id === id)!
       if (type === '表白') {
@@ -292,6 +303,7 @@ export const useGame = create<StoreState>((set, get) => {
         g.actions--
         if (Math.random() < 0.5 + cc.好感度 / 400) {
           cc.好感度 = clamp(cc.好感度 + 8, 0, 100)
+          cc.恋爱中 = true
           g.family.婚姻 = '恋爱中'
           g.log.unshift({ t: `${g.date.y}年`, h: '确定恋爱关系', kind: 'good', d: `你向${cc.姓名}表明心意，对方答应了。\n从此你的时间，有一部分不再属于自己。` })
           set({ game: g })
@@ -301,6 +313,21 @@ export const useGame = create<StoreState>((set, get) => {
           set({ game: g })
           finish('对方说需要再想想。')
         }
+        return
+      }
+      const 免费 = 免费互动.find((x) => x.名 === type)
+      if (免费) {
+        if (!cc.恋爱中) return finish('你们还没到这一步。')
+        if (cc.本年约会 && cc.本年约会.includes(type)) return finish(`今年已经${type}过了。`)
+        cc.本年约会 = [...(cc.本年约会 || []), type]
+        const before = cc.好感度
+        cc.好感度 = clamp(cc.好感度 + rnd(免费.加[0], 免费.加[1]), 0, 100)
+        const d = cc.好感度 - before
+        cc.memory.unshift(`${g.date.y}年：${免费.文.replace('{名}', cc.姓名)}好感度 +${d}。`)
+        if (cc.memory.length > 5) cc.memory.pop()
+        g.yearLog.unshift({ t: `${g.date.y}年`, h: `与${cc.姓名}· ${type}`, kind: '', d: 免费.文.replace('{名}', cc.姓名) })
+        set({ game: g })
+        finish(`${type}，好感度 +${d}（当前 ${cc.好感度}）`)
         return
       }
       const cfg = conf[type]
@@ -335,6 +362,7 @@ export const useGame = create<StoreState>((set, get) => {
       g.family.配偶 = {
         id: 'spouse', 姓名: c.姓名, 年龄: c.年龄, 身份: '你的配偶 · ' + c.职业, 职业: c.职业, 类别: c.类别,
         月收入: c.月收入, 养老金: 0, 退休: false,
+        职级: Math.max(0, g.rankIdx - rnd(1, 2)),
         性格: c.性格, 好感度: 88, 面: '💑', 信任: 80, 公开: 60, 利益: 0, memory: [], notes: '你们在亲友的见证下办了婚事。',
       }
       g.family.婚姻 = '已婚'
@@ -371,7 +399,7 @@ export const useGame = create<StoreState>((set, get) => {
       if (!s.game || !s.game.family.配偶) return
       const g = { ...s.game }
       const sp = g.family.配偶!
-      if (sp.好感度 < 50) return finish('配偶好感度不足 50，暂不考虑生育。')
+      if (sp.好感度 < 80) return finish('配偶好感度不足 80，暂不考虑生育。')
       if (g.family.子女.length >= 3) return finish('三个孩子已经是这个家庭能承担的极限了。')
       if (g.family.上次生育年 && g.date.y - g.family.上次生育年 < 2) return finish('距离上一个孩子出生还不到两年，身体和精力都需要恢复。')
       if (sp.年龄 >= 42) return finish('配偶年龄偏大，医生建议不再考虑生育。')
@@ -463,20 +491,20 @@ export const useGame = create<StoreState>((set, get) => {
       finish(msg)
     },
 
-    buyHouse: (i) => {
+    buyHouse: (i, mode) => {
       const s = get()
       if (!s.game) return
       const g = { ...s.game }
-      const r = buyAsset(g, '房', i)
+      const r = buyAsset(g, '房', i, mode)
       set({ game: g })
       finish(r.msg)
     },
 
-    buyCar: (i) => {
+    buyCar: (i, mode) => {
       const s = get()
       if (!s.game) return
       const g = { ...s.game }
-      const r = buyAsset(g, '车', i)
+      const r = buyAsset(g, '车', i, mode)
       set({ game: g })
       finish(r.msg)
     },
@@ -492,6 +520,37 @@ export const useGame = create<StoreState>((set, get) => {
       const r = sellAsset(g, kind, i)
       set({ game: g })
       finish(r.msg)
+    },
+
+    还负债: () => {
+      const s = get()
+      if (!s.game) return
+      const g = { ...s.game }
+      const r = repayDebt(g)
+      set({ game: g })
+      finish(r.msg)
+    },
+
+    结清贷款: (i) => {
+      const s = get()
+      if (!s.game) return
+      const g = { ...s.game }
+      const r = repayLoan(g, i)
+      set({ game: g })
+      finish(r.msg)
+    },
+
+    向上社交: () => {
+      const s = get()
+      if (!s.game) return
+      const g = { ...s.game }
+      if (!g.flags['首升换圈']) return finish('还没有进入新的圈层。')
+      if (g.actions <= 0) return finish('本年行动额度已用完。')
+      g.actions--
+      const 名字 = 向上社交Domain(g)
+      g.log.unshift({ t: `${g.date.y}年`, h: '向上社交', kind: '', d: `你通过饭局与走访，结识了 ${名字}。关系网换了一部分。` })
+      set({ game: g })
+      finish(`结识了新的人脉：${名字}`)
     },
 
     eduStart: (i) => {
@@ -571,6 +630,20 @@ export const useGame = create<StoreState>((set, get) => {
       const s = get()
       if (!s.game) return
       finish(saveGame(s.game) ? '已保存到本机浏览器。' : '保存失败。')
+    },
+
+    exportSave: () => {
+      const s = get()
+      if (!s.game) return
+      exportSaveFile(s.game)
+      finish('已导出存档文件。')
+    },
+
+    importGame: (text) => {
+      const g = parseSave(text)
+      if (!g) return finish('存档文件无效。')
+      set({ game: g, curTab: '年度' })
+      finish('存档导入成功。')
     },
 
     load: () => {

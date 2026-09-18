@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
 import { nextRankInfo, indicatorList } from '../../domain/selectors'
@@ -7,21 +8,38 @@ import { fmt } from '../../utils/format'
 function SaveCard() {
   const save = useGame((s) => s.save)
   const load = useGame((s) => s.load)
+  const exportSave = useGame((s) => s.exportSave)
+  const importGame = useGame((s) => s.importGame)
   const reset = useGame((s) => s.reset)
   useGame((s) => s.toastId)
+  const fileRef = useRef<HTMLInputElement>(null)
   const t = lastSaveTime()
   return (
     <div className="card" style={{ borderColor: '#e8c56a', background: '#fffdf4', marginBottom: 12 }}>
       <div className="card-bd" style={{ padding: '11px 13px' }}>
         <div className="ap-row" style={{ marginBottom: 8 }}>
           <span className="sec-title" style={{ margin: 0, color: '#9a7a24', borderLeftColor: '#e8c56a' }}>存档</span>
-          <span className="hint" style={{ margin: 0 }}>上次保存：{t || '尚未保存'}</span>
+          <span className="hint" style={{ margin: 0 }}>每年结束自动保存 · 上次保存：{t || '尚未保存'}</span>
         </div>
         <div className="btn-row" style={{ marginTop: 0 }}>
           <button className="btn-plain" onClick={save}>保存存档</button>
           <button className="btn-plain" onClick={load}>读取存档</button>
+          <button className="btn-plain" onClick={exportSave}>导出存档</button>
+          <button className="btn-plain" onClick={() => fileRef.current?.click()}>导入存档</button>
           <button className="btn-plain" onClick={reset}>重开人生</button>
         </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={async (e) => {
+            const f = e.target.files?.[0]
+            if (!f) return
+            importGame(await f.text())
+            e.target.value = ''
+          }}
+        />
       </div>
     </div>
   )

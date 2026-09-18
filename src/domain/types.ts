@@ -65,6 +65,7 @@ export interface ShixiItem {
   desc: string
   e: Effect
   asks: ShixiQuestion[][]
+  职业?: Job[]
 }
 
 export interface Npc {
@@ -99,6 +100,7 @@ export interface Candidate {
   memory: string[]
   notes: string
   本年约会?: string[]
+  恋爱中?: boolean
 }
 
 export interface Spouse {
@@ -120,6 +122,7 @@ export interface Spouse {
   memory: string[]
   notes: string
   额外?: string
+  职级?: number
 }
 
 export interface Child {
@@ -168,6 +171,9 @@ export interface AdvicePosition {
   级别: string
   条线: string
   理由: string[]
+  序号?: number
+  城市?: string
+  本地?: boolean
 }
 
 export interface HouseAsset {
@@ -384,6 +390,7 @@ export interface GameState {
   _晋升消耗?: number
   _本年事件?: string[]
   _候选年数?: number
+  浪漫方式?: string[]
   pendingEvent: GameEvent | null
   pendingPositions: AdvicePosition[] | null
   pendingPosTitle: string

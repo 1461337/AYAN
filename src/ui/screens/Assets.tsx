@@ -12,6 +12,8 @@ export function Assets() {
   const buyHouse = useGame((s) => s.buyHouse)
   const buyCar = useGame((s) => s.buyCar)
   const sell = useGame((s) => s.sell)
+  const 还负债 = useGame((s) => s.还负债)
+  const 结清贷款 = useGame((s) => s.结清贷款)
 
   const a = game.assets
   const totalLoan = game.loans.reduce((x, l) => x + l.余额, 0) + game.负债
@@ -88,19 +90,31 @@ export function Assets() {
         </button>
       )) : <div className="box">名下暂无车辆。车贷年利率约 4.8%，期限 3—5 年。</div>}
 
+      {game.负债 > 0 ? (
+        <div className="box warn-box">
+          <b>待偿负债：{fmt(game.负债)} 元</b>（助学贷款等）<br />
+          <button className="btn-plain mt8" disabled={game.cash <= 0} onClick={还负债}>
+            偿还负债（可用现金 {fmt(game.cash)} 元）
+          </button>
+        </div>
+      ) : null}
+
       {game.loans.length ? (
         <>
           <div className="sec-title">贷款明细</div>
           {game.loans.map((l, i) => (
             <div className="box" key={i}>
               · <b>{l.名}</b><br />余额 {fmt(l.余额)} 元　月供 {fmt(l.月供)} 元　
-              年利率 {l.利率}%　剩余 {l.总月 - l.已还} / {l.总月} 期
+              年利率 {l.利率}%　剩余 {l.总月 - l.已还} / {l.总月} 期<br />
+              <button className="btn-plain mt8" disabled={game.cash < l.余额 * 1.01} onClick={() => 结清贷款(i)}>
+                提前结清（需 {fmt(l.余额 + Math.round(l.余额 * 0.01))} 元）
+              </button>
             </div>
           ))}
         </>
       ) : null}
 
-      <div className="sec-title">购房（首付现金支付，月供不得超家庭月收入 55%）</div>
+      <div className="sec-title">购房（可全款，也可首付＋按揭）</div>
       {HOUSES.map((h, i) => {
         const down = Math.round(h.总价 * h.首付比)
         const pr = h.总价 - down
@@ -108,15 +122,20 @@ export function Assets() {
         const pay = monthly(pr, rate, h.年)
         const okPay = pay + used <= limit
         const okDown = game.cash >= down
+        const okFull = game.cash >= h.总价
         return (
-          <button className="btn-line" key={i} disabled={!okPay || !okDown} onClick={() => buyHouse(i)}>
-            {h.名}{h.奢侈 ? <span className="tag red fr">超标</span> : null}<span className="cost">总价 {fmt(h.总价)}</span>
-            <small>
-              首付 {h.首付比 * 100}% ＝ <b>{fmt(down)}</b> 元　贷款 {fmt(pr)} 元　{h.年} 年期　年利率 {rate}%（{pub ? '公积金' : '商业'}）　月供 <b>{fmt(pay)}</b> 元
-              {okDown ? '' : <><br /><b className="bad-txt">现金不足，缺 {fmt(down - game.cash)} 元</b></>}
-              {okPay ? '' : <><br /><b className="bad-txt">月供超出可贷上限 {fmt(limit)} 元，银行不予批贷</b></>}
-            </small>
-          </button>
+          <div className="npc" key={i}>
+            <div className="npc-top">
+              <div className="npc-main">
+                <div className="npc-name">{h.名}{h.奢侈 ? <em>超标</em> : null}</div>
+                <div className="hint">总价 {fmt(h.总价)}　首付 {h.首付比 * 100}% ＝ {fmt(down)}　贷款 {fmt(pr)} 元　{h.年} 年期　年利率 {rate}%（{pub ? '公积金' : '商业'}）　月供 {fmt(pay)} 元</div>
+              </div>
+            </div>
+            <div className="npc-act">
+              <button disabled={!okFull} onClick={() => buyHouse(i, 'full')}>全款购买<br /><small>{okFull ? `需 ${fmt(h.总价)} 元` : '现金不足'}</small></button>
+              <button disabled={!okPay || !okDown} onClick={() => buyHouse(i, 'loan')}>按揭购买<br /><small>{okPay ? (okDown ? `首付 ${fmt(down)} 元` : '首付不足') : '月供超限'}</small></button>
+            </div>
+          </div>
         )
       })}
       <div className="sec-title">购车</div>
@@ -127,15 +146,20 @@ export function Assets() {
         const pay = monthly(pr, rate, c.年)
         const okPay = pay + used <= limit
         const okDown = game.cash >= down
+        const okFull = game.cash >= c.总价
         return (
-          <button className="btn-line" key={i} disabled={!okPay || !okDown} onClick={() => buyCar(i)}>
-            {c.名}{c.奢侈 ? <span className="tag red fr">超标</span> : null}<span className="cost">总价 {fmt(c.总价)}</span>
-            <small>
-              首付 {c.首付比 * 100}% ＝ <b>{fmt(down)}</b> 元　贷款 {fmt(pr)} 元　{c.年} 年期　年利率 {rate}%　月供 <b>{fmt(pay)}</b> 元
-              {okDown ? '' : <><br /><b className="bad-txt">现金不足，缺 {fmt(down - game.cash)} 元</b></>}
-              {okPay ? '' : <><br /><b className="bad-txt">月供超出可贷上限 {fmt(limit)} 元</b></>}
-            </small>
-          </button>
+          <div className="npc" key={i}>
+            <div className="npc-top">
+              <div className="npc-main">
+                <div className="npc-name">{c.名}{c.奢侈 ? <em>超标</em> : null}</div>
+                <div className="hint">总价 {fmt(c.总价)}　首付 {c.首付比 * 100}% ＝ {fmt(down)}　贷款 {fmt(pr)} 元　{c.年} 年期　年利率 {rate}%　月供 {fmt(pay)} 元</div>
+              </div>
+            </div>
+            <div className="npc-act">
+              <button disabled={!okFull} onClick={() => buyCar(i, 'full')}>全款购买<br /><small>{okFull ? `需 ${fmt(c.总价)} 元` : '现金不足'}</small></button>
+              <button disabled={!okPay || !okDown} onClick={() => buyCar(i, 'loan')}>按揭购买<br /><small>{okPay ? (okDown ? `首付 ${fmt(down)} 元` : '首付不足') : '月供超限'}</small></button>
+            </div>
+          </div>
         )
       })}
       <div className="sec-title">投资与产业</div>

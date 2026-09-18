@@ -105,11 +105,33 @@ export interface ActionResult {
   msg: string
 }
 
-export function buyAsset(g: GameState, kind: '房' | '车', i: number): ActionResult {
+export function buyAsset(g: GameState, kind: '房' | '车', i: number, mode: 'full' | 'loan' = 'loan'): ActionResult {
   const d = (kind === '房' ? HOUSES : CARS)[i]
   if (!d) return { ok: false, msg: '该资产不存在。' }
+  const 可用公积金 = kind === '房' ? Math.min(g.fund || 0, d.总价) : 0
+  if (mode === 'full') {
+    const 需付 = d.总价 - 可用公积金
+    if (g.cash < 需付) {
+      return { ok: false, msg: `全款不足，需 ${fmt(需付)} 元${可用公积金 ? `（公积金可抵 ${fmt(可用公积金)} 元）` : ''}。` }
+    }
+    if (可用公积金 > 0) g.fund -= 可用公积金
+    g.cash -= 需付
+    if (kind === '房') {
+      const 首套 = g.assets.房产.length === 0
+      g.assets.房产.push({ 名: d.名, 面积: d.面积, 购入价: d.总价, 购入年: g.date.y, 市值: d.总价, 自住: 首套, 贷款: false })
+      if (首套) g.housing = '自有住房 · ' + d.名
+    } else {
+      g.assets.车辆.push({ 名: d.名, 总价: d.总价, 购入年: g.date.y, 市值: d.总价 })
+    }
+    g.log.unshift({
+      t: `${g.date.y}年`, h: kind === '房' ? '全款购置住房' : '全款购置车辆', kind: 'good',
+      d: `你以全款 ${fmt(d.总价)} 元买下${d.名}${可用公积金 ? `（其中公积金 ${fmt(可用公积金)} 元）` : ''}，没有贷款。`
+        + (d.奢侈 && isPublicJob(g) ? `\n一名${g.p.职业}购置这种价位的资产，在每年的组织考察中，都可能被重新提起。` : ''),
+    })
+    return { ok: true, msg: '已全款购置：' + d.名 }
+  }
+
   const down = Math.round(d.总价 * d.首付比)
-  const 可用公积金 = kind === '房' ? Math.min(g.fund || 0, down) : 0
   if (g.cash + 可用公积金 < down) {
     return { ok: false, msg: `首付不足，需 ${fmt(down)} 元${可用公积金 ? `（公积金可抵 ${fmt(可用公积金)} 元）` : ''}。` }
   }
@@ -131,12 +153,36 @@ export function buyAsset(g: GameState, kind: '房' | '车', i: number): ActionRe
     g.assets.车辆.push({ 名: d.名, 总价: d.总价, 购入年: g.date.y, 市值: d.总价 })
   }
   g.log.unshift({
-    t: `${g.date.y}年`, h: kind === '房' ? '购置住房' : '购置车辆', kind: 'good',
+    t: `${g.date.y}年`, h: kind === '房' ? '按揭购置住房' : '按揭购置车辆', kind: 'good',
     d: `你以 ${fmt(down)} 元首付（其中公积金 ${fmt(可用公积金)} 元）买下${d.名}，贷款 ${fmt(pr)} 元，${d.年} 年期，年利率 ${rate}%，月供 ${fmt(pay)} 元。`
       + (kind === '房' ? (g.assets.房产.length === 1 ? '\n这是你的第一套房，从租房搬进了自己的家。' : '\n这套房用于出租，每年约有 ' + fmt(Math.round(d.总价 * 0.014)) + ' 元租金收入。') : '')
       + (d.奢侈 && isPublicJob(g) ? `\n一名${g.p.职业}购置这种价位的资产，在每年的组织考察中，都可能被重新提起。` : ''),
   })
-  return { ok: true, msg: '已购置：' + d.名 }
+  return { ok: true, msg: '已按揭购置：' + d.名 }
+}
+
+/* 偿还背景负债（助学贷款等） */
+export function repayDebt(g: GameState): ActionResult {
+  if (g.负债 <= 0) return { ok: false, msg: '目前没有负债。' }
+  const 还 = Math.min(g.cash, g.负债)
+  if (还 <= 0) return { ok: false, msg: '现金不足，无法偿还。' }
+  g.cash -= 还
+  g.负债 -= 还
+  g.log.unshift({ t: `${g.date.y}年`, h: '偿还负债', kind: 'good', d: `你一次性偿还负债 ${fmt(还)} 元，${g.负债 > 0 ? `还剩 ${fmt(g.负债)} 元。` : '负债已清零。'}` })
+  return { ok: true, msg: `已偿还 ${fmt(还)} 元${g.负债 > 0 ? `，剩余 ${fmt(g.负债)} 元` : '，负债清零'}。` }
+}
+
+/* 提前结清房贷/车贷 */
+export function repayLoan(g: GameState, i: number): ActionResult {
+  const l = g.loans[i]
+  if (!l) return { ok: false, msg: '该笔贷款不存在。' }
+  const 违约金 = Math.round(l.余额 * 0.01)
+  const 需付 = l.余额 + 违约金
+  if (g.cash < 需付) return { ok: false, msg: `结清需 ${fmt(需付)} 元（含违约金 ${fmt(违约金)} 元），现金不足。` }
+  g.cash -= 需付
+  g.loans = g.loans.filter((x) => x !== l)
+  g.log.unshift({ t: `${g.date.y}年`, h: '提前结清贷款', kind: 'good', d: `你提前结清${l.名}贷款，支付余额 ${fmt(l.余额)} 元与违约金 ${fmt(违约金)} 元。` })
+  return { ok: true, msg: `已结清「${l.名}」贷款，共付 ${fmt(需付)} 元。` }
 }
 
 export function sellAsset(g: GameState, kind: '房' | '车', i: number): ActionResult {

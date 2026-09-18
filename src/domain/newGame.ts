@@ -1,6 +1,6 @@
-import type { Candidate, Edu, GameState, Sex, Job } from './types'
-import { 单姓, 复姓, 男名, 女名, 男名池, 女名池, 婚恋职业池, 婚恋收入, 婚恋性格, BACKGROUNDS, JOB_BONUS, BASE_PAY, JOB_UNIT_FIXED, 平台表, 平台集合, ACTIONS_PER_YEAR, SHIXI_COUNT } from '../data/static'
-import { SHIXI } from '../data/shixi'
+import type { Candidate, Edu, GameState, Npc, Sex, Job } from './types'
+import { 单姓, 复姓, 男名, 女名, 男名池, 女名池, 婚恋职业池, 婚恋收入, 婚恋性格, BACKGROUNDS, JOB_BONUS, BASE_PAY, JOB_UNIT_FIXED, 平台表, 平台集合, ACTIONS_PER_YEAR, 职务阶梯 } from '../data/static'
+import { makeShixiOrder } from './quiz'
 import { clamp } from '../utils/format'
 import { pick, rnd, shuffle } from './rng'
 import { fitOf, 平台单位, 条线Of } from './selectors'
@@ -101,7 +101,7 @@ export function newState(f: SetupForm): GameState {
     date: { y: 2040 }, beginYear: 2040, endYear: 0,
     actions: ACTIONS_PER_YEAR, actionsMax: ACTIONS_PER_YEAR,
     usedThisYear: [],
-    shixiOrder: shuffle(SHIXI.map((_, i) => i)).slice(0, SHIXI_COUNT),
+    shixiOrder: [],
     quiz: null,
     family: { 婚姻: '单身', 配偶: null, 子女: [] },
     candidates: [],
@@ -153,29 +153,8 @@ export function newState(f: SetupForm): GameState {
     s.zhijiIdx = Math.min(s.zhijiIdx, 7)
   }
 
-  const leaderName = pick(['高育良', '李达康', '季昌明', '孙连城', '丁义珍', '陈海', '赵东来', '田国福'])
-  s.npcs = [
-    {
-      id: 'leader', 姓名: leaderName, 身份: '分管领导（正处级）', 年龄: 52, 面: '🧔', 层级: '上级',
-      信任: 32, 利益: 0, 公开: 20, 好感度: 62, 性格: '爱惜羽毛，重文字材料',
-      memory: ['第一次见他时，你交上去的材料格式错了三处。'], notes: '你的直接领导，晋升时最有分量的一票。',
-    },
-    {
-      id: 'colleague', 姓名: pick(男名池), 身份: '同处室同批同事', 年龄: Math.max(24, age + 2), 面: '👨‍💼', 层级: '同事',
-      信任: 48, 利益: 0, 公开: 45, 好感度: 75, 性格: '业务熟，话不多',
-      memory: [], notes: '和你同一条船，也和你争同一个位置。',
-    },
-    {
-      id: 'oldclass', 姓名: pick(['蔡成功', '王大路', '郑胜利', '刘新建', '孙广志']), 身份: '京州民营建筑公司老板', 年龄: Math.max(26, age + 3), 面: '🧑‍💼', 层级: '社会',
-      信任: 58, 利益: 28, 公开: 40, 好感度: 78, 性格: '讲义气，也讲利益，胆子偏大',
-      memory: ['大学时你借过他两千块交学费。'], notes: '你的老同学，做工程生意。',
-    },
-    {
-      id: 'discipline', 姓名: pick(男名池), 身份: '市纪委监委监督检查室副主任', 年龄: 44, 面: '🕵️', 层级: '监督',
-      信任: 20, 利益: 0, 公开: 15, 好感度: 40, 性格: '程序至上，只认证据',
-      memory: [], notes: '目前和你没有交集，但你知道他存在。',
-    },
-  ]
+  s.npcs = makeNpcs(s)
+  s.shixiOrder = makeShixiOrder(s)
   s.candidates = makeCandidates(f.sex, age)
 
   s.log.unshift({
@@ -194,4 +173,52 @@ export function newState(f: SetupForm): GameState {
     })
   }
   return s
+}
+
+/* ============ 人脉 NPC ============ */
+
+const 领导名池 = ['高育良', '李达康', '季昌明', '孙连城', '丁义珍', '陈海', '赵东来', '田国福', '沙瑞金', '侯亮平', '钟小艾', '易学习']
+const 老板名池 = ['蔡成功', '王大路', '郑胜利', '刘新建', '孙广志', '赵瑞龙', '高小凤', '张树立', '程度']
+
+function 领导级别(g: GameState, offset: number): string {
+  if (g.p.职业 === '公务员') {
+    const idx = Math.min(职务阶梯.length - 1, Math.max(0, g.rankIdx + offset))
+    return 职务阶梯[idx].名
+  }
+  if (g.p.职业 === '事业单位') return ['科级', '科级', '处级', '处级', '厅级'][Math.min(4, Math.max(0, g.rankIdx + offset))] + '负责人'
+  return '同行业资深人士'
+}
+
+export function makeNpc(g: GameState, id: string): Npc {
+  const age = g.p.年龄
+  if (id === 'leader') {
+    return {
+      id, 姓名: pick(领导名池), 身份: `分管领导（${领导级别(g, 2)}）`, 年龄: Math.max(38, age + rnd(10, 22)), 面: '🧔', 层级: '上级',
+      信任: rnd(26, 40), 利益: 0, 公开: rnd(12, 26), 好感度: rnd(52, 66), 性格: pick(['爱惜羽毛，重文字材料', '雷厉风行，只看结果', '谨小慎微，不担责任', '用人不疑，讲情面']),
+      memory: [], notes: '你的直接领导，晋升时最有分量的一票。',
+    }
+  }
+  if (id === 'colleague') {
+    return {
+      id, 姓名: pick(男名池.concat(女名池)), 身份: '同处室同批同事', 年龄: Math.max(24, age + rnd(0, 4)), 面: '👨‍💼', 层级: '同事',
+      信任: rnd(40, 55), 利益: 0, 公开: rnd(35, 55), 好感度: rnd(62, 80), 性格: pick(['业务熟，话不多', '热情，爱张罗', '较真，认死理', '圆滑，谁也不得罪']),
+      memory: [], notes: '和你同一条船，也和你争同一个位置。',
+    }
+  }
+  if (id === 'oldclass') {
+    return {
+      id, 姓名: pick(老板名池), 身份: '民营企业经营者', 年龄: Math.max(26, age + rnd(1, 5)), 面: '🧑‍💼', 层级: '社会',
+      信任: rnd(50, 62), 利益: rnd(18, 34), 公开: rnd(32, 46), 好感度: rnd(68, 82), 性格: pick(['讲义气，也讲利益，胆子偏大', '生意人，先算账后谈情', '低调，不显山露水']),
+      memory: [], notes: '你的老同学，做工程生意。',
+    }
+  }
+  return {
+    id, 姓名: pick(男名池.concat(女名池)), 身份: `${g.p.城市}纪委监委监督检查室副主任`, 年龄: Math.max(40, age + 8), 面: '🕵️', 层级: '监督',
+    信任: rnd(14, 24), 利益: 0, 公开: rnd(10, 20), 好感度: rnd(34, 46), 性格: '程序至上，只认证据',
+    memory: [], notes: '目前和你没有交集，但你知道他存在。',
+  }
+}
+
+export function makeNpcs(g: GameState): Npc[] {
+  return ['leader', 'colleague', 'oldclass', 'discipline'].map((id) => makeNpc(g, id))
 }

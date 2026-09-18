@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
 import { rankTitle } from '../../domain/selectors'
@@ -5,6 +6,7 @@ import { 职级序列 } from '../../data/static'
 
 export function Archive() {
   const game = useGame((s) => s.game)!
+  const [展开, set展开] = useState(false)
 
   const pos = game.positions.length
     ? game.positions.map((p, i) => <span key={i}>· {p.年}年　{p.职级}　{p.岗位}<br /></span>)
@@ -41,11 +43,29 @@ export function Archive() {
         </>
       ) : null}
       <div className="sec-title">人生轨迹</div>
-      {game.log.map((x, i) => (
-        <div className={`log-item ${x.kind || ''}`} key={i}>
-          <div className="t">{x.t}</div><div className="h">{x.h}</div><div className="d">{x.d}</div>
-        </div>
-      ))}
+      <div className="hint mb8">{展开 ? '显示全部记录' : `仅显示近 3 年（${game.date.y - 2}—${game.date.y}）`}</div>
+      {(() => {
+        const 全部 = game.log
+        const 近3年 = 全部.filter((x) => {
+          const m = x.t.match(/(\d{4})/)
+          return m ? Number(m[1]) >= game.date.y - 2 : true
+        })
+        const 显示 = 展开 ? 全部 : 近3年
+        return (
+          <>
+            {显示.map((x, i) => (
+              <div className={`log-item ${x.kind || ''}`} key={i}>
+                <div className="t">{x.t}</div><div className="h">{x.h}</div><div className="d">{x.d}</div>
+              </div>
+            ))}
+            {全部.length > 近3年.length ? (
+              <button className="btn-plain mt8" onClick={() => set展开((v) => !v)}>
+                {展开 ? '收起，只看近 3 年' : `展开全部（共 ${全部.length} 条）`}
+              </button>
+            ) : null}
+          </>
+        )
+      })()}
     </Card>
   )
 }

@@ -25,7 +25,7 @@ export function Header() {
         <div className={styles.hdrTop}>
           <div className={styles.hdrTitle}>
             <div className={styles.rankName}>
-              {t}
+              {game.p.姓名} · {t}
               <small>{jobTag}</small>
               {game.p.选调生 ? <small className="tag-xd">选调生</small> : null}
               {game.status === '退休' ? <small className="tag-xd">退休</small> : null}

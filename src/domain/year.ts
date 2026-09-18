@@ -6,20 +6,21 @@ import { doPromote } from './promotion'
 import { nextRankInfo, ladder, rankTitle, promoteGateWhy } from './selectors'
 import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, npcTick, cityTick, retiredMini } from './events'
 import { disciplineTick, 生成调查事件 } from './discipline'
-import { SHIXI_COUNT } from '../data/static'
+import { 浪漫方式池 } from '../data/static'
 import { makeCandidates } from './newGame'
+import { makeShixiOrder } from './quiz'
 import {
   netIncome, livingCost, 年租金收入, 年养车成本, 年终奖, 公积金月缴, 岗位月薪,
   isPublicJob, luxuryCount,
 } from './economy'
-import { SHIXI } from '../data/shixi'
 
 export function yearWrapUp(g: GameState): void {
   g.riskSnapshot = g.discipline.risk
   g.actions = g.actionsMax
   g.usedThisYear = []
   g.flags['本年免费健康'] = false
-  g.shixiOrder = shuffle(SHIXI.map((_, i) => i)).slice(0, SHIXI_COUNT)
+  g.shixiOrder = makeShixiOrder(g)
+  g.浪漫方式 = shuffle(浪漫方式池).slice(0, 4)
 }
 
 export function lifeCheck(g: GameState): void {

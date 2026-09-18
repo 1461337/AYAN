@@ -2,7 +2,12 @@ import type { ReactNode } from 'react'
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
 import { 子女月支出 } from '../../domain/economy'
+import { 免费互动 } from '../../data/static'
 import { fmt } from '../../utils/format'
+
+const 约会花费: Record<string, string> = {
+  '散步': '免费', '吃饭': '500元', '看电影': '200元', '短途旅行': '3000元', '看展': '100元', '一起运动': '免费',
+}
 
 interface NpcCardProps {
   face: string
@@ -57,6 +62,7 @@ export function People() {
   const marry = useGame((s) => s.marry)
   const meetMore = useGame((s) => s.meetMore)
   const rel = useGame((s) => s.rel)
+  const 向上社交 = useGame((s) => s.向上社交)
 
   return (
     <Card icon="🕸️" title="人脉 · 感情 · 家庭">
@@ -110,11 +116,15 @@ export function People() {
         />
       )) : game.family.配偶 ? (
         <>
-          <div className="box">你们还没有孩子。生育会增加家庭开支，而养育成本会随孩子长大逐年上升。</div>
-          <button className="btn-line" disabled={game.actions <= 0} onClick={birth}>
-            计划要一个孩子<span className="cost">-1 行动</span>
-            <small>需配偶好感度 ≥ 50、配偶未满 42 岁，最多 3 个孩子且间隔 2 年以上</small>
-          </button>
+          <div className="box">你们还没有孩子。养育成本会随孩子长大逐年上升。</div>
+          {game.family.配偶.好感度 >= 80 ? (
+            <button className="btn-line" disabled={game.actions <= 0} onClick={birth}>
+              计划要一个孩子<span className="cost">-1 行动</span>
+              <small>需配偶未满 42 岁，最多 3 个孩子且间隔 2 年以上</small>
+            </button>
+          ) : (
+            <div className="hint">配偶好感度达到 80 后，才会考虑生育（当前 {game.family.配偶.好感度}）。</div>
+          )}
         </>
       ) : null}
 
@@ -136,25 +146,37 @@ export function People() {
               extra={c.好感度 >= 80 ? '对方已经在等你开口了。' : undefined}
               actions={
                 <>
-                  <button disabled={c.本年约会?.includes('散步')} onClick={() => date(c.id, '散步')}>散步<br /><small>{c.本年约会?.includes('散步') ? '本年已约' : '300元'}</small></button>
-                  <button disabled={c.本年约会?.includes('吃饭')} onClick={() => date(c.id, '吃饭')}>吃饭<br /><small>{c.本年约会?.includes('吃饭') ? '本年已约' : '500元'}</small></button>
-                  <button disabled={c.本年约会?.includes('电影')} onClick={() => date(c.id, '电影')}>看电影<br /><small>{c.本年约会?.includes('电影') ? '本年已约' : '200元'}</small></button>
-                  <button disabled={c.本年约会?.includes('旅行')} onClick={() => date(c.id, '旅行')}>短途旅行<br /><small>{c.本年约会?.includes('旅行') ? '本年已约' : '3000元'}</small></button>
+                  {(game.浪漫方式 && game.浪漫方式.length ? game.浪漫方式 : ['散步', '吃饭', '看电影', '短途旅行']).map((m) => (
+                    <button key={m} disabled={c.本年约会?.includes(m)} onClick={() => date(c.id, m)}>
+                      {m}<br /><small>{c.本年约会?.includes(m) ? '本年已约' : (约会花费[m] || '')}</small>
+                    </button>
+                  ))}
+                  {c.恋爱中 ? 免费互动.map((f) => (
+                    <button key={f.名} disabled={c.本年约会?.includes(f.名)} onClick={() => date(c.id, f.名)}>
+                      {f.名}<br /><small>{c.本年约会?.includes(f.名) ? '本年已做' : '不耗行动'}</small>
+                    </button>
+                  )) : null}
                   <button onClick={() => date(c.id, '表白')}>坦诚表白<br /><small>1 行动 · 好感 ≥ 60</small></button>
                   <button onClick={() => marry(c.id)}>登记结婚<br /><small>1 行动 · 好感 ≥ 80</small></button>
                 </>
               }
             />
           ))}
-          <button className="btn-line" disabled={game.actions <= 0} onClick={meetMore}>
+          <button className="btn-line" disabled={game.actions <= 0 || game.candidates.length >= 6} onClick={meetMore}>
             请朋友再介绍两位<span className="cost">-1 行动</span>
-            <small>重新认识 2 位可以相处的人</small>
+            <small>当前 {game.candidates.length} / 6 位可发展对象</small>
           </button>
         </>
       ) : null}
 
       <div className="sec-title mt14">工作与社会关系</div>
       <div className="hint mb12">人脉是晋升中分量最重的一项，每次互动消耗 1 次行动。</div>
+      {game.flags['首升换圈'] ? (
+        <button className="btn-line" disabled={game.actions <= 0} onClick={向上社交}>
+          向上社交 · 结识更高层级的人<span className="cost">-1 行动</span>
+          <small>替换掉好感度最低的两位人脉</small>
+        </button>
+      ) : null}
       {game.npcs.map((n) => (
         <NpcCard
           key={n.id}
