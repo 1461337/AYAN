@@ -662,9 +662,12 @@ export const useGame = create<StoreState>((set, get) => {
       if (g.cash < first) return finish(`首期学费不足 ${fmt(first)} 元。`)
       g.cash -= first
       g.edu.在读 = { 名: e.名, 至: e.至, 年: e.年, 剩: e.年, 已付: first, 总费: e.费, 效: e.效 }
-      g.log.unshift({ t: `${g.date.y}年`, h: '报名在职学历教育', kind: '', d: `你报名参加${e.名}，首期缴纳 ${fmt(first)} 元，总费用约 ${fmt(e.费)} 元，周期 ${e.年} 年。\n${e.注}` })
+      const 备考说明 = g.status === '退休'
+        ? `你以社会考生身份报名参加${e.名}，首期缴纳 ${fmt(first)} 元，总费用约 ${fmt(e.费)} 元，周期 ${e.年} 年。\n退休了，时间由自己安排，考场上的对手却还是年轻人。`
+        : `你报名参加${e.名}，首期缴纳 ${fmt(first)} 元，总费用约 ${fmt(e.费)} 元，周期 ${e.年} 年。\n${e.注}`
+      g.log.unshift({ t: `${g.date.y}年`, h: g.status === '退休' ? '报名学历教育（社会考生）' : '报名在职学历教育', kind: '', d: 备考说明 })
       set({ game: g })
-      finish('已报名，开始在职攻读。')
+      finish('已报名，开始攻读。')
     },
 
     eduCancel: () => {

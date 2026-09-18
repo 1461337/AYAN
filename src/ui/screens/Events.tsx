@@ -23,7 +23,7 @@ function SaveCard() {
           <span className="sec-title" style={{ margin: 0, color: '#9a7a24', borderLeftColor: '#e8c56a' }}>存档</span>
           <span className="hint" style={{ margin: 0 }}>自动保存 · 上次：{t || '未保存'}</span>
         </div>
-        <div className="btn-row" style={{ marginTop: 0 }}>
+        <div className="btn-grid" style={{ marginTop: 0 }}>
           <button className="btn-plain" onClick={save}>保存存档</button>
           <button className="btn-plain" onClick={load}>读取存档</button>
           <button className="btn-plain" onClick={exportSave}>导出存档</button>

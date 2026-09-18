@@ -36,7 +36,7 @@ export function Study() {
         </>
       ) : null}
       <div className="sec-title mt14">学历提升（在职或退休均可）</div>
-      {game.status === '退休' ? <div className="box">退休后仍可报考开放大学、老年大学等学历教育，圆一个当年的心愿。</div> : null}
+      {game.status === '退休' ? <div className="box">退休后仍可继续学历教育：成人高考、自学考试、开放大学等均可报考，圆一个当年的心愿。</div> : null}
       {EDU_UP.map((e, i) => {
         const ok = e.需.includes(cur)
         const busy = !!up

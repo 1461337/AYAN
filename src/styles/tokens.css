@@ -131,6 +131,10 @@ select {
 .btn-line:disabled { opacity: .5; }
 .btn-line .cost { float: right; font-size: 12px; color: var(--red-700); font-weight: 800; }
 .btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+/* 等宽按钮网格：手机端对齐更整齐 */
+.btn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; }
+.btn-grid .btn-plain { width: 100%; text-align: center; padding: 10px 6px; }
+.btn-grid .btn-ghost { width: 100%; text-align: center; }
 
 /* ============ 数据格 ============ */
 .kv { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
