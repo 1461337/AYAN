@@ -1,6 +1,7 @@
 import type { GameState, Job, PlatformName } from './types'
 import { 平台表, 职务阶梯 } from '../data/static'
 import { 职业机构, 职业职称名, 教师高校职称, 教师中小学职称, 医生职称序列 } from '../data/careers'
+import { eduIdxOf } from './selectors'
 import { 政治扩展职位 } from '../data/positionsLib'
 import { shuffle } from './rng'
 
@@ -448,7 +449,13 @@ function 职业职位池(g: GameState, idx: number): PoolPos[] {
     while (目标 < 3 && 职业本层(职业, 目标, idx).length === 0) 目标++
     out.push(...职业本层(职业, 目标, idx))
   }
-  return 补齐(out)
+  // 高校教职要求研究生学历：本科教师留在中学轨
+  let 结果 = 补齐(out)
+  if (职业 === '教师' && eduIdxOf(g.p.学历) < 3) {
+    const 中学岗 = 结果.filter((p) => !/大学|学院/.test(p.名))
+    if (中学岗.length) 结果 = 中学岗
+  }
+  return 结果
 }
 
 function ladderName(职业: Job, idx: number): string {

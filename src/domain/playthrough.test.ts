@@ -6,6 +6,7 @@ import { useGame } from '../store/gameStore'
 import { ALL_SHIXI } from './quiz'
 import { nextRankInfo } from './selectors'
 import { 快照 } from './effects'
+import { resetRandomSource, setRandomSource } from './rng'
 import type { GameEvent, GameState, Job } from './types'
 
 function mulberry32(seed: number) {
@@ -19,7 +20,7 @@ function mulberry32(seed: number) {
   }
 }
 
-type 策略 = '清廉' | '贪腐' | '贪后收手' | '激进'
+type 策略 = '清廉' | '贪腐' | '贪后收手' | '激进' | '稳健'
 
 const 该收手了 = (g: GameState) => g.p.年龄 >= 55 || g.discipline.risk >= 60
 
@@ -65,20 +66,51 @@ function 贪腐最优(g: GameState, ev: GameEvent): number {
   return best
 }
 
+/* 稳健：保健康、避风险、重家庭，晋升顺其自然 */
+function 稳健最优(g: GameState, ev: GameEvent): number {
+  const saved = g.pendingEvent
+  g.pendingEvent = null
+  let best = 0
+  let bestScore = -Infinity
+  ev.选项.forEach((o, i) => {
+    const copy = structuredClone(g)
+    try { o.resolve(copy) } catch { /* 忽略单选项异常 */ }
+    const score = (copy.p.健康 - g.p.健康) * 2
+      + (copy.p.道德 - g.p.道德) * 0.5
+      + (copy.p.声望 - g.p.声望) * 0.5
+      - (copy.discipline.risk - g.discipline.risk) * 3
+      + (copy.zhengji - g.zhengji) / 100
+      + (copy.cash - g.cash) / 100000
+    if (score > bestScore) { bestScore = score; best = i }
+  })
+  g.pendingEvent = saved
+  return best
+}
+
 function 选事件(g: GameState, ev: GameEvent, 策略: 策略): number {
   if (策略 === '贪后收手' && 该收手了(g)) {
     if (ev.标题 === '纪委监委找你谈话') return 0
     return 事件最优(g, ev)
   }
-  if (策略 !== '清廉' && ev.标题 === '纪委监委找你谈话') return 2
-  return 策略 === '清廉' ? 事件最优(g, ev) : 贪腐最优(g, ev)
+  if (策略 !== '清廉' && 策略 !== '稳健' && ev.标题 === '纪委监委找你谈话') return 2
+  if (策略 === '清廉') return 事件最优(g, ev)
+  if (策略 === '稳健') return 稳健最优(g, ev)
+  return 贪腐最优(g, ev)
 }
 
-/* 逐利/实权岗位优先（贪腐与激进打法共用） */
+/* 逐利/实权岗位优先（贪腐与激进打法共用）；稳健避开高配与二线 */
 function 选岗(g: GameState, 策略: 策略): number {
   const list = g.pendingPositions || []
   if (!list.length) return 0
-  const 逐利 = 策略 !== '清廉'
+  if (策略 === '稳健') {
+    const k = list.findIndex((p) => !p.高配 && !p.二线)
+    if (k >= 0) return k
+  }
+  if (策略 === '激进') {
+    const k = list.findIndex((p) => /大学|三甲|集团|总编辑|校长|院长|副主任医师|主任医师/.test(p.名))
+    if (k >= 0) return k
+  }
+  const 逐利 = 策略 !== '清廉' && 策略 !== '稳健'
   if (逐利 && !(策略 === '贪后收手' && 该收手了(g))) {
     const k = list.findIndex((p) => /住建|交通|发改|自然资源|规划|城建|城管|财政|市场监管/.test(p.名))
     if (k >= 0) return k
@@ -103,6 +135,7 @@ interface 模拟结果 {
 
 function 跑一局(c: 模拟配置): 模拟结果 {
   const rng = mulberry32(c.种子)
+  setRandomSource(rng)
   const oldRandom = Math.random
   Math.random = rng
   try {
@@ -161,7 +194,8 @@ function 跑一局(c: 模拟配置): 模拟结果 {
       // 年度免费体检
       if (s.game && !s.game.flags['本年免费健康']) useGame.getState().healthFree()
       s = useGame.getState()
-      if (s.game && s.game.p.健康 < 55 && s.game.actions > 0 && s.game.cash > 20000) useGame.getState().healthPaid()
+      const 健康线 = c.策略 === '稳健' ? 78 : 55
+      if (s.game && s.game.p.健康 < 健康线 && s.game.actions > 0 && s.game.cash > 20000) useGame.getState().healthPaid()
       s = useGame.getState()
 
       // 婚恋
@@ -240,6 +274,7 @@ function 跑一局(c: 模拟配置): 模拟结果 {
     return { 配置: c, 结局, 详情 }
   } finally {
     Math.random = oldRandom
+    resetRandomSource()
   }
 }
 
@@ -247,18 +282,26 @@ it('全部职业人生模拟（含公务员贪腐打法）', () => {
   const 配置s: 模拟配置[] = [
     { 姓名: '陆承宇', 职业: '公务员', 专业: '法学', 种子: 2026, 策略: '清廉' },
     { 姓名: '周明远', 职业: '公务员', 专业: '土木工程', 种子: 2027, 策略: '贪腐' },
+    { 姓名: '曹得志', 职业: '公务员', 专业: '工程管理', 种子: 2034, 策略: '贪后收手' },
+    { 姓名: '陈守拙', 职业: '公务员', 专业: '法学', 种子: 2040, 策略: '稳健' },
     { 姓名: '许砚舟', 职业: '事业单位', 专业: '土木工程', 种子: 2028, 策略: '清廉' },
-    { 姓名: '方雨桐', 职业: '事业单位', 专业: '会计学', 种子: 2034, 策略: '贪后收手' },
+    { 姓名: '方雨桐', 职业: '事业单位', 专业: '会计学', 种子: 2035, 策略: '贪后收手' },
+    { 姓名: '齐静之', 职业: '事业单位', 专业: '汉语言文学', 种子: 2041, 策略: '稳健' },
     { 姓名: '林北辰', 职业: '国企', 专业: '会计学', 种子: 2029, 策略: '清廉' },
-    { 姓名: '赵启铭', 职业: '国企', 专业: '工商管理', 种子: 2035, 策略: '贪腐' },
+    { 姓名: '赵启铭', 职业: '国企', 专业: '工商管理', 种子: 2036, 策略: '贪腐' },
+    { 姓名: '郭惟俭', 职业: '国企', 专业: '经济学', 种子: 2042, 策略: '稳健' },
     { 姓名: '沈亦寒', 职业: '企业', 专业: '工商管理', 种子: 2030, 策略: '清廉' },
-    { 姓名: '韩东野', 职业: '企业', 专业: '经济学', 种子: 2036, 策略: '激进' },
+    { 姓名: '韩东野', 职业: '企业', 专业: '经济学', 种子: 2037, 策略: '激进' },
+    { 姓名: '陆知进退', 职业: '企业', 专业: '会计学', 种子: 2043, 策略: '稳健' },
     { 姓名: '顾长川', 职业: '记者', 专业: '新闻学', 种子: 2031, 策略: '清廉' },
-    { 姓名: '苏怀瑾', 职业: '记者', 专业: '汉语言文学', 种子: 2037, 策略: '激进' },
+    { 姓名: '苏怀瑾', 职业: '记者', 专业: '汉语言文学', 种子: 2038, 策略: '激进' },
+    { 姓名: '方秉笔', 职业: '记者', 专业: '新闻学', 种子: 2044, 策略: '稳健' },
     { 姓名: '程知远', 职业: '教师', 专业: '汉语言文学', 种子: 2032, 策略: '清廉' },
-    { 姓名: '唐佩珊', 职业: '教师', 专业: '英语', 种子: 2038, 策略: '激进', 年龄: 26 },
+    { 姓名: '唐佩珊', 职业: '教师', 专业: '英语', 种子: 2039, 策略: '激进', 年龄: 26 },
+    { 姓名: '温守正', 职业: '教师', 专业: '数学与应用数学', 种子: 2045, 策略: '稳健' },
     { 姓名: '裴景行', 职业: '医生', 专业: '临床医学', 种子: 2033, 策略: '清廉' },
-    { 姓名: '白景明', 职业: '医生', 专业: '口腔医学', 种子: 2039, 策略: '激进', 年龄: 26 },
+    { 姓名: '白景明', 职业: '医生', 专业: '口腔医学', 种子: 2040, 策略: '激进', 年龄: 26 },
+    { 姓名: '许仁心', 职业: '医生', 专业: '预防医学', 种子: 2046, 策略: '稳健' },
   ]
 
   const 结果s: 模拟结果[] = []
@@ -289,7 +332,7 @@ it('全部职业人生模拟（含公务员贪腐打法）', () => {
     expect(r.结局.length).toBeGreaterThan(2)
     expect(r.详情.length).toBeGreaterThan(12)
   }
-  const 贪官s = 结果s.filter((r) => r.配置.策略 !== '清廉')
-  expect(贪官s.length).toBeGreaterThanOrEqual(3)
+  const 贪官s = 结果s.filter((r) => r.配置.策略 === '贪腐' || r.配置.策略 === '贪后收手')
+  expect(贪官s.length).toBeGreaterThanOrEqual(4)
   expect(贪官s.some((r) => r.结局.includes('落马'))).toBe(true)
-}, 120000)
+}, 240000)
