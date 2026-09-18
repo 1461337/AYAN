@@ -121,6 +121,24 @@ export function endYear(g: GameState): void {
   }
   g.loans = g.loans.filter((l) => l.余额 > 0)
 
+  /* 领导干部个人有关事项报告：房产、车辆超标 */
+  if (isPublicJob(g) && g.status === '在职') {
+    const 房产市值 = g.assets.房产.reduce((a, x) => a + (x.市值 || x.购入价 || 0), 0)
+    const 房产标准 = 1_500_000 + Math.max(0, g.rankIdx) * 800_000
+    const 车标准 = 200_000 + Math.max(0, g.rankIdx) * 50_000
+    const 超标车 = g.assets.车辆.filter((v) => (v.总价 || 0) > 车标准)
+    if (房产市值 > 房产标准 || 超标车.length) {
+      const 项: string[] = []
+      if (房产市值 > 房产标准) 项.push('名下房产市值明显超出同职级一般水平')
+      if (超标车.length) 项.push(`${超标车.length} 辆车的购价高于职级用车标准`)
+      g.discipline.risk = clamp(g.discipline.risk + 6 + 超标车.length * 2, 0, 100)
+      g.p.声望 = clamp(g.p.声望 - 2, 0, 100)
+      const 文 = `个人有关事项报告抽查：${项.join('，')}，被要求作出书面说明。`
+      g.yearLog.unshift({ t: `${g.date.y}年`, h: '个人事项报告', kind: 'bad', d: 文 })
+      g.log.unshift({ t: `${g.date.y}年`, h: '个人事项报告', kind: 'bad', d: 文 })
+    }
+  }
+
   /* 在职学历（退休后中止） */
   if (g.edu.在读 && g.status === '退休') g.edu.在读 = null
   if (g.edu.在读) {

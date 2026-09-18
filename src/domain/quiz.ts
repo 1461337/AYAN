@@ -1,10 +1,11 @@
 import type { GameState, Job } from './types'
 import { SHIXI } from '../data/shixi'
 import { SHIXI_EXTRA } from '../data/shixiExtra'
+import { SHIXI_HIGH } from '../data/shixiHigh'
 import { SHIXI_COUNT } from '../data/static'
 import { shuffle } from './rng'
 
-export const ALL_SHIXI = [...SHIXI, ...SHIXI_EXTRA]
+export const ALL_SHIXI = [...SHIXI, ...SHIXI_EXTRA, ...SHIXI_HIGH]
 const 公务池: Job[] = ['公务员', '事业单位', '国企']
 
 export function 可用题目(g: GameState): number[] {
@@ -13,8 +14,15 @@ export function 可用题目(g: GameState): number[] {
     .map((it, i) => ({ it, i }))
     .filter(({ it }) => {
       const 职业 = it.职业
-      if (!职业 || !职业.length) return 公务池.includes(job)
-      return 职业.includes(job)
+      if (职业 && 职业.length && !职业.includes(job)) return false
+      if (!职业 || !职业.length) {
+        if (!公务池.includes(job)) return false
+      }
+      if (it.职级范围) {
+        const [低, 高] = it.职级范围
+        if (g.rankIdx < 低 || g.rankIdx > 高) return false
+      }
+      return true
     })
     .map((x) => x.i)
   return list.length ? list : ALL_SHIXI.map((_, i) => i)

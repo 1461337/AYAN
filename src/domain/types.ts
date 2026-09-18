@@ -66,6 +66,8 @@ export interface ShixiItem {
   e: Effect
   asks: ShixiQuestion[][]
   职业?: Job[]
+  /** 适用职级（含端点），缺省则不限 */
+  职级范围?: [number, number]
 }
 
 export interface Npc {

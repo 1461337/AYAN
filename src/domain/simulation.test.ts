@@ -8,7 +8,7 @@ import { genPositions, doPromote, settlePosition, 向上社交 } from './promoti
 import { nextRankInfo, ladder } from './selectors'
 import { disciplineTick, 处置结果, 生成调查事件 } from './discipline'
 import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, retiredMini, npcTick, cityTick, 政府事件标题 } from './events'
-import { makeShixiOrder, ALL_SHIXI } from './quiz'
+import { makeShixiOrder, ALL_SHIXI, 可用题目, 题目套 } from './quiz'
 import { SHIXI } from '../data/shixi'
 import { SHIXI_EXTRA } from '../data/shixiExtra'
 import { 政治本地职位, 平台序, 机构Of, 晋升职位池 } from './positions'
@@ -792,6 +792,77 @@ describe('本地化晋升', () => {
       }
     }
     expect(文案.size).toBeGreaterThanOrEqual(5)
+  })
+
+  it('高职级行动题库按职级匹配，副部不再做处级题', () => {
+    setRandomSource(mulberry32(97))
+    const g = newState({ name: '周正', sex: '男', age: 52, major: '法学', job: '公务员' })
+    g.rankIdx = 6
+    g.p.平台 = '省级'
+    const pool = 可用题目(g)
+    const 名s = pool.map((i) => ALL_SHIXI[i].名)
+    expect(名s.some((x) => x.includes('·省部'))).toBe(true)
+    expect(名s).not.toContain('下基层调研检查')
+    const 省部 = pool.find((i) => ALL_SHIXI[i].名.includes('·省部'))!
+    const { tier, variants } = 题目套(省部, 6)
+    expect(tier).toBe(4)
+    expect(variants.length).toBeGreaterThanOrEqual(3)
+    expect(variants[0].a.length).toBe(3)
+  })
+
+  it('高职级突发事件池过滤低职级事件', () => {
+    setRandomSource(mulberry32(99))
+    const g = newState({ name: '周正', sex: '男', age: 52, major: '法学', job: '公务员' })
+    g.rankIdx = 6
+    let 高级 = false
+    for (let i = 0; i < 300; i++) {
+      const ev = makeEvent(g)
+      expect(['片区改造摸底材料被退回', '老同学的饭局', '群众围堵施工现场']).not.toContain(ev.标题)
+      if (['地市班子调整', '中央巡视组下沉', '跨省项目布局', '全省舆情'].includes(ev.标题)) 高级 = true
+    }
+    expect(高级).toBe(true)
+  })
+
+  it('行动题库去重后达到三百题以上', () => {
+    const qs = new Set<string>()
+    for (const it of ALL_SHIXI) for (const tier of it.asks) for (const v of tier) qs.add(v.q)
+    expect(qs.size).toBeGreaterThanOrEqual(300)
+  })
+
+  it('职级上升后房产车辆超标会增加廉政风险', () => {
+    setRandomSource(mulberry32(101))
+    const g = newState({ name: '周正', sex: '男', age: 45, major: '法学', job: '公务员' })
+    g.rankIdx = 3
+    g.assets.车辆 = [{ 名: '豪华越野车', 总价: 1200000, 购入年: g.date.y, 市值: 1100000 }]
+    g.assets.房产 = [{ 名: '大平层', 面积: 260, 购入价: 6000000, 购入年: g.date.y, 市值: 6000000, 自住: true }]
+    g._年初快照 = 快照(g)
+    const 前声望 = g.p.声望
+    endYear(g)
+    expect(g.p.声望).toBeLessThan(前声望)
+    expect(g.log.some((l) => l.h === '个人事项报告')).toBe(true)
+  })
+
+  it('所有职业各平台各职级都有合法候选岗位', () => {
+    setRandomSource(mulberry32(103))
+    for (const job of ALL_JOBS) {
+      for (const 平台 of ['乡镇级', '县级', '市级', '省级'] as const) {
+        for (let idx = 0; idx <= 7; idx++) {
+          const g = newState({ name: '测试', sex: '男', age: 34, major: job === '医生' ? '临床医学' : job === '教师' ? '汉语言文学' : '法学', job })
+          g.p.学历 = '博士'
+          g.p.平台 = 平台
+          g.p.城市 = 平台 === '省级' ? '京州市' : 平台 === '市级' ? '林城市' : 平台 === '县级' ? '岩台县' : '双河乡'
+          g.rankIdx = Math.max(-1, idx - 1)
+          if (idx >= ladder(g).length) continue
+          const list = genPositions(g, idx)
+          expect(list.length, `${job}/${平台}/${idx}`).toBeGreaterThanOrEqual(3)
+          for (const p of list) {
+            expect(Number.isFinite(p.sc)).toBe(true)
+            expect(p.名.length).toBeGreaterThan(1)
+            expect(p.理由.length).toBeGreaterThanOrEqual(1)
+          }
+        }
+      }
+    }
   })
 
   it('人大/政协正职属二线不得再提拔，兼任不算', () => {
