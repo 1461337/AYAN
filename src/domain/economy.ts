@@ -108,9 +108,11 @@ export interface ActionResult {
 export function buyAsset(g: GameState, kind: '房' | '车', i: number, mode: 'full' | 'loan' = 'loan'): ActionResult {
   const d = (kind === '房' ? HOUSES : CARS)[i]
   if (!d) return { ok: false, msg: '该资产不存在。' }
-  const 可用公积金 = kind === '房' ? Math.min(g.fund || 0, d.总价) : 0
+  // 房价随本地市场指数浮动；车价固定
+  const 总价 = kind === '房' ? Math.round(d.总价 * (g.market?.房价 || 1)) : d.总价
+  const 可用公积金 = kind === '房' ? Math.min(g.fund || 0, 总价) : 0
   if (mode === 'full') {
-    const 需付 = d.总价 - 可用公积金
+    const 需付 = 总价 - 可用公积金
     if (g.cash < 需付) {
       return { ok: false, msg: `全款不足，需 ${fmt(需付)} 元${可用公积金 ? `（公积金可抵 ${fmt(可用公积金)} 元）` : ''}。` }
     }
@@ -118,24 +120,24 @@ export function buyAsset(g: GameState, kind: '房' | '车', i: number, mode: 'fu
     g.cash -= 需付
     if (kind === '房') {
       const 首套 = g.assets.房产.length === 0
-      g.assets.房产.push({ 名: d.名, 面积: d.面积, 购入价: d.总价, 购入年: g.date.y, 市值: d.总价, 自住: 首套, 贷款: false })
+      g.assets.房产.push({ 名: d.名, 面积: d.面积, 购入价: 总价, 购入年: g.date.y, 市值: 总价, 自住: 首套, 贷款: false })
       if (首套) g.housing = '自有住房 · ' + d.名
     } else {
-      g.assets.车辆.push({ 名: d.名, 总价: d.总价, 购入年: g.date.y, 市值: d.总价 })
+      g.assets.车辆.push({ 名: d.名, 总价: 总价, 购入年: g.date.y, 市值: 总价 })
     }
     g.log.unshift({
       t: `${g.date.y}年`, h: kind === '房' ? '全款购置住房' : '全款购置车辆', kind: 'good',
-      d: `你以全款 ${fmt(d.总价)} 元买下${d.名}${可用公积金 ? `（其中公积金 ${fmt(可用公积金)} 元）` : ''}，没有贷款。`
+      d: `你以全款 ${fmt(总价)} 元买下${d.名}${可用公积金 ? `（其中公积金 ${fmt(可用公积金)} 元）` : ''}，没有贷款。`
         + (d.奢侈 && isPublicJob(g) ? `\n一名${g.p.职业}购置这种价位的资产，在每年的组织考察中，都可能被重新提起。` : ''),
     })
     return { ok: true, msg: '已全款购置：' + d.名 }
   }
 
-  const down = Math.round(d.总价 * d.首付比)
+  const down = Math.round(总价 * d.首付比)
   if (g.cash + 可用公积金 < down) {
     return { ok: false, msg: `首付不足，需 ${fmt(down)} 元${可用公积金 ? `（公积金可抵 ${fmt(可用公积金)} 元）` : ''}。` }
   }
-  const pr = d.总价 - down
+  const pr = 总价 - down
   const rate = loanRate(g, kind)
   const pay = monthly(pr, rate, d.年)
   const limit = Math.round((netIncome(g) + 公积金月缴(g)) * 0.55)
@@ -147,15 +149,15 @@ export function buyAsset(g: GameState, kind: '房' | '车', i: number, mode: 'fu
   g.loans.push({ 名: d.名, 类型: kind, 余额: pr, 月供: pay, 利率: rate, 总月: Math.round(d.年 * 12), 已还: 0, 年: d.年 })
   if (kind === '房') {
     const 首套 = g.assets.房产.length === 0
-    g.assets.房产.push({ 名: d.名, 面积: d.面积, 购入价: d.总价, 购入年: g.date.y, 市值: d.总价, 自住: 首套, 贷款: true })
+    g.assets.房产.push({ 名: d.名, 面积: d.面积, 购入价: 总价, 购入年: g.date.y, 市值: 总价, 自住: 首套, 贷款: true })
     if (首套) g.housing = '自有住房 · ' + d.名
   } else {
-    g.assets.车辆.push({ 名: d.名, 总价: d.总价, 购入年: g.date.y, 市值: d.总价 })
+    g.assets.车辆.push({ 名: d.名, 总价: 总价, 购入年: g.date.y, 市值: 总价 })
   }
   g.log.unshift({
     t: `${g.date.y}年`, h: kind === '房' ? '按揭购置住房' : '按揭购置车辆', kind: 'good',
     d: `你以 ${fmt(down)} 元首付（其中公积金 ${fmt(可用公积金)} 元）买下${d.名}，贷款 ${fmt(pr)} 元，${d.年} 年期，年利率 ${rate}%，月供 ${fmt(pay)} 元。`
-      + (kind === '房' ? (g.assets.房产.length === 1 ? '\n这是你的第一套房，从租房搬进了自己的家。' : '\n这套房用于出租，每年约有 ' + fmt(Math.round(d.总价 * 0.014)) + ' 元租金收入。') : '')
+      + (kind === '房' ? (g.assets.房产.length === 1 ? '\n这是你的第一套房，从租房搬进了自己的家。' : '\n这套房用于出租，每年约有 ' + fmt(Math.round(总价 * 0.014)) + ' 元租金收入。') : '')
       + (d.奢侈 && isPublicJob(g) ? `\n一名${g.p.职业}购置这种价位的资产，在每年的组织考察中，都可能被重新提起。` : ''),
   })
   return { ok: true, msg: '已按揭购置：' + d.名 }

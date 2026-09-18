@@ -196,6 +196,18 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .sumbox.next { background: #eef4fb; border: 1px solid #c9dcef; border-radius: 9px; padding: 9px 11px; margin-top: 10px; }
 .sumbox.next > span { color: #3d6ea8; }
 
+/* ============ 折叠 ============ */
+.collapse {
+  border: 1px solid var(--line); border-radius: 10px; margin-bottom: 12px;
+  overflow: hidden; background: #fffdf7;
+}
+.collapse-head {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; font-size: 13.5px; font-weight: 700; color: #5d5147;
+}
+.collapse-arrow { color: var(--muted); font-size: 15px; line-height: 1; }
+.collapse-body { padding: 0 12px 12px; }
+
 /* ============ Toast ============ */
 .toast {
   position: fixed; left: 50%; bottom: calc(96px + var(--safe-b)); transform: translateX(-50%);

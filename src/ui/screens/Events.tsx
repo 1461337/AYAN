@@ -1,8 +1,10 @@
 import { useRef } from 'react'
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
+import { Collapse } from '../components/Collapse'
 import { nextRankInfo, indicatorList } from '../../domain/selectors'
 import { lastSaveTime } from '../../persistence/save'
+import { 年度主题 } from '../../data/era'
 import { fmt } from '../../utils/format'
 
 function SaveCard() {
@@ -85,37 +87,27 @@ export function Events() {
     <>
       <SaveCard />
       {game.date.y - (game.beginYear || game.date.y) < 3 && game.status !== '退休' ? (
-        <div className="card" style={{ borderColor: '#e8d5a8', background: '#fffdf4', marginBottom: 12 }}>
-          <div className="card-bd" style={{ padding: '13px 14px' }}>
-            <div className="sec-title" style={{ color: '#9a7a24', borderLeftColor: '#e8c56a' }}>上手指引（前三年显示）</div>
-            <div className="hint" style={{ margin: 0, lineHeight: 1.75 }}>
-              每年 5 次行动，建议 3 次施政 + 1 次向领导汇报，其余留给家庭、健康或廉政。<br />
-              晋升看六项指标，完成情况见「🏛️ 政务」页；任职年限一到自动进入考察。
-            </div>
+        <Collapse title="上手指引（前三年显示）">
+          <div className="hint" style={{ margin: 0 }}>
+            每年 5 次行动：建议 3 次施政 + 1 次汇报领导，其余留给家庭、健康或廉政。晋升看六项指标，见「🏛️ 政务」页。
           </div>
-        </div>
+        </Collapse>
       ) : null}
 
       <Card icon="📋" title="年度生活与工作">
         <div className="tags">
           <span className="tag green">{game.date.y} 年度</span>
-          <span className="tag gold">本年无突发事件</span>
-          <span className="tag gray">按年推进</span>
+          <span className="tag gold">{年度主题(game.date.y)}</span>
+          <span className="tag gray">行动 {game.actions}/{game.actionsMax}</span>
           {game.status === '退休' ? <span className="tag gray">已退休</span> : null}
-        </div>
-        <div className="box">
-          当前健康：<b className={game.p.健康 < 30 ? 'bad-txt' : game.p.健康 < 80 ? '' : 'ok-txt'}>{game.p.健康}</b>
-          <div className="bar"><i style={{ width: `${game.p.健康}%` }} /></div>
-          <span className="hint">健康是六项晋升指标之一，可免费休养 +5—10，详见「🌿 生活」页。</span>
         </div>
 
         {game.status !== '退休' && ni.def ? (
           <>
-            <div className="sec-title mt14">晋升指标（共 6 项）</div>
             <div className="note">
-              下一职级：<span className="big">{ni.def.名}</span>　最低任职 <span className="big">{ni.effMin}</span> 年（已任 {ni.served} 年）　提任年龄界限 <span className="big">{ni.年龄线}</span> 岁<br />
-              工作平台：<b>{game.p.平台}{game.p.挂职 ? '（挂职中）' : ''}</b>{ni.early ? <span className="ok-txt">　多项指标表现突出，组织上会考虑提前</span> : null}
-              {ni.超龄 ? <><br /><span className="bad-txt">已超过提任该级职务的年龄界限，组织上不再考虑实职提拔。</span></> : null}
+              下一职级：<span className="big">{ni.def.名}</span>　最低任职 <span className="big">{ni.effMin}</span> 年（已任 {ni.served} 年）　年龄线 <span className="big">{ni.年龄线}</span>
+              {ni.early ? <span className="ok-txt">　可提前</span> : null}
+              {ni.超龄 ? <span className="bad-txt">　已超龄，不再提任实职</span> : null}
               <div className="bars">{Array.from({ length: ni.effMin }, (_, i) => <i key={i} className={i < ni.served ? 'on' : ''} />)}</div>
             </div>
             <div className="ind-list">
@@ -125,23 +117,17 @@ export function Events() {
                 return (
                   <div className="ind" key={x.名}>
                     <span className="ind-name">{x.名}</span>
-                    <span className="ind-val">{fmt(x.当前)}<em> / 要求 {fmt(x.门槛)}</em></span>
+                    <span className="ind-val">{fmt(x.当前)}<em> / {fmt(x.门槛)}</em></span>
                     <span className={`ind-tag ${档}`}>{tag}</span>
                   </div>
                 )
               })}
             </div>
-            <div className="hint">四项「表现突出」可提前 1—2 年提拔，四项「位列前茅」可提前 3—4 年。</div>
           </>
         ) : null}
 
-        <div className="sec-title mt14">本年度工作安排</div>
-        <div className="txt">
-          <p>每年 5 次行动，由施政、家庭、关系、廉政与学习共用；用完后结束本年。</p>
-          <p>任职年限一到自动进入考察，也可主动申请；岗位大概率在本地区产生。</p>
-        </div>
         <div className="ap-row">
-          本年剩余行动：<b>{game.actions} / {game.actionsMax} 次</b>
+          本年行动：<b>{game.actions} / {game.actionsMax}</b>
           <span className="dots">{Array.from({ length: game.actionsMax }, (_, i) => <i key={i} className={i < game.actions ? 'on' : ''} />)}</span>
         </div>
         {game.status === '退休'

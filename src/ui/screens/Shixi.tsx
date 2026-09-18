@@ -1,5 +1,6 @@
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
+import { Collapse } from '../components/Collapse'
 import { SHIXI } from '../../data/shixi'
 import { nextRankInfo, networkScore, TIER_NAME } from '../../domain/selectors'
 import { fmt } from '../../utils/format'
@@ -77,32 +78,25 @@ export function Shixi() {
       {ni.def ? (
         <>
           <div className="sec-title mt14">晋升</div>
-          <div className="box">
-            <div className="kv2">
-              <div><span>下一职级</span><b>{ni.def.名}</b></div>
-              <div><span>最低任职</span><b>{ni.effMin} 年（已任 {ni.served} 年）</b></div>
-              <div><span>提任年龄界限</span><b className={ni.超龄 ? 'bad-txt' : ''}>{ni.年龄线} 岁（现任 {game.p.年龄} 岁）</b></div>
-              <div><span>工作平台</span><b>{game.p.平台}{game.p.挂职 ? '（挂职）' : ''}</b></div>
-              <div><span>{game.p.职业 === '公务员' ? '政绩点' : '业绩点'}</span><b>{fmt(game.zhengji)} / 要求 {fmt(ni.def.门槛.政绩)}</b></div>
-            </div>
-            <div className="mt8">
-              <div className="bar-row"><span>人脉（晋升中分量最重的一项）</span><b>{Math.round(networkScore(game))}</b></div>
-              <div className="bar"><i style={{ width: `${Math.round(networkScore(game))}%` }} /></div>
-              <div className="hint mt6">由综合人脉、关键人物的信任与好感度构成；职位越高，圈子越大。</div>
-            </div>
-            <div className="mt8">
-              <div className="bar-row"><span>健康（承担更重岗位的身体条件）</span><b className={game.p.健康 < 70 ? 'bad-txt' : game.p.健康 < 80 ? '' : 'ok-txt'}>{game.p.健康}</b></div>
-              <div className="bar"><i style={{ width: `${game.p.健康}%` }} /></div>
-              <div className="hint mt6">晋升要求 80 以上；低于 70 会明显降低把握。</div>
-            </div>
-            <div className="hint mt6">
-              硬性条件：能力 ≥ {ni.def.门槛.能力}、道德 ≥ {ni.def.门槛.道德}、领导评价 ≥ {ni.def.门槛.上司}
-              {ni.idx >= 2 ? `；学历须本科及以上（当前${game.p.学历}，${['高中/中专', '大专'].includes(game.p.学历) ? '不满足' : '满足'}）` : ''}
-            </div>
+          <div className="kv2 mb12">
+            <div><span>下一职级</span><b>{ni.def.名}</b></div>
+            <div><span>最低任职</span><b>{ni.effMin} 年（已任 {ni.served} 年）</b></div>
+            <div><span>年龄线</span><b className={ni.超龄 ? 'bad-txt' : ''}>{ni.年龄线} 岁（现任 {game.p.年龄}）</b></div>
+            <div><span>{game.p.职业 === '公务员' ? '政绩点' : '业绩点'}</span><b>{fmt(game.zhengji)} / {fmt(ni.def.门槛.政绩)}</b></div>
           </div>
+          <Collapse title="晋升条件与把握">
+            <div className="bar-row"><span>人脉</span><b>{Math.round(networkScore(game))}</b></div>
+            <div className="bar"><i style={{ width: `${Math.round(networkScore(game))}%` }} /></div>
+            <div className="bar-row mt8"><span>健康（要求 80）</span><b className={game.p.健康 < 70 ? 'bad-txt' : game.p.健康 < 80 ? '' : 'ok-txt'}>{game.p.健康}</b></div>
+            <div className="bar"><i style={{ width: `${game.p.健康}%` }} /></div>
+            <div className="hint mt8">
+              硬性条件：能力 ≥ {ni.def.门槛.能力}、道德 ≥ {ni.def.门槛.道德}、领导评价 ≥ {ni.def.门槛.上司}
+              {ni.idx >= 2 ? `；学历本科及以上（当前${game.p.学历}）` : ''}
+            </div>
+          </Collapse>
           <button className="btn-line" disabled={game.actions <= 0} onClick={applyPromote}>
             主动申请晋升 · 组织谈话<span className="cost">-1 行动</span>
-            <small>进入考察程序，结果取决于六项指标。</small>
+            <small>进入考察，结果取决于六项指标。</small>
           </button>
         </>
       ) : null}

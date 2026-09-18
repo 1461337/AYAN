@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
+import { Collapse } from '../components/Collapse'
 import { rankTitle } from '../../domain/selectors'
 import { 职级序列 } from '../../data/static'
 
@@ -17,31 +18,24 @@ export function Archive() {
 
   return (
     <Card icon="📁" title="档案 · 过去必须留下痕迹">
-      <div className="kv">
-        <div className="k"><span>姓名</span><b>{game.p.姓名}</b></div>
-        <div className="k"><span>年龄</span><b>{game.p.年龄}</b></div>
-        <div className="k"><span>学历 / 专业</span><b>{game.p.学历} · {game.p.专业}</b></div>
-        <div className="k"><span>专业匹配度</span><b>{game.p.专业匹配度}%</b></div>
-        <div className="k"><span>职务 / 职级</span><b>{rankTitle(game)}{game.p.职业 === '公务员' ? ' · ' + 职级序列[game.zhijiIdx] : ''}</b></div>
-        <div className="k"><span>出生地 / 家庭</span><b>{game.p.出生地} · {game.p.家庭背景}</b></div>
-        <div className="k"><span>工作平台</span><b>{game.p.平台 || '—'}{game.p.挂职 ? ' · 挂职' + game.p.挂职.层级 : ''}</b></div>
-        <div className="k"><span>人事关系</span><b>{game.p.选调生 ? '省委组织部（选调生）' : (game.p.单位 || '—')}</b></div>
-        {game.p.挂职 ? <div className="k"><span>挂职单位</span><b>{game.p.挂职.单位}（至 {game.p.挂职.结束年} 年）</b></div> : null}
-        <div className="k"><span>政治面貌</span><b>{game.p.政治面貌}{game.p.选调生 ? '（选调生）' : ''}</b></div>
-        <div className="k"><span>任现职年限</span><b>{game.p2.任职年} 年</b></div>
-      </div>
-      <div className="sec-title mt14">长期目标</div>
-      <div className="box">{game.p.目标}</div>
-      <div className="sec-title">家庭</div>
-      <div className="box">{fam.map((x, i) => <span key={i}>{x}<br /></span>)}</div>
-      <div className="sec-title">任职经历</div>
-      <div className="box">{pos}</div>
-      {game.edu.证书.length ? (
-        <>
-          <div className="sec-title">已取得资格</div>
-          <div className="box">{game.edu.证书.map((c, i) => <span key={i}>· {c}<br /></span>)}</div>
-        </>
-      ) : null}
+      <Collapse title="个人档案">
+        <div className="kv">
+          <div className="k"><span>姓名</span><b>{game.p.姓名}</b></div>
+          <div className="k"><span>年龄</span><b>{game.p.年龄}</b></div>
+          <div className="k"><span>学历 / 专业</span><b>{game.p.学历} · {game.p.专业}</b></div>
+          <div className="k"><span>职务 / 职级</span><b>{rankTitle(game)}{game.p.职业 === '公务员' ? ' · ' + 职级序列[game.zhijiIdx] : ''}</b></div>
+          <div className="k"><span>出生地 / 家庭</span><b>{game.p.出生地} · {game.p.家庭背景}</b></div>
+          <div className="k"><span>工作平台</span><b>{game.p.平台 || '—'}{game.p.挂职 ? ' · 挂职' + game.p.挂职.层级 : ''}</b></div>
+          <div className="k"><span>人事关系</span><b>{game.p.选调生 ? '省委组织部（选调生）' : (game.p.单位 || '—')}</b></div>
+          <div className="k"><span>任现职年限</span><b>{game.p2.任职年} 年</b></div>
+        </div>
+        <div className="hint mt8">长期目标：{game.p.目标}</div>
+      </Collapse>
+      <Collapse title="家庭与任职经历">
+        <div className="box">{fam.map((x, i) => <span key={i}>{x}<br /></span>)}</div>
+        <div className="box">{pos}</div>
+        {game.edu.证书.length ? <div className="box">{game.edu.证书.map((c, i) => <span key={i}>· {c}<br /></span>)}</div> : null}
+      </Collapse>
       <div className="sec-title">人生轨迹</div>
       <div className="hint mb8">{展开 ? '显示全部记录' : `仅显示近 3 年（${game.date.y - 2}—${game.date.y}）`}</div>
       {(() => {

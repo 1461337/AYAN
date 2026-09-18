@@ -1,5 +1,6 @@
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
+import { Collapse } from '../components/Collapse'
 import { CERTS, EDU_UP, eduIdx } from '../../data/static'
 import { fmt } from '../../utils/format'
 
@@ -54,17 +55,18 @@ export function Study() {
           </button>
         )
       })}
-      <div className="sec-title mt14">职业资格与培训</div>
-      {CERTS.map((c, i) => {
-        const done = game.edu.证书.includes(c.名)
-        const bad = c.限 && !c.限.includes(game.p.专业)
-        return (
-          <button className="btn-line" key={c.名} disabled={!!done || !!bad} onClick={() => certStart(i)}>
-            {c.名}<span className="cost">{c.费 ? fmt(c.费) + ' 元' : '免费'}</span>
-            <small>周期约 {c.年} 年　{done ? <b className="ok-txt">已取得</b> : bad ? <b className="bad-txt">专业不符（限{c.限!.join('/')}）</b> : '考核通过后生效'}</small>
-          </button>
-        )
-      })}
+      <Collapse title="职业资格与培训">
+        {CERTS.map((c, i) => {
+          const done = game.edu.证书.includes(c.名)
+          const bad = c.限 && !c.限.includes(game.p.专业)
+          return (
+            <button className="btn-line" key={c.名} disabled={!!done || !!bad} onClick={() => certStart(i)}>
+              {c.名}<span className="cost">{c.费 ? fmt(c.费) + ' 元' : '免费'}</span>
+              <small>周期约 {c.年} 年　{done ? <b className="ok-txt">已取得</b> : bad ? <b className="bad-txt">专业不符（限{c.限!.join('/')}）</b> : '考核通过后生效'}</small>
+            </button>
+          )
+        })}
+      </Collapse>
       <div className="hint">县级及以上岗位普遍要求本科以上学历。</div>
     </Card>
   )

@@ -197,7 +197,7 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
     else if (d === 1) {
       const 够格 = 有基层经历 && 突出数 >= 2
       const 上调概率 = Math.pow(0.45, g.p.上调次数 || 0)
-      const 过关 = Math.random() < (有本级 ? 上调概率 : Math.max(0.45, 上调概率))
+      const 过关 = chance(有本级 ? 上调概率 : Math.max(0.45, 上调概率))
       if (够格 && 过关) {
         sc += 7
         理由.push(有本级 ? '组织上有意放到更高一层的平台锻炼' : '本级没有合适岗位，组织安排到上一级平台')
@@ -235,7 +235,7 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
       if (实权 && g.p.年龄 < 二线年龄(g)) sc += 3
       if (高配) {
         if (g.p.年龄 >= 二线年龄(g)) sc -= 4
-        else if (Math.random() < 高配概率) { sc += 5; 理由.push('组织统筹后拿出的岗位') }
+        else if (chance(高配概率)) { sc += 5; 理由.push('组织统筹后拿出的岗位') }
         else sc -= 6
       }
       if (g.p.选调生) sc += 1

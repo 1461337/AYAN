@@ -131,7 +131,7 @@ export function People() {
       {!game.family.配偶 ? (
         <>
           <div className="sec-title mt14">感情 · 认识与相处</div>
-          <div className="hint mb12">约会不消耗行动点，每项每年一次；表白与结婚各消耗 1 次行动。好感度 ≥ 80 可登记结婚。</div>
+          <div className="hint mb12">约会不耗行动、每项每年一次；表白/结婚各耗 1 行动；好感 ≥ 80 可结婚。</div>
           {game.candidates.map((c) => (
             <NpcCard
               key={c.id}
@@ -170,7 +170,7 @@ export function People() {
       ) : null}
 
       <div className="sec-title mt14">工作与社会关系</div>
-      <div className="hint mb12">人脉是晋升中分量最重的一项，每次互动消耗 1 次行动。</div>
+      <div className="hint mb12">每次互动消耗 1 次行动；人脉影响晋升。</div>
       {game.flags['首升换圈'] ? (
         <button className="btn-line" disabled={game.actions <= 0} onClick={向上社交}>
           向上社交 · 结识更高层级的人<span className="cost">-1 行动</span>

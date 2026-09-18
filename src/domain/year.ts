@@ -154,7 +154,7 @@ export function endYear(g: GameState): void {
     if (sp.年龄 >= 72 && chance(0.03 + (sp.年龄 - 72) * 0.012)) {
       g.family.配偶 = null
       g.family.婚姻 = '丧偶'
-      g.candidates = makeCandidatesLocal(g)
+      if (!g.candidates.length) g.candidates = makeCandidatesLocal(g)
       g._候选年数 = 0
       g.p.声望 = clamp(g.p.声望 - 3, 0, 100)
       g.p.健康 = clamp(g.p.健康 - 8, 0, 100)
@@ -162,7 +162,7 @@ export function endYear(g: GameState): void {
     } else if (sp.好感度 < 20 && chance(0.35)) {
       g.family.配偶 = null
       g.family.婚姻 = '离异'
-      g.candidates = makeCandidatesLocal(g)
+      if (!g.candidates.length) g.candidates = makeCandidatesLocal(g)
       g._候选年数 = 0
       g.p.声望 = clamp(g.p.声望 - 6, 0, 100)
       g.p.健康 = clamp(g.p.健康 - 4, 0, 100)
@@ -204,8 +204,11 @@ export function endYear(g: GameState): void {
   })
   g.candidates.forEach((c) => { c.年龄++; c.本年约会 = [] })
   g._候选年数 = (g._候选年数 || 0) + 1
-  if (g.status !== '退休' && g.p.年龄 <= 66 && (!g.candidates.length || (g._候选年数 || 0) >= 8)) {
-    g.candidates = makeCandidatesLocal(g)
+  // 不再整批替换候选：只在人数不足时补充，上限 6 位
+  if (g.status !== '退休' && g.p.年龄 <= 66 && g.candidates.length < 2) {
+    const fresh = makeCandidatesLocal(g)
+    const add = Math.min(2 - g.candidates.length, fresh.length)
+    g.candidates.push(...fresh.slice(0, add))
     g._候选年数 = 0
   }
 

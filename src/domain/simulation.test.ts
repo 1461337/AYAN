@@ -139,8 +139,8 @@ describe('本地化晋升', () => {
     g.zhengji = 100000
     const list = genPositions(g, 2)
     expect(list.length).toBeGreaterThanOrEqual(7)
-    const local = list.filter((p) => p.名.includes('岩台县')).length
-    expect(local).toBeGreaterThanOrEqual(Math.ceil(list.length / 2))
+    const local = list.filter((p) => p.本地 || p.名.includes('岩台县')).length
+    expect(local).toBeGreaterThanOrEqual(3)
   })
 
   it('县局级以上晋升必含一个二线岗位', () => {

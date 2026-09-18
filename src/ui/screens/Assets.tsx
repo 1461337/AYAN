@@ -1,5 +1,6 @@
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
+import { Collapse } from '../components/Collapse'
 import { CARS, HOUSES } from '../../data/static'
 import {
   isPublicJob, livingCost, loanRate, luxuryCount, monthly, netIncome,
@@ -22,6 +23,8 @@ export function Assets() {
   const pub = isPublicJob(game)
   const lux = luxuryCount(game)
   const usedPct = Math.min(100, Math.round((used / Math.max(1, limit)) * 100))
+  const 房价指数 = game.market?.房价 || 1
+  const 市价 = (base: number) => Math.round(base * 房价指数)
 
   return (
     <Card icon="💰" title="资产 · 每一分钱都要有来源">
@@ -33,26 +36,20 @@ export function Assets() {
       </div>
       <div className="bar mt8"><i style={{ width: `${usedPct}%` }} /></div>
 
-      <div className="sec-title mt14">工资条（本人）</div>
-      <div className="box">
-        应发工资：<b>{fmt(game.income.月工资)}</b> 元 / 月<br />
-        五险一金：<b className="dn">-{fmt(五险一金(game))}</b> 元　个人所得税：<b className="dn">-{fmt(个税(game))}</b> 元<br />
-        <b>实发工资：{fmt(实发(game))} 元 / 月</b>　社会保险与公积金按规定比例代扣<br />
-        住房公积金账户：<b className="ok-txt">{fmt(game.fund || 0)}</b> 元（单位与个人各缴 12%，可用于购房与还贷）<br />
-        <span className="hint">年终奖约 1—3 个月工资；每两年晋档，工资约涨 2%。</span>
-      </div>
-      <div className="sec-title">每年收支</div>
-      <div className="box">
-        家庭年收入：<b>{fmt(netIncome(game) * 12)}</b> 元（已扣五险一金与个税，含配偶收入）<br />
-        生活与家庭支出：<b>{fmt(livingCost(game) * 12)}</b> 元{game.family.子女.length ? `（含 ${game.family.子女.length} 名子女养育）` : ''}<br />
-        贷款年供：<b>{fmt(used * 12)}</b> 元{年租金收入(game) ? <>　租金收入：<b className="ok-txt">+{fmt(年租金收入(game))}</b> 元</> : null}{年养车成本(game) ? <>　养车：<b className="dn">-{fmt(年养车成本(game))}</b> 元</> : null}<br />
-        年终净结余：<b>{fmt((netIncome(game) - livingCost(game) - used) * 12 + 年租金收入(game) - 年养车成本(game))}</b> 元
-      </div>
+      <Collapse title="工资条与每年收支">
+        <div className="box">
+          应发 <b>{fmt(game.income.月工资)}</b>　五险一金 <b className="dn">-{fmt(五险一金(game))}</b>　个税 <b className="dn">-{fmt(个税(game))}</b>　
+          实发 <b>{fmt(实发(game))}</b> 元 / 月<br />
+          公积金账户 <b className="ok-txt">{fmt(game.fund || 0)}</b> 元（可用于购房与还贷）<br />
+          家庭年收入 <b>{fmt(netIncome(game) * 12)}</b>　年支出 <b>{fmt(livingCost(game) * 12)}</b>　年供 <b>{fmt(used * 12)}</b>
+          {年租金收入(game) ? <>　租金 <b className="ok-txt">+{fmt(年租金收入(game))}</b></> : null}
+          {年养车成本(game) ? <>　养车 <b className="dn">-{fmt(年养车成本(game))}</b></> : null}<br />
+          年终净结余 <b>{fmt((netIncome(game) - livingCost(game) - used) * 12 + 年租金收入(game) - 年养车成本(game))}</b> 元
+        </div>
+      </Collapse>
       {lux > 0 && pub && game.status !== '退休' ? (
         <div className="box warn-box">
-          <b className="bad-txt">廉政提示</b><br />
-          你名下现有 {lux} 项明显超出正常工资收入的资产。作为{game.p.职业}，每年组织考察期间都可能被纪律审查、监察调查，
-          轻则影响晋升，重则形成问题线索。
+          <b className="bad-txt">廉政提示</b>：名下 {lux} 项资产明显超出工资水平，每年考察都可能被要求说明来源。
         </div>
       ) : null}
 
@@ -114,57 +111,62 @@ export function Assets() {
         </>
       ) : null}
 
-      <div className="sec-title">购房（可全款，也可首付＋按揭）</div>
+      <div className="sec-title">购房（房价随市场浮动 · 指数 {房价指数.toFixed(2)}）</div>
       {HOUSES.map((h, i) => {
-        const down = Math.round(h.总价 * h.首付比)
-        const pr = h.总价 - down
+        const 总价 = 市价(h.总价)
+        const down = Math.round(总价 * h.首付比)
+        const pr = 总价 - down
         const rate = loanRate(game, '房')
         const pay = monthly(pr, rate, h.年)
         const okPay = pay + used <= limit
         const okDown = game.cash >= down
-        const okFull = game.cash >= h.总价
+        const okFull = game.cash >= 总价
         return (
           <div className="npc" key={i}>
             <div className="npc-top">
               <div className="npc-main">
                 <div className="npc-name">{h.名}{h.奢侈 ? <em>超标</em> : null}</div>
-                <div className="hint">总价 {fmt(h.总价)}　首付 {h.首付比 * 100}% ＝ {fmt(down)}　贷款 {fmt(pr)} 元　{h.年} 年期　年利率 {rate}%（{pub ? '公积金' : '商业'}）　月供 {fmt(pay)} 元</div>
+                <div className="hint">现价 {fmt(总价)}（基准 {fmt(h.总价)}）　首付 {fmt(down)}　贷款 {fmt(pr)}　{h.年} 年　利率 {rate}%　月供 {fmt(pay)} 元</div>
               </div>
             </div>
             <div className="npc-act">
-              <button disabled={!okFull} onClick={() => buyHouse(i, 'full')}>全款购买<br /><small>{okFull ? `需 ${fmt(h.总价)} 元` : '现金不足'}</small></button>
+              <button disabled={!okFull} onClick={() => buyHouse(i, 'full')}>全款购买<br /><small>{okFull ? `需 ${fmt(总价)} 元` : '现金不足'}</small></button>
               <button disabled={!okPay || !okDown} onClick={() => buyHouse(i, 'loan')}>按揭购买<br /><small>{okPay ? (okDown ? `首付 ${fmt(down)} 元` : '首付不足') : '月供超限'}</small></button>
             </div>
           </div>
         )
       })}
-      <div className="sec-title">购车</div>
-      {CARS.map((c, i) => {
-        const down = Math.round(c.总价 * c.首付比)
-        const pr = c.总价 - down
-        const rate = loanRate(game, '车')
-        const pay = monthly(pr, rate, c.年)
-        const okPay = pay + used <= limit
-        const okDown = game.cash >= down
-        const okFull = game.cash >= c.总价
-        return (
-          <div className="npc" key={i}>
-            <div className="npc-top">
-              <div className="npc-main">
-                <div className="npc-name">{c.名}{c.奢侈 ? <em>超标</em> : null}</div>
-                <div className="hint">总价 {fmt(c.总价)}　首付 {c.首付比 * 100}% ＝ {fmt(down)}　贷款 {fmt(pr)} 元　{c.年} 年期　年利率 {rate}%　月供 {fmt(pay)} 元</div>
+      <Collapse title="购车">
+        {CARS.map((c, i) => {
+          const down = Math.round(c.总价 * c.首付比)
+          const pr = c.总价 - down
+          const rate = loanRate(game, '车')
+          const pay = monthly(pr, rate, c.年)
+          const okPay = pay + used <= limit
+          const okDown = game.cash >= down
+          const okFull = game.cash >= c.总价
+          return (
+            <div className="npc" key={i}>
+              <div className="npc-top">
+                <div className="npc-main">
+                  <div className="npc-name">{c.名}{c.奢侈 ? <em>超标</em> : null}</div>
+                  <div className="hint">总价 {fmt(c.总价)}　首付 {fmt(down)}　贷款 {fmt(pr)}　{c.年} 年　利率 {rate}%　月供 {fmt(pay)} 元</div>
+                </div>
+              </div>
+              <div className="npc-act">
+                <button disabled={!okFull} onClick={() => buyCar(i, 'full')}>全款购买<br /><small>{okFull ? `需 ${fmt(c.总价)} 元` : '现金不足'}</small></button>
+                <button disabled={!okPay || !okDown} onClick={() => buyCar(i, 'loan')}>按揭购买<br /><small>{okPay ? (okDown ? `首付 ${fmt(down)} 元` : '首付不足') : '月供超限'}</small></button>
               </div>
             </div>
-            <div className="npc-act">
-              <button disabled={!okFull} onClick={() => buyCar(i, 'full')}>全款购买<br /><small>{okFull ? `需 ${fmt(c.总价)} 元` : '现金不足'}</small></button>
-              <button disabled={!okPay || !okDown} onClick={() => buyCar(i, 'loan')}>按揭购买<br /><small>{okPay ? (okDown ? `首付 ${fmt(down)} 元` : '首付不足') : '月供超限'}</small></button>
-            </div>
-          </div>
-        )
-      })}
-      <div className="sec-title">投资与产业</div>
-      <div className="box">{a.投资.length ? a.投资.map((x, i) => <span key={i}>· {x}<br /></span>) : '暂无合法投资。'}</div>
-      <div className="hint">资产、贷款与月供逐年真实结算；逾期会形成不良记录并影响声誉。</div>
+          )
+        })}
+      </Collapse>
+      {a.投资.length ? (
+        <Collapse title="投资与产业">
+          <div className="box">{a.投资.map((x, i) => <span key={i}>· {x}<br /></span>)}</div>
+        </Collapse>
+      ) : null}
+      <div className="hint">资产、贷款与月供逐年真实结算；逾期会形成不良记录。</div>
     </Card>
   )
 }

@@ -3,6 +3,7 @@ import { clamp, fmt } from '../utils/format'
 import { chance, pick, rnd } from './rng'
 import { applyEffect } from './effects'
 import { 条线Of } from './selectors'
+import { makeNpc } from './newGame'
 
 /* =========================================================
    通用事件池
@@ -557,6 +558,13 @@ export function miniEvent(g: GameState): void {
 
 export function npcTick(g: GameState): void {
   for (const n of g.npcs) {
+    n.年龄++
+    if (n.年龄 >= 62 && chance(0.22)) {
+      const 旧名 = n.姓名
+      Object.assign(n, makeNpc(g, n.id))
+      g.log.unshift({ t: `${g.date.y}年`, h: '人脉更替', kind: '', d: `${旧名}到龄退居二线，${n.姓名}接替了他的位置。关系网总要跟着年份更新。` })
+      continue
+    }
     if (chance(0.5)) n.好感度 = clamp(n.好感度 + rnd(-3, 2), 0, 100)
     if (chance(0.35)) n.信任 = clamp(n.信任 + rnd(-2, 2), -100, 100)
     if (chance(0.16)) {
