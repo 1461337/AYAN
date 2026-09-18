@@ -274,7 +274,8 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
   })
   评分.sort((a, b) => b.sc - a.sc)
 
-  let 可用 = (政治 && idx >= 4) ? 评分.filter((x) => !(x.党政 && x.高配 && !有党政经历)) : 评分
+  // 党政班子经历是提任党政班子的硬杠杠；到副国级不再一刀切剔除（此时由评分体现）
+  let 可用 = (政治 && idx >= 4 && idx <= 7) ? 评分.filter((x) => !(x.党政 && x.高配 && !有党政经历)) : 评分
   if (可用.length < 3) 可用 = 评分
   let list = 可用.slice(0, 9)
   if (政治 && idx >= 1 && !list.some((x) => x.二线)) {

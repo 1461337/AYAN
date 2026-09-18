@@ -202,6 +202,23 @@ describe('逻辑一致性', () => {
     expect(res.msg || '').toContain('学历')
   })
 
+  it('省长不会直接升任中央部长，书记/组工轨道才会', () => {
+    setRandomSource(mulberry32(101))
+    const 省长 = newState({ name: '周正', sex: '男', age: 56, major: '法学', job: '公务员' })
+    省长.rankIdx = 7
+    省长.p.平台 = '省级'
+    省长.positions = [{ 年: 省长.date.y, 职级: '省部级正职', 岗位: '省长', 条线: '主官' }]
+    const 省长候选 = genPositions(省长, 8).map((p) => p.名)
+    expect(省长候选).not.toContain('中央组织部部长')
+    expect(省长候选).toContain('国务委员')
+
+    const 书记 = newState({ name: '周正', sex: '男', age: 58, major: '法学', job: '公务员' })
+    书记.rankIdx = 7
+    书记.p.平台 = '省级'
+    书记.positions = [{ 年: 书记.date.y, 职级: '省部级正职', 岗位: '省委书记', 条线: '主官' }]
+    expect(genPositions(书记, 8).map((p) => p.名)).toContain('中央组织部部长')
+  })
+
   it('高平台岗位的单位映射正确', () => {
     expect(机构Of('中央组织部部长', '京州市', '省级', '公务员')).toBe('中共中央组织部')
     expect(机构Of('中央宣传部部长', '京州市', '省级', '公务员')).toBe('中共中央宣传部')

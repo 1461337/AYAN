@@ -299,9 +299,8 @@ function 省级(idx: number): LocalPos[] {
     return [
       { 名: '国务院副总理' },
       { 名: '国务委员' },
-      { 名: '国家副主席' },
-      { 名: '中央组织部部长' },
-      { 名: '中央宣传部部长' },
+      { 名: '全国人大常委会副委员长' },
+      { 名: '全国政协副主席' },
     ]
   }
   return []
@@ -364,7 +363,27 @@ function 职业本层(职业: Job, 序号: number, 职称: string): PoolPos[] {
 
 /* ============ 统一职位池 ============ */
 
+/* 正部 → 副国：按现实干部序列分流 */
+function 国家级候选(g: GameState): PoolPos[] {
+  const 现岗位 = (g.positions[0] && g.positions[0].岗位) || ''
+  const 条 = 条线OfLocal(现岗位)
+  const 书记轨 = /省委书记|市委书记|县委书记/.test(现岗位)
+  const 组工轨 = 书记轨 || 条 === '组工'
+  const 宣传轨 = 书记轨 || 条 === '宣传'
+  const out: PoolPos[] = [
+    { 名: '国务院副总理', 序号: 3, 本地: false, 城市: '京州市' },
+    { 名: '国务委员', 序号: 3, 本地: false, 城市: '京州市' },
+    { 名: '全国人大常委会副委员长', 序号: 3, 本地: false, 城市: '京州市', 二线: true },
+    { 名: '全国政协副主席', 序号: 3, 本地: false, 城市: '京州市', 二线: true },
+  ]
+  if (组工轨) out.push({ 名: '中央组织部部长', 序号: 3, 本地: false, 城市: '京州市' })
+  if (宣传轨) out.push({ 名: '中央宣传部部长', 序号: 3, 本地: false, 城市: '京州市' })
+  return 补齐(out)
+}
+
 function 公务员职位池(g: GameState, idx: number): PoolPos[] {
+  // 正部 → 副国：按现实干部序列分流（省长一般不直接任中央部长）
+  if (idx >= 8) return 国家级候选(g)
   const 现平台 = g.p.平台
   const 现序 = 平台序[现平台]
   const 上限 = 本地最高[现序]
