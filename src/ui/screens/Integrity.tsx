@@ -45,10 +45,12 @@ export function Integrity() {
           {game.discipline.records.length ? game.discipline.records.map((x, i) => <span key={i}>· {x}<br /></span>) : '暂无异常记录。'}
         </div>
       </Collapse>
-      <button className="btn-line" disabled={game.actions <= 0 || game.status === '退休'} onClick={audit}>
-        主动梳理本人及分管领域的廉政风险点<span className="cost">-1 行动</span>
-        <small>可能降低风险，也可能暴露更多问题。</small>
-      </button>
+      {(['公务员', '事业单位', '国企'] as string[]).includes(game.p.职业) ? (
+        <button className="btn-line" disabled={game.actions <= 0 || game.status === '退休'} onClick={audit}>
+          主动梳理本人及分管领域的廉政风险点<span className="cost">-1 行动</span>
+          <small>可能降低风险，也可能暴露更多问题。</small>
+        </button>
+      ) : null}
     </Card>
   )
 }

@@ -10,7 +10,7 @@ import { 浪漫方式池 } from '../data/static'
 import { makeCandidates } from './newGame'
 import { makeShixiOrder } from './quiz'
 import {
-  netIncome, livingCost, 年租金收入, 年养车成本, 年终奖, 公积金月缴, 岗位月薪,
+  netIncome, livingCost, 年租金收入, 年养车成本, 年终奖, 公积金月缴,
   isPublicJob, luxuryCount,
 } from './economy'
 
@@ -41,7 +41,7 @@ function retireAgeOf(g: GameState): number {
 }
 
 export function retire(g: GameState, why: string): void {
-  if (g.discipline.risk >= 35 && chance(g.discipline.risk / 300)) {
+  if (isPublicJob(g) && g.discipline.risk >= 35 && chance(g.discipline.risk / 300)) {
     g.pendingEvent = 生成调查事件(g, '你在办理退休手续前，组织上对你进行离任审计')
     g.pendingEvent.月 = rnd(1, 12)
   }
@@ -78,7 +78,8 @@ export function endYear(g: GameState): void {
       d: `年度考核结果出来，你拿到 ${fmt(奖金)} 元年终奖（约 ${Math.round(奖金 / g.income.月工资)} 个月工资）。`,
     })
   }
-  g.fund = (g.fund || 0) + 公积金月缴(g) * 12
+  // 住房公积金：在职期间按月缴存（退休后停缴）
+  if (g.status !== '退休') g.fund = (g.fund || 0) + 公积金月缴(g) * 12
   const 房供年 = (g.loans || []).filter((l) => l.类型 === '房').reduce((a, l) => a + l.月供, 0) * 12
   if (房供年 > 0 && g.fund > 0) {
     const 冲还 = Math.min(g.fund, 房供年)
@@ -87,7 +88,8 @@ export function endYear(g: GameState): void {
     g.yearLog.unshift({ t: `${g.date.y}年`, h: '公积金冲还贷', kind: 'good', d: `从公积金账户提取 ${fmt(冲还)} 元用于偿还房贷。` })
   }
   if (g.date.y % 2 === 0) {
-    const 同级 = Math.max(6200, (g.rankIdx >= 0 ? 岗位月薪(g.rankIdx) : 5200) * 1.6)
+    const 本级月薪 = g.rankIdx >= 0 ? (ladder(g)[g.rankIdx]?.月薪 || 5200) : 5200
+    const 同级 = Math.max(6200, 本级月薪 * 1.6)
     g.income.月工资 = Math.min(Math.round(同级), Math.round(g.income.月工资 * 1.02))
   }
   g.cash += (netIncome(g) - livingCost(g)) * 12
@@ -117,7 +119,8 @@ export function endYear(g: GameState): void {
   }
   g.loans = g.loans.filter((l) => l.余额 > 0)
 
-  /* 在职学历 */
+  /* 在职学历（退休后中止） */
+  if (g.edu.在读 && g.status === '退休') g.edu.在读 = null
   if (g.edu.在读) {
     const u = g.edu.在读
     u.剩--

@@ -110,6 +110,7 @@ export function buyAsset(g: GameState, kind: '房' | '车', i: number, mode: 'fu
   if (!d) return { ok: false, msg: '该资产不存在。' }
   // 房价随本地市场指数浮动；车价固定
   const 总价 = kind === '房' ? Math.round(d.总价 * (g.market?.房价 || 1)) : d.总价
+  const 标识 = 'A' + Date.now() + Math.floor(Math.random() * 1000)
   const 可用公积金 = kind === '房' ? Math.min(g.fund || 0, 总价) : 0
   if (mode === 'full') {
     const 需付 = 总价 - 可用公积金
@@ -120,10 +121,10 @@ export function buyAsset(g: GameState, kind: '房' | '车', i: number, mode: 'fu
     g.cash -= 需付
     if (kind === '房') {
       const 首套 = g.assets.房产.length === 0
-      g.assets.房产.push({ 名: d.名, 面积: d.面积, 购入价: 总价, 购入年: g.date.y, 市值: 总价, 自住: 首套, 贷款: false })
+      g.assets.房产.push({ 名: d.名, 面积: d.面积, 购入价: 总价, 购入年: g.date.y, 市值: 总价, 自住: 首套, 贷款: false, 标识 })
       if (首套) g.housing = '自有住房 · ' + d.名
     } else {
-      g.assets.车辆.push({ 名: d.名, 总价: 总价, 购入年: g.date.y, 市值: 总价 })
+      g.assets.车辆.push({ 名: d.名, 总价: 总价, 购入年: g.date.y, 市值: 总价, 标识 })
     }
     g.log.unshift({
       t: `${g.date.y}年`, h: kind === '房' ? '全款购置住房' : '全款购置车辆', kind: 'good',
@@ -146,13 +147,13 @@ export function buyAsset(g: GameState, kind: '房' | '车', i: number, mode: 'fu
   }
   if (可用公积金 > 0) g.fund -= 可用公积金
   g.cash -= (down - 可用公积金)
-  g.loans.push({ 名: d.名, 类型: kind, 余额: pr, 月供: pay, 利率: rate, 总月: Math.round(d.年 * 12), 已还: 0, 年: d.年 })
+  g.loans.push({ 名: d.名, 类型: kind, 余额: pr, 月供: pay, 利率: rate, 总月: Math.round(d.年 * 12), 已还: 0, 年: d.年, 标识 })
   if (kind === '房') {
     const 首套 = g.assets.房产.length === 0
-    g.assets.房产.push({ 名: d.名, 面积: d.面积, 购入价: 总价, 购入年: g.date.y, 市值: 总价, 自住: 首套, 贷款: true })
+    g.assets.房产.push({ 名: d.名, 面积: d.面积, 购入价: 总价, 购入年: g.date.y, 市值: 总价, 自住: 首套, 贷款: true, 标识 })
     if (首套) g.housing = '自有住房 · ' + d.名
   } else {
-    g.assets.车辆.push({ 名: d.名, 总价: 总价, 购入年: g.date.y, 市值: 总价 })
+    g.assets.车辆.push({ 名: d.名, 总价: 总价, 购入年: g.date.y, 市值: 总价, 标识 })
   }
   g.log.unshift({
     t: `${g.date.y}年`, h: kind === '房' ? '按揭购置住房' : '按揭购置车辆', kind: 'good',
@@ -192,7 +193,8 @@ export function sellAsset(g: GameState, kind: '房' | '车', i: number): ActionR
   const it = arr[i]
   if (!it) return { ok: false, msg: '该资产不存在。' }
   const 名 = it.名 || ''
-  const loan = g.loans.find((l) => 名.indexOf(l.名) === 0)
+  const 标识 = (it as HouseAsset | CarAsset).标识
+  const loan = g.loans.find((l) => (标识 && l.标识 === 标识) || (!标识 && 名.indexOf(l.名) === 0 && l.类型 === kind))
   const 基准 = kind === '房'
     ? ((it as HouseAsset).市值 || (it as HouseAsset).购入价 || 0)
     : ((it as CarAsset).市值 || Math.round(((it as CarAsset).总价 || 0) * 0.5))

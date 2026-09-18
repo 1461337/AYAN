@@ -3,8 +3,10 @@ import { resetRandomSource, setRandomSource } from './rng'
 import { newState } from './newGame'
 import { endYear } from './year'
 import { 快照 } from './effects'
-import { monthly, buyAsset, repayLoan, repayDebt } from './economy'
+import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
 import { genPositions, doPromote } from './promotion'
+import { disciplineTick } from './discipline'
+import { makeShixiOrder } from './quiz'
 import { 政治本地职位, 平台序 } from './positions'
 import { 职务阶梯 } from '../data/static'
 import type { GameState, Job } from './types'
@@ -123,6 +125,51 @@ describe('经济公式', () => {
     const r4 = repayDebt(g)
     expect(r4.ok).toBe(true)
     expect(g.负债).toBe(0)
+  })
+
+  it('同类资产出售时结清对应贷款', () => {
+    setRandomSource(mulberry32(67))
+    const g = newState({ name: '周正', sex: '男', age: 26, major: '法学', job: '公务员' })
+    g.cash = 1_000_000
+    buyAsset(g, '车', 0, 'loan')
+    buyAsset(g, '车', 0, 'loan')
+    expect(g.loans.length).toBe(2)
+    const 标识0 = g.assets.车辆[0].标识
+    const r = sellAsset(g, '车', 0)
+    expect(r.ok).toBe(true)
+    expect(g.loans.length).toBe(1)
+    expect(g.loans[0].标识).not.toBe(标识0)
+    expect(g.loans[0].标识).toBe(g.assets.车辆[0].标识)
+  })
+})
+
+describe('逻辑一致性', () => {
+  it('退休后不再缴存公积金', () => {
+    setRandomSource(mulberry32(61))
+    const g = newState({ name: '苏晚', sex: '女', age: 54, major: '会计学', job: '公务员' })
+    g.status = '退休'
+    g.loans = []
+    const f0 = g.fund
+    endYear(g)
+    expect(g.fund).toBe(f0)
+  })
+
+  it('非体制内不触发纪检监察', () => {
+    setRandomSource(mulberry32(63))
+    const g = newState({ name: '周正', sex: '男', age: 30, major: '计算机科学与技术', job: '企业' })
+    g.discipline.risk = 100
+    for (let i = 0; i < 200; i++) disciplineTick(g)
+    expect(g.discipline.records.length).toBe(0)
+    expect(g.pendingEvent).toBeNull()
+  })
+
+  it('晋升后刷新题库优先未做项', () => {
+    setRandomSource(mulberry32(65))
+    const g = newState({ name: '周正', sex: '男', age: 26, major: '计算机科学与技术', job: '企业' })
+    const first = g.shixiOrder[0]
+    g.usedThisYear = [first]
+    const order = makeShixiOrder(g)
+    expect(order[0]).not.toBe(first)
   })
 })
 

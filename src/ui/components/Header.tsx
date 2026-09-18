@@ -46,7 +46,7 @@ export function Header() {
             <button className={styles.iconBtn} title="保存存档" onClick={save}>💾</button>
             <button className={styles.iconBtn} title="说明" onClick={() => setHelp(true)}>?</button>
             <div className={styles.avatar}>{avatar}</div>
-            <div className={styles.zhiji}><b>{fmt(game.zhengji)}</b>政绩点</div>
+            <div className={styles.zhiji}><b>{fmt(game.zhengji)}</b>{game.p.职业 === '公务员' ? '政绩点' : '业绩点'}</div>
           </div>
         </div>
         <div className={styles.stats}>

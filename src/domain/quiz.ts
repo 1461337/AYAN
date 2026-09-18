@@ -21,7 +21,11 @@ export function 可用题目(g: GameState): number[] {
 }
 
 export function makeShixiOrder(g: GameState): number[] {
-  return shuffle(可用题目(g)).slice(0, SHIXI_COUNT)
+  const pool = 可用题目(g)
+  const 已做 = g.usedThisYear || []
+  const 未做 = pool.filter((i) => !已做.includes(i))
+  const 剩余 = pool.filter((i) => 已做.includes(i))
+  return [...shuffle(未做), ...shuffle(剩余)].slice(0, SHIXI_COUNT)
 }
 
 /* 职级 → 题库阶段：科员 / 科级 / 处级 / 厅级 / 省部级 */

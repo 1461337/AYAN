@@ -184,6 +184,7 @@ export interface HouseAsset {
   市值?: number
   自住?: boolean
   贷款?: boolean
+  标识?: string
 }
 
 export interface CarAsset {
@@ -191,6 +192,7 @@ export interface CarAsset {
   总价?: number
   购入年?: number
   市值?: number
+  标识?: string
 }
 
 export interface Loan {
@@ -202,6 +204,7 @@ export interface Loan {
   总月: number
   已还: number
   年: number
+  标识?: string
 }
 
 export interface StudyRecord {

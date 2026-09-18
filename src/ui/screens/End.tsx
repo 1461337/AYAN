@@ -16,7 +16,9 @@ export function End() {
     ? game.assets.车辆.map((v, i) => <span key={i}>{v.名}（残值 {fmt(v.市值 || 0)} 元）<br /></span>)
     : '无'
   const loan = game.loans.reduce((a, l) => a + l.余额, 0) + game.负债
-  const netWorth = game.cash + (game.assets.房产.length ? game.assets.房产.length * 1350000 : 0) - loan
+  const 房值 = game.assets.房产.reduce((a, x) => a + (x.市值 || x.购入价 || 0), 0)
+  const 车值 = game.assets.车辆.reduce((a, v) => a + (v.市值 || 0), 0)
+  const netWorth = game.cash + 房值 + 车值 - loan
   const kids = game.family.子女.length
     ? game.family.子女.map((c, i) => <span key={i}>{c.姓名}（{c.年龄}岁，{c.备注}）<br /></span>)
     : '无'

@@ -25,22 +25,25 @@ function YearSummary() {
     .map((x) => '· ' + (x.t ? x.t.replace(/^\d+年\s*/, '') : '') + ' ' + x.h.replace(/（[^）]*）$/, '').trim())
     .slice(0, 6)
   return (
-    <Modal>
+    <Modal wide>
       <div className="card-hd"><span className="ic">📅</span><h2>{y.年} 年度总结</h2></div>
-      <div className="card-bd">
+      <div className="card-bd year-summary">
         <div className="tags">
           <span className="tag green">{y.年龄} 岁</span>
           <span className="tag gold">{y.职务}</span>
           <span className="tag gray">本年完成施政 {y.施政数} 项</span>
         </div>
-        <div className="sumbox"><span>本年变化</span>{y.明细 || '平稳度过'}</div>
-        <div className="sumbox"><span>家庭收支</span>收入 {fmt(y.收入)}　支出 {fmt(y.支出)}　
-          结余 <b className={y.结余 >= 0 ? 'ok-txt' : 'bad-txt'}>{y.结余 >= 0 ? '+' : '-'}¥{fmt(Math.abs(y.结余))}</b></div>
-        <div className="sumbox"><span>职务职级</span>职务：{y.职务变化}　职级：{y.职级变化}</div>
-        <div className="sumbox"><span>人脉圈子</span>{game.p.人脉} / {人脉上限(game)}（与当前岗位层级相匹配）</div>
-        {事件.length ? <div className="sumbox"><span>突发事件</span>{事件.map((x, i) => <span key={i}>· {x}<br /></span>)}</div> : null}
-        {大事.length ? <div className="sumbox"><span>本年记事</span>{大事.map((x, i) => <span key={i}>{x}<br /></span>)}</div> : null}
-        <div className="sumbox next"><span>下一年</span>{y.下一年}</div>
+        <div className="sumbox full"><span>本年变化</span>{y.明细 || '平稳度过'}</div>
+        <div className="sumbox-list">
+          <div className="sumbox"><span>家庭收支</span>
+            收入 {fmt(y.收入)}　支出 {fmt(y.支出)}　
+            结余 <b className={y.结余 >= 0 ? 'ok-txt' : 'bad-txt'}>{y.结余 >= 0 ? '+' : '-'}¥{fmt(Math.abs(y.结余))}</b></div>
+          <div className="sumbox"><span>职务职级</span>职务：{y.职务变化}　职级：{y.职级变化}</div>
+          <div className="sumbox"><span>人脉圈子</span>{game.p.人脉} / {人脉上限(game)}</div>
+          <div className="sumbox next"><span>下一年</span>{y.下一年}</div>
+          {事件.length ? <div className="sumbox full"><span>突发事件</span>{事件.map((x, i) => <span key={i}>· {x}<br /></span>)}</div> : null}
+          {大事.length ? <div className="sumbox full"><span>本年记事</span>{大事.map((x, i) => <span key={i}>{x}<br /></span>)}</div> : null}
+        </div>
         <button className="btn-red" onClick={closeSummary}>进入 {game.date.y} 年 →</button>
       </div>
     </Modal>

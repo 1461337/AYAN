@@ -7,7 +7,7 @@ import {
   indicatorList, 条线Of, 岗位平台, 是高配, 是党政班子, 是二线, 是实权, 是基层岗位,
   zhijiFloorOf, 家庭系数, eduIdxOf, 专业条线匹配,
 } from './selectors'
-import { 专业偏好条线, 职级序列 } from '../data/static'
+import { 专业偏好条线, 职级序列, 平台表 } from '../data/static'
 import { 生成调查事件 } from './discipline'
 import { 晋升职位池, 机构Of, 平台序, type PoolPos } from './positions'
 import { makeNpc, makeNpcs } from './newGame'
@@ -75,7 +75,8 @@ export function doPromote(g: GameState, _manual: boolean): PromoteResult {
     })
     return { kind: 'toast', msg: `已超过提任${ni.def.名}的年龄界限（${提任年龄上限(g, ni.idx)} 岁），组织上不再考虑。` }
   }
-  if (g.discipline.risk >= 40 && chance(g.discipline.risk / 380)) {
+  const 体制内 = (['公务员', '事业单位', '国企'] as string[]).includes(g.p.职业)
+  if (体制内 && g.discipline.risk >= 40 && chance(g.discipline.risk / 380)) {
     g.pendingEvent = 生成调查事件(g, '你在晋升考察期间，考察组收到了相关的信访举报')
     g.pendingEvent.月 = rnd(1, 12)
     g.log.unshift({ t: `${g.date.y}年`, h: '考察中止', kind: 'bad', d: '晋升考察期间，考察组收到了关于你的反映。考察中止，问题移交有关部门核实。' })
@@ -152,7 +153,8 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
   const 政治 = g.p.职业 === '公务员'
   let pool: PoolPos[] = 晋升职位池(g, idx)
   if (政治 && g.p.年龄 >= 二线年龄(g)) {
-    pool = pool.filter((p) => p.二线)
+    const 二线池 = pool.filter((p) => p.二线)
+    if (二线池.length) pool = 二线池
   }
   while (pool.length < 7) {
     pool.push({
@@ -347,6 +349,12 @@ export function settlePosition(g: GameState, pos: AdvicePosition): void {
       t: `${g.date.y}年`, h: '平台调整', kind: 'good',
       d: `你从${序平台名(旧序)}机关调到${序平台名(新序)}机关任职，站到了更高的平台上。`,
     })
+    if (!政治) {
+      const 城市s = 平台表[序平台名(新序) as keyof typeof 平台表]?.城市
+      if (城市s && 城市s.length) {
+        g.p.城市 = pick(城市s)
+      }
+    }
   }
   if (政治 && 是二线(名) && !g.flags['二线']) {
     g.flags['二线'] = true

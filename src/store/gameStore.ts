@@ -612,6 +612,7 @@ export const useGame = create<StoreState>((set, get) => {
       const s = get()
       if (!s.game) return
       const g = { ...s.game }
+      if (!(['公务员', '事业单位', '国企'] as string[]).includes(g.p.职业)) return finish('该操作仅适用于体制内身份。')
       if (g.actions <= 0) return finish('本年行动额度已用完。')
       g.actions--
       if (g.discipline.risk < 20 && Math.random() < 0.7) {

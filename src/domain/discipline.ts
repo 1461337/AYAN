@@ -92,6 +92,8 @@ export function 生成调查事件(g: GameState, 触发点: string): GameEvent {
 }
 
 export function disciplineTick(g: GameState): void {
+  const 体制内 = (['公务员', '事业单位', '国企'] as string[]).includes(g.p.职业)
+  if (!体制内) return
   const r = g.discipline.risk
   if (r <= 0) return
   if (r >= 45 && chance(r / 500) && !g.pendingEvent) {
