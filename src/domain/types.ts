@@ -343,6 +343,7 @@ export interface CareerState {
   初次晋升: boolean
   连续模糊: number
   累计模糊: number
+  连续高配?: number
 }
 
 export interface FamilyState {

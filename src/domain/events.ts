@@ -950,7 +950,13 @@ export function makeRetiredEvent(g: GameState): GameEvent {
         },
         {
           text: '答应下来，认为自己已经退休，不算违纪', hint: '二十万，但代价在后面',
-          resolve(g2) { applyEffect(g2, { cash: 200000, 道德: -6, 声望: -8, 廉政风险: rnd(15, 25) }); return '第一年的钱到账了。第二年，省里开展退休干部违规兼职专项清理，你的名字在名单上。' },
+          resolve(g2) {
+            const 公职 = (['公务员', '事业单位', '国企'] as string[]).includes(g2.p.职业)
+            applyEffect(g2, { cash: 200000, 道德: -6, 声望: -8, 廉政风险: 公职 ? rnd(15, 25) : 0 })
+            return 公职
+              ? '第一年的钱到账了。第二年，省里开展退休干部违规兼职专项清理，你的名字在名单上。'
+              : '第一年的钱到账了。同行议论纷纷，说你把几十年的名声折成了顾问费。'
+          },
         },
       ],
     },

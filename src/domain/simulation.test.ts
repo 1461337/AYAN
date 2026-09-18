@@ -763,6 +763,37 @@ describe('本地化晋升', () => {
     expect(g.yearSummary?.职务变化).toContain('岩台县委书记')
   })
 
+  it('连续两次高配岗位后可越两级平台', () => {
+    setRandomSource(mulberry32(93))
+    const g = newState({ name: '周正', sex: '男', age: 40, major: '法学', job: '公务员' })
+    g.p.平台 = '县级'
+    g.p.城市 = '岩台县'
+    g.rankIdx = 3
+    g.positions = [{ 年: g.date.y, 职级: '县处级正职', 岗位: '岩台县委书记', 条线: '主官' }]
+    g.p2.连续高配 = 0
+    const 普通 = genPositions(g, 4).map((p) => p.序号)
+    expect(普通.every((x) => x === 2)).toBe(true)
+    g.p2.连续高配 = 2
+    const 越级 = genPositions(g, 4).map((p) => p.序号)
+    expect(越级.some((x) => x === 3)).toBe(true)
+  })
+
+  it('拟任岗位说明文案多样且不超过两条', () => {
+    setRandomSource(mulberry32(95))
+    const g = newState({ name: '周正', sex: '男', age: 40, major: '法学', job: '公务员' })
+    g.rankIdx = 2
+    装备晋升条件(g)
+    const 文案 = new Set<string>()
+    for (let i = 0; i < 30; i++) {
+      for (const p of genPositions(g, 3)) {
+        expect(p.理由.length).toBeGreaterThanOrEqual(1)
+        expect(p.理由.length).toBeLessThanOrEqual(2)
+        p.理由.forEach((r) => 文案.add(r))
+      }
+    }
+    expect(文案.size).toBeGreaterThanOrEqual(5)
+  })
+
   it('人大/政协正职属二线不得再提拔，兼任不算', () => {
     setRandomSource(mulberry32(83))
     const mk = (名: string, 二线: boolean): AdvicePosition => ({
@@ -854,6 +885,7 @@ describe('本地化晋升', () => {
       expect(g.pendingPositions && g.pendingPositions.length).toBeGreaterThanOrEqual(7)
       expect(g.flags['首升换圈']).toBe(true)
       expect(g.shixiOrder.length).toBe(3)
+      expect(g.log.some((l) => l.h === '组织考察')).toBe(true)
     }
   })
 })

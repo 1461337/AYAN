@@ -413,8 +413,10 @@ function 公务员职位池(g: GameState, idx: number): PoolPos[] {
       out.push(...政治本地职位(现平台, idx, c).map((p) => ({ 名: p.名, 序号: 现序, 本地: false, 城市: c, 二线: p.二线 })))
     }
   } else {
-    // 一次晋升最多上跨一级平台；若该平台没有对应职级岗位，则继续上溯（兼容异常状态）
-    let 目标 = Math.min(3, 现序 + 1)
+    // 一次晋升最多上跨一级平台；连续两次高配岗位历练的，可越两级平台（不在文案中说明）
+    const 越两级 = (g.p2.连续高配 || 0) >= 2
+    let 目标 = Math.min(3, 现序 + (越两级 ? 2 : 1))
+    if (政治本地职位(序平台[目标], idx, g.p.城市).length === 0) 目标 = Math.min(3, 现序 + 1)
     while (目标 < 3 && 政治本地职位(序平台[目标], idx, g.p.城市).length === 0) 目标++
     const 城市s = shuffle(平台表[序平台[目标]].城市)
     for (const c of 城市s.slice(0, 2)) {

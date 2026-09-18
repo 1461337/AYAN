@@ -172,10 +172,42 @@ export function doPromote(g: GameState, _manual: boolean): PromoteResult {
     })
   }
   配偶随晋(g)
+  // 组织考察与公示
+  g.log.unshift({
+    t: `${g.date.y}年`, h: '组织考察', kind: 'good',
+    d: pick([
+      '考察组找了班子成员和相关同事谈话，民主推荐情况总体不错。',
+      '组织部门听取了分管领导和同事的意见，反映比较集中。',
+      '考察谈话中，多数人认为你能扛事，也有人提醒注意工作方法。',
+      '考察组核对了近三年的考核结果和奖惩记录，没有发现影响任用的问题。',
+    ]),
+  })
+  if (chance(0.18)) {
+    g.discipline.risk = clamp((g.discipline.risk || 0) + 3, 0, 100)
+    g.log.unshift({ t: `${g.date.y}年`, h: '公示', kind: '', d: '任前公示期间收到一条匿名反映，经核实不影响任用，但已登记在案。' })
+  }
   return { kind: 'modal' }
 }
 
 /* ============ 拟任岗位 ============ */
+
+const 选 = <T,>(arr: T[]): T => arr[rnd(0, arr.length - 1)]
+
+/* 岗位说明文案池：避免千篇一律的“专业对口/组织安排” */
+const 理由语 = {
+  专业: ['专业背景与岗位要求相符', '岗位需要的正是你这条专业线', '组织上按专业方向培养使用'],
+  条线: ['延续你现在的条线，情况熟', '在你熟悉的领域继续压担子', '这条线上一路是你干出来的'],
+  上调: ['组织上有意放到更高一层的平台锻炼', '本级没有合适岗位，组织安排到上一级平台', '再上一个台阶，压更重的担子'],
+  基层: ['需要到基层历练', '基层这堂课还没补', '到一线去长本事'],
+  党政: ['拥有党政班子经历', '班子履历完整，是加分项', '在班子里经受过考验'],
+  缺党政: ['缺少党政班子经历，这是硬杠杠', '没有班子经历，这一步卡住了'],
+  高配: ['组织统筹后拿出的岗位', '重要岗位，组织上反复比较后定了你', '这个岗位竞争激烈，组织上最终选了你'],
+  二线: ['按惯例安排的二线岗位', '到龄前的过渡性安排', '级别待遇不变，事务性工作为主'],
+  非公原单位: ['留在原单位挑担子', '本单位班子需要你', '情况熟，接着干'],
+  非公系统: ['系统内轮岗，专业不断线', '同行之间正常流动', '换个平台，还是这一行'],
+  非公通用: ['业绩突出，名次靠前', '考核优秀，组织（董事会）认可', '正是用人之际，把你顶上去', '资历与能力都到了'],
+  默认: ['组织统一安排', '按程序正常调整', '班子结构需要'],
+}
 
 export function genPositions(g: GameState, idx: number): AdvicePosition[] {
   const L = ladder(g)
@@ -232,6 +264,7 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
     const 实权 = 政治 && 是实权(名)
     const 序 = entry.序号 ?? 现序
     const d = 序 - 现序
+    const 连高 = (g.p2.连续高配 || 0) >= 2
     if (d === 0) sc += 6
     else if (d === 1) {
       const 够格 = 有基层经历 && 突出数 >= 2
@@ -239,13 +272,14 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
       const 过关 = chance(有本级 ? 上调概率 : Math.max(0.45, 上调概率))
       if (够格 && 过关) {
         sc += 7
-        理由.push(有本级 ? '组织上有意放到更高一层的平台锻炼' : '本级没有合适岗位，组织安排到上一级平台')
+        理由.push(选(理由语.上调))
       } else if (过关 && !够格) {
         sc -= 5
         理由.push('有上调机会，但缺少基层经历或实绩')
       } else sc -= 11
-    } else if (d >= 2) sc -= 14
-    else sc -= 4
+    } else if (d >= 2) {
+      if (连高 && 政治) { sc += 6; 理由.push('组织上放到更高平台任职') } else sc -= 14
+    } else sc -= 4
     // 下派基层补主官经历
     if (entry.下派) {
       if (!有基层经历) { sc += 9; 理由.push('组织安排下派基层，补主官经历') }
@@ -254,40 +288,41 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
 
     if (entry.本地) { sc += 3 }
     if (政治) {
-      if (条 !== '综合' && 条 !== '主官' && 条 !== '其他' && 条 !== '人大政协' && 专业.includes(条)) { sc += 4; 理由.push('与你的专业对口') }
+      if (条 !== '综合' && 条 !== '主官' && 条 !== '其他' && 条 !== '人大政协' && 专业.includes(条)) { sc += 4; 理由.push(选(理由语.专业)) }
       else if (条 === '综合' && 专业.includes('综合')) { sc += 2 }
-      if (主官) sc += 专业.includes('综合') ? 4 : 2
+      if (主官) { sc += 专业.includes('综合') ? 4 : 2; 理由.push('主官岗位，关键时刻要能拍板') }
       if (组宣统 && !主官) sc += 2
-      if (条 === 现条线 && 条 !== '其他' && 条 !== '人大政协') { sc += 3; 理由.push('延续你现在的条线') }
+      if (条 === 现条线 && 条 !== '其他' && 条 !== '人大政协') { sc += 3; 理由.push(选(理由语.条线)) }
       if (条 === 单位条线 && 条 !== '其他' && 条 !== '人大政协') sc += 2
       if (基层) {
         if (有基层经历) sc += 1
-        else { sc += 3; 理由.push('需要到基层历练') }
+        else { sc += 3; 理由.push(选(理由语.基层)) }
       } else if (主官 || 高层) {
         if (有基层经历) sc += 2
         else sc -= 1
       }
       if (idx >= 4 && 党政) {
-        if (有党政经历) { sc += 4; 理由.push('拥有党政班子经历') }
-        else { sc -= 3; 理由.push('缺少党政班子经历，这是硬杠杠') }
+        if (有党政经历) { sc += 4; 理由.push(选(理由语.党政)) }
+        else { sc -= 3; 理由.push(选(理由语.缺党政)) }
       }
       if (党政 && 有党政经历 && idx < 4) sc += 1
       if (二线) {
-        if (g.p.年龄 >= 二线年龄(g)) sc += 6
+        if (g.p.年龄 >= 二线年龄(g)) { sc += 6; 理由.push(选(理由语.二线)) }
         else sc -= 6
       }
       if (实权 && g.p.年龄 < 二线年龄(g)) sc += 3
       if (高配) {
         if (g.p.年龄 >= 二线年龄(g)) sc -= 4
-        else if (chance(高配概率)) { sc += 5; 理由.push('组织统筹后拿出的岗位') }
+        else if (chance(高配概率)) { sc += 5; 理由.push(选(理由语.高配)) }
         else sc -= 6
       }
       if (g.p.选调生) sc += 1
     } else {
       if (entry.本地) sc += 2
       if (g.p.专业匹配度 >= 90) { sc += 2 }
-      if (g.p.单位 && 名.startsWith(g.p.单位)) { sc += 3; 理由.push('留在原单位') }
-      else if (同系统(g.p.单位, 名)) { sc += 5; 理由.push('留在本系统') }
+      if (g.p.单位 && 名.startsWith(g.p.单位)) { sc += 3; 理由.push(选(理由语.非公原单位)) }
+      else if (同系统(g.p.单位, 名)) { sc += 5; 理由.push(选(理由语.非公系统)) }
+      else 理由.push(选(理由语.非公通用))
       // 医院等级与高校教职的学历门槛
       if (g.p.职业 === '医生' && /三甲/.test(名)) {
         if (eduIdxOf(g.p.学历) >= 3) { sc += 4; 理由.push('三甲医院岗位，学历与科研更占优') }
@@ -301,7 +336,7 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
     return {
       名, sc, 高配, 党政, 二线, 实权, 平台: 岗台, 级别: def.名, 条线: 条,
       序号: 序, 城市: entry.城市, 本地: entry.本地, 下派: entry.下派,
-      理由: 理由.length ? Array.from(new Set(理由)).slice(0, 1) : ['组织统一安排'],
+      理由: 理由.length ? Array.from(new Set(理由)).slice(0, 2) : [选(理由语.默认)],
     }
   })
   评分.sort((a, b) => b.sc - a.sc)
@@ -430,6 +465,11 @@ export function settlePosition(g: GameState, pos: AdvicePosition): void {
     g.flags['二线'] = true
     g.p.声望 = clamp(g.p.声望 + 3, 0, 100)
     g.p.健康 = clamp(g.p.健康 + 4, 0, 100)
+  }
+  // 连续高配岗位历练（连续两次后有机会越级上平台，不在文案中说明）
+  if (政治) {
+    if (是高配(名)) g.p2.连续高配 = (g.p2.连续高配 || 0) + 1
+    else g.p2.连续高配 = 0
   }
   g.p.单位 = 机构Of(名, g.p.城市, g.p.平台, g.p.职业)
   g.positions.unshift({ 年: g.date.y, 职级: 职级名, 岗位: 名, 条线: 条线Of(名) })
