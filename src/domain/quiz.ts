@@ -30,7 +30,18 @@ export function 可用题目(g: GameState): number[] {
   const 合并 = [...命中, ...通用]
   const 选 = 合并.length >= 3 ? 合并 : 基础
   const list = 选.map((x) => x.i)
-  return list.length ? list : ALL_SHIXI.map((_, i) => i)
+  if (list.length) return list
+  // 最后兜底：只限职业，不跨职业出题
+  const 保底 = ALL_SHIXI
+    .map((it, i) => ({ it, i }))
+    .filter(({ it }) => {
+      const 职业 = it.职业
+      if (职业 && 职业.length && !职业.includes(job)) return false
+      if ((!职业 || !职业.length) && !公务池.includes(job)) return false
+      return true
+    })
+    .map((x) => x.i)
+  return 保底.length ? 保底 : [0]
 }
 
 export function makeShixiOrder(g: GameState): number[] {

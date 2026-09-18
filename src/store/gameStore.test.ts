@@ -49,6 +49,20 @@ describe('存档与感情线动作', () => {
     }
   })
 
+  it('科员开局只出科员科级题，不出厅局省部题', () => {
+    useGame.getState().start({ name: '测试', sex: '男', age: 24, major: '法学', job: '公务员' })
+    const g = useGame.getState().game!
+    g.p.选调生 = false
+    g.rankIdx = -1
+    g.shixiOrder = makeShixiOrder(g)
+    const 名s = g.shixiOrder.map((i) => ALL_SHIXI[i].名)
+    expect(名s.length).toBe(3)
+    expect(名s.some((n) => n.includes('·厅局') || n.includes('·省部'))).toBe(false)
+    const 池 = 可用题目(g)
+    expect(池.length).toBeGreaterThanOrEqual(3)
+    expect(池.every((i) => !ALL_SHIXI[i].名.includes('·厅局'))).toBe(true)
+  })
+
   it('职级变化后旧题库条目会被拦截并刷新', () => {
     useGame.getState().start({ name: '测试', sex: '男', age: 52, major: '法学', job: '公务员' })
     const g = useGame.getState().game!
