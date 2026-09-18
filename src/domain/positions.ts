@@ -1,6 +1,7 @@
 import type { GameState, Job, PlatformName } from './types'
 import { 平台表, 职务阶梯 } from '../data/static'
 import { 职业机构 } from '../data/careers'
+import { 政治扩展职位 } from '../data/positionsLib'
 import { shuffle } from './rng'
 
 export interface PoolPos {
@@ -304,14 +305,23 @@ function 省级(idx: number): LocalPos[] {
 }
 
 export function 政治本地职位(平台: PlatformName, idx: number, 城市: string): LocalPos[] {
-  switch (平台) {
-    case '乡镇级': return 乡镇(城市, idx)
-    case '县级':
-    case '区级': return 县区(城市, idx)
-    case '市级': return 市级(城市, idx)
-    case '省级': return 省级(idx)
-    default: return []
-  }
+  const 手写 = ((): LocalPos[] => {
+    switch (平台) {
+      case '乡镇级': return 乡镇(城市, idx)
+      case '县级':
+      case '区级': return 县区(城市, idx)
+      case '市级': return 市级(城市, idx)
+      case '省级': return 省级(idx)
+      default: return []
+    }
+  })()
+  const 扩展 = 政治扩展职位(平台, idx, 城市).map((p) => ({ 名: p.名, 二线: p.二线 }))
+  const seen = new Set<string>()
+  return 手写.concat(扩展).filter((p) => {
+    if (seen.has(p.名)) return false
+    seen.add(p.名)
+    return true
+  })
 }
 
 /* ============ 非公务员职业：岗位池 ============ */
@@ -342,7 +352,7 @@ function 职业本层(职业: Job, 序号: number, 职称: string): PoolPos[] {
     const 单元 = 单元s[ji % 单元s.length]
     const 单元2 = 单元s[(ji + 1) % 单元s.length]
     out.push({ 名: 职业职位名(j, 职称, 单元), 序号, 本地: false })
-    if (机构.length < 4 && !/总经理|校长|院长|总编辑|处长|科长|主任|经理/.test(职称)) {
+    if (!/总经理|校长|院长|总编辑|处长|科长|主任|经理/.test(职称)) {
       out.push({ 名: 职业职位名(j, 职称, 单元2), 序号, 本地: false })
     }
   })
@@ -384,15 +394,10 @@ function 职业职位池(g: GameState, idx: number): PoolPos[] {
   const out: PoolPos[] = []
   if (idx <= 上限) {
     out.push(...职业本层(职业, 现序, L).map((p) => ({ ...p, 本地: true })))
-    // 同级其他平台机构的同类岗位，增加选择
-    const 其它序 = [0, 1, 2, 3].filter((x) => x !== 现序 && idx <= 职业最高[x])
-    for (const s of shuffle(其它序).slice(0, 1)) {
-      out.push(...职业本层(职业, s, L))
-    }
   } else {
+    // 一次晋升最多上跨一级平台
     const 目标 = Math.min(3, 现序 + 1)
     out.push(...职业本层(职业, 目标, L))
-    if (目标 < 3) out.push(...职业本层(职业, 目标 + 1, L))
   }
   return 补齐(out, '', 现序)
 }

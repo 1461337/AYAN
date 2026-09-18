@@ -30,13 +30,13 @@ export function Study() {
             <div className="bars mt8">
               {Array.from({ length: up.年 }, (_, i) => <i key={i} className={i < up.年 - up.剩 ? 'on' : ''} />)}
             </div>
-            <span className="hint">每年占用 1 次行动；中途放弃不退费。</span>
+            <span className="hint">每年 1 次行动 · 中途放弃不退费。</span>
           </div>
           <button className="btn-red gray" onClick={eduCancel}>中 途 放 弃</button>
         </>
       ) : null}
       <div className="sec-title mt14">在职学历提升（在编在岗）</div>
-      {!inOffice ? <div className="box">你目前不在编在岗，可以自费报考，但拿不到委托培养与工龄衔接的政策便利。</div> : null}
+      {!inOffice ? <div className="box">不在编在岗，无法享受委托培养。</div> : null}
       {EDU_UP.map((e, i) => {
         const ok = e.需.includes(cur)
         const busy = !!up
@@ -49,8 +49,7 @@ export function Study() {
               {ok ? '' : (eduIdx(cur) > eduIdx(e.至)
                 ? <><br /><b className="ok-txt">你已取得{cur}学历，高于该层次</b></>
                 : <><br /><b className="bad-txt">学历不符：该层次要求{e.需.join(' / ')}，当前为{cur}</b></>)}
-              {busy ? <><br /><b className="bad-txt">正在攻读一项学历，无法同时进行。</b></> : null}
-              <br />{e.注}
+              {busy ? <><br /><b className="bad-txt">正在攻读一项学历。</b></> : null}
             </small>
           </button>
         )

@@ -1,7 +1,7 @@
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
 import { Collapse } from '../components/Collapse'
-import { SHIXI } from '../../data/shixi'
+import { ALL_SHIXI, 题目套 } from '../../domain/quiz'
 import { nextRankInfo, networkScore, TIER_NAME } from '../../domain/selectors'
 import { fmt } from '../../utils/format'
 
@@ -15,10 +15,7 @@ export function Shixi() {
   if (game.status === '退休') {
     return (
       <Card icon="🧰" title="施政 · 已退休">
-        <div className="box">
-          你已于 {game.p.年龄} 岁到龄退休，不再担任现职。<br />
-          现在可以做的是：照顾好家庭、打理资产、保养身体，看着这座城市继续往前走。
-        </div>
+        <div className="box">你已到龄退休，不再担任现职。可安排家庭、资产与健康事务。</div>
         <div className="ap-row">
           本年剩余行动：<b>{game.actions} / {game.actionsMax} 次</b>
           <span className="dots">{Array.from({ length: game.actionsMax }, (_, i) => <i key={i} className={i < game.actions ? 'on' : ''} />)}</span>
@@ -31,9 +28,8 @@ export function Shixi() {
   const ni = nextRankInfo(game)
 
   if (game.quiz) {
-    const item = SHIXI[game.quiz.item]
-    const tier = game.quiz.tier
-    const set = item.asks[tier][game.quiz.variant]
+    const { item, tier, variants } = 题目套(game.quiz.item, game.rankIdx)
+    const set = variants[Math.min(game.quiz.variant, variants.length - 1)]
     const mo = game.p2.连续模糊 || 0
     return (
       <Card icon="❓" title={'处置问答 · ' + item.名}>
@@ -43,11 +39,11 @@ export function Shixi() {
           {mo > 0 ? <span className="tag red">已连续 {mo} 次模棱两可</span> : null}
         </div>
         <div className="sec-title">{set.q}</div>
-        <div className="hint mb12">三个选项对应不同处置方式，位置随机，系统不会提示哪个更合适。</div>
+        <div className="hint mb12">三个选项位置随机，系统不会提示哪个更合适。</div>
         {game.quiz.order.map((ai, k) => (
           <button className="btn-line" key={k} onClick={() => answerQuiz(k)}>{set.a[ai].文}</button>
         ))}
-        <div className="hint">作答后本项工作才算完成，且本年内该项工作不能重复开展。</div>
+        <div className="hint">作答后本项工作才算完成，本年内不能重复开展。</div>
       </Card>
     )
   }
@@ -59,11 +55,10 @@ export function Shixi() {
         <span className="dots">{Array.from({ length: game.actionsMax }, (_, i) => <i key={i} className={i < game.actions ? 'on' : ''} />)}</span>
         <span className="hint right">{game.date.y} 年度</span>
       </div>
-      <div className="hint mb12">
-        每年随机 3 项，每项限一次。答对加分；模棱两可不加不减，连续 3 次后每次扣减，答对即清零；答错直接扣减。
-      </div>
+      <div className="hint mb12">每年随机 3 项，每项限一次；答对加分，答错扣分；连续模糊 3 次后每次扣分。</div>
       {game.shixiOrder.map((idx, i) => {
-        const a = SHIXI[idx]
+        const a = ALL_SHIXI[idx]
+        if (!a) return null
         const used = game.usedThisYear.includes(idx)
         return (
           <button className="btn-line" key={idx} disabled={game.actions <= 0 || used} onClick={() => shixi(idx)}>

@@ -116,14 +116,13 @@ export function People() {
         />
       )) : game.family.配偶 ? (
         <>
-          <div className="box">你们还没有孩子。养育成本会随孩子长大逐年上升。</div>
           {game.family.配偶.好感度 >= 80 ? (
             <button className="btn-line" disabled={game.actions <= 0} onClick={birth}>
               计划要一个孩子<span className="cost">-1 行动</span>
               <small>需配偶未满 42 岁，最多 3 个孩子且间隔 2 年以上</small>
             </button>
           ) : (
-            <div className="hint">配偶好感度达到 80 后，才会考虑生育（当前 {game.family.配偶.好感度}）。</div>
+            <div className="hint">好感度需 ≥ 80（当前 {game.family.配偶.好感度}）。</div>
           )}
         </>
       ) : null}

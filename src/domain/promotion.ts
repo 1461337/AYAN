@@ -189,7 +189,9 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
     const 组宣统 = 政治 && /组织部|宣传部|统战部/.test(名)
     const 党政 = 政治 && 是党政班子(名)
     const 高配 = 政治 && 是高配(名)
-    const 二线 = 政治 && (!!entry.二线 || 是二线(名))
+    // 兼任岗位（含“、”或“兼”）只按兼任算，不按二线处理
+    const 兼任 = /[、]|兼/.test(名)
+    const 二线 = 政治 && !兼任 && (!!entry.二线 || 是二线(名))
     const 实权 = 政治 && 是实权(名)
     const 序 = entry.序号 ?? 现序
     const d = 序 - 现序

@@ -34,7 +34,7 @@ export function Integrity() {
           <div className="box warn-box">
             <b className="bad-txt">已掌握在案 {game.discipline.案件.length} 笔，合计 {fmt(涉案金额(game))} 元</b><br />
             {game.discipline.案件.slice(-4).map((c, i) => <span key={i}>· {c.年}年　{c.事由}　{fmt(c.金额)} 元<br /></span>)}
-            <span className="hint">每一笔都记在案上，构成风险下限，不会随时间冲淡。</span>
+            <span className="hint">每一笔都记在案上，不会随时间冲淡。</span>
           </div>
         </>
       ) : null}

@@ -21,7 +21,7 @@ function SaveCard() {
       <div className="card-bd" style={{ padding: '11px 13px' }}>
         <div className="ap-row" style={{ marginBottom: 8 }}>
           <span className="sec-title" style={{ margin: 0, color: '#9a7a24', borderLeftColor: '#e8c56a' }}>存档</span>
-          <span className="hint" style={{ margin: 0 }}>每年结束自动保存 · 上次保存：{t || '尚未保存'}</span>
+          <span className="hint" style={{ margin: 0 }}>自动保存 · 上次：{t || '未保存'}</span>
         </div>
         <div className="btn-row" style={{ marginTop: 0 }}>
           <button className="btn-plain" onClick={save}>保存存档</button>
@@ -68,7 +68,6 @@ export function Events() {
           <div className="txt"><p>{pendingEvent.描述}</p></div>
           {pendingEvent.背景 ? <div className="box">{pendingEvent.背景}</div> : null}
           <div className="mt6">
-            {pendingEvent.月 ? <div className="hint mb12">这件事发生在 {game.date.y} 年 {pendingEvent.月} 月。不同的处置方式，会带来不同的奖励与后果。</div> : null}
             {pendingEvent.选项.map((o, i) => (
               <button className="btn-line" key={i} onClick={() => chooseEvent(i)}>
                 {o.text}
@@ -76,7 +75,6 @@ export function Events() {
               </button>
             ))}
           </div>
-          <div className="hint">每个选项都会留下痕迹。系统不会告诉你哪个“正确”。</div>
         </Card>
       </>
     )
@@ -89,7 +87,7 @@ export function Events() {
       {game.date.y - (game.beginYear || game.date.y) < 3 && game.status !== '退休' ? (
         <Collapse title="上手指引（前三年显示）">
           <div className="hint" style={{ margin: 0 }}>
-            每年 5 次行动：建议 3 次施政 + 1 次汇报领导，其余留给家庭、健康或廉政。晋升看六项指标，见「🏛️ 政务」页。
+            每年 5 次行动：建议 3 次施政 + 1 次汇报，其余留给家庭或健康。晋升看六项指标。
           </div>
         </Collapse>
       ) : null}

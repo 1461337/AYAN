@@ -56,9 +56,7 @@ function PositionPicker() {
       <div className="card-hd"><span className="ic">🏅</span><h2>组织谈话 · 拟任岗位</h2></div>
       <div className="card-bd">
         <div className="txt">
-          <p>组织部门找你谈话，拟提任你为 <span className="hl">{game.pendingPosTitle}</span>。组织上按你的专业、现单位和任职经历，给出了以下岗位方向，<b>只能选择一个</b>。</p>
-          <p className="hint">岗位不同，部门关系、群众基础与今后的路也不同。排在前面的，是与你的经历更匹配的岗位。<br />
-            组织上不会告诉你哪个岗位更重——同样是"副市长"，市委常委与普通副市长分量并不相同。这一步值不值得走，请自己判断。</p>
+          <p>组织部门找你谈话，拟提任你为 <span className="hl">{game.pendingPosTitle}</span>，以下岗位只能选择一个。</p>
         </div>
         {list.map((p, i) => (
           <button className="btn-line" key={p.名 + i} onClick={() => choosePos(i)}>

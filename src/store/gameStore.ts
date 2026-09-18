@@ -271,6 +271,7 @@ export const useGame = create<StoreState>((set, get) => {
       if (!s.game) return
       const g = { ...s.game }
       if (g.actions <= 0) return finish('本年行动额度已用完。')
+      if (g.p.年龄 > 66) return finish('这个年纪，已经很少有人再给你介绍了。')
       if (g.candidates.length >= 6) return finish('同时认识的人已经够多了，先把关系理一理。')
       g.actions--
       const add = Math.min(6 - g.candidates.length, 2)

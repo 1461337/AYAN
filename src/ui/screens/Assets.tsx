@@ -71,8 +71,7 @@ export function Assets() {
         )
       }) : (
         <div className="box">
-          名下暂无住房，现居：{game.housing}。{pub ? `你是${game.p.职业}，可申请公积金贷款，利率约 3.1%。` : '商业贷款年利率约 4.2%。'}<br />
-          房价随本地房地产市场涨跌，长期看并不保证只涨不跌。
+          名下暂无住房，现居：{game.housing}。房价随市场浮动。
         </div>
       )}
       {a.车辆.length ? a.车辆.map((v, i) => (
@@ -85,7 +84,7 @@ export function Assets() {
             点此出售：按当前残值成交
           </small>
         </button>
-      )) : <div className="box">名下暂无车辆。车贷年利率约 4.8%，期限 3—5 年。</div>}
+      )) : <div className="box">名下暂无车辆。</div>}
 
       {game.负债 > 0 ? (
         <div className="box warn-box">
@@ -166,7 +165,7 @@ export function Assets() {
           <div className="box">{a.投资.map((x, i) => <span key={i}>· {x}<br /></span>)}</div>
         </Collapse>
       ) : null}
-      <div className="hint">资产、贷款与月供逐年真实结算；逾期会形成不良记录。</div>
+      <div className="hint">所有收支与贷款按年结算，逾期影响征信。</div>
     </Card>
   )
 }

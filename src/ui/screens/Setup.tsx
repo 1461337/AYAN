@@ -89,13 +89,10 @@ export function Setup() {
               <span>专业—职业匹配度 <b>{fit}%</b></span>
               <span className={styles.ok}>应届 · 无工作经历</span>
             </div>
-            <div className={styles.sm}>
-              匹配度须高于 80%；学历按年龄自动匹配，出生地、所在地与家庭背景随机。<br />
-              进入体制后可在「🌿 生活」页在职提升学历。
-            </div>
+            <div className={styles.sm}>匹配度须高于 80%；学历按年龄自动匹配。</div>
           </div>
           <div className="hint">
-            出生地、所在地与家庭背景随机；学历由年龄自动匹配；是否成为<span className="hl">选调生</span>（仅公务员）在入职当天揭晓。
+            出生地、家庭背景随机；是否成为<span className="hl">选调生</span>（仅公务员）入职当天揭晓。
           </div>
           <button className="btn-main" onClick={onStart}>开 始 人 生</button>
         </div>

@@ -3,9 +3,10 @@ import { resetRandomSource, setRandomSource } from './rng'
 import { newState } from './newGame'
 import { endYear } from './year'
 import { 快照 } from './effects'
-import { monthly } from './economy'
+import { monthly, buyAsset, repayLoan, repayDebt } from './economy'
 import { genPositions, doPromote } from './promotion'
-import { 政治本地职位 } from './positions'
+import { 政治本地职位, 平台序 } from './positions'
+import { 职务阶梯 } from '../data/static'
 import type { GameState, Job } from './types'
 
 function mulberry32(seed: number) {
@@ -103,6 +104,26 @@ describe('经济公式', () => {
     expect(monthly(100000, 4.8, 5)).toBe(1878)
     expect(monthly(0, 4.8, 5)).toBe(0)
   })
+
+  it('全款不产生贷款，偿还负债与提前结清有效', () => {
+    setRandomSource(mulberry32(9))
+    const g = newState({ name: '周正', sex: '男', age: 26, major: '法学', job: '公务员' })
+    g.cash = 5_000_000
+    g.负债 = 30000
+    const r1 = buyAsset(g, '车', 0, 'full')
+    expect(r1.ok).toBe(true)
+    expect(g.loans.length).toBe(0)
+    expect(g.assets.车辆.length).toBe(1)
+    const r2 = buyAsset(g, '房', 0, 'loan')
+    expect(r2.ok).toBe(true)
+    expect(g.loans.length).toBe(1)
+    const r3 = repayLoan(g, 0)
+    expect(r3.ok).toBe(true)
+    expect(g.loans.length).toBe(0)
+    const r4 = repayDebt(g)
+    expect(r4.ok).toBe(true)
+    expect(g.负债).toBe(0)
+  })
 })
 
 describe('本地化晋升', () => {
@@ -178,6 +199,112 @@ describe('本地化晋升', () => {
     expect(list.length).toBeGreaterThanOrEqual(7)
     expect(list.some((p) => /医院|卫生院/.test(p.名))).toBe(true)
     expect(list.some((p) => /主治医师/.test(p.名))).toBe(true)
+  })
+
+  it('首次晋升（乡镇）必含党政领导职务', () => {
+    setRandomSource(mulberry32(3))
+    const g = newState({ name: '方军', sex: '男', age: 26, major: '法学', job: '公务员' })
+    g.rankIdx = -1
+    g.p.平台 = '乡镇级'
+    g.p.城市 = '平塘镇'
+    const list = genPositions(g, 0)
+    expect(list.length).toBeGreaterThanOrEqual(7)
+    const s = list.map((p) => p.名).join('|')
+    expect(/党委副书记|组织委员|宣传委员|统战委员|常务副/.test(s)).toBe(true)
+  })
+
+  it('县级正处升厅级只会给出市级岗位，不越级到省级', () => {
+    setRandomSource(mulberry32(13))
+    const g = newState({ name: '林远', sex: '男', age: 45, major: '法学', job: '公务员' })
+    g.rankIdx = 3
+    g.p.平台 = '县级'
+    g.p.城市 = '岩台县'
+    g.zhengji = 999999
+    g.flags['基层经历'] = true
+    const list = genPositions(g, 4)
+    expect(list.length).toBeGreaterThanOrEqual(7)
+    expect(list.every((p) => (p.序号 ?? 1) <= 2)).toBe(true)
+    expect(list.some((p) => p.名.includes('市'))).toBe(true)
+  })
+
+  it('乡科级正职晋升也保证有二线岗位', () => {
+    setRandomSource(mulberry32(17))
+    const g = newState({ name: '周正', sex: '男', age: 40, major: '法学', job: '公务员' })
+    g.rankIdx = 0
+    g.p.平台 = '乡镇级'
+    g.p.城市 = '平塘镇'
+    g.zhengji = 999999
+    const list = genPositions(g, 1)
+    expect(list.length).toBeGreaterThanOrEqual(7)
+    expect(list.some((p) => p.二线)).toBe(true)
+  })
+
+  it('长跑审计：不越级、不出现裸职级岗位、配偶职级不越位', () => {
+    const jobs: Job[] = ['公务员', '事业单位', '国企', '企业', '记者', '教师', '医生']
+    const 裸职级 = new Set(职务阶梯.map((d) => d.名))
+    let seed = 200
+    for (const job of jobs) {
+      setRandomSource(mulberry32(seed++))
+      const g = newState({ name: '审计', sex: '男', age: 24, major: '法学', job })
+      装备晋升条件(g)
+      for (let i = 0; i < 45 && !g.over; i++) {
+        if (g.pendingPositions) {
+          expect(g.pendingPositions.length).toBeGreaterThanOrEqual(7)
+          const 现序 = 平台序[g.p.平台] ?? 1
+          for (const p of g.pendingPositions) {
+            expect(p.序号 ?? 现序).toBeLessThanOrEqual(现序 + 1)
+          }
+          g.pendingPositions = null
+        }
+        resolvePending(g)
+        if (g.quiz) g.quiz = null
+        endYear(g)
+        for (const item of g.positions) {
+          expect(裸职级.has(item.岗位)).toBe(false)
+        }
+        const sp = g.family.配偶
+        if (sp && ['公务员', '事业单位人员', '国企人员'].includes(sp.类别) && sp.职级 != null) {
+          expect(sp.职级).toBeLessThanOrEqual(g.rankIdx)
+        }
+      }
+    }
+  })
+
+  it('扩展岗位库覆盖党委/政府/群团/人大政协序列', () => {
+    const 县 = 政治本地职位('县级', 1, '岩台县').map((p) => p.名).join('|')
+    expect(县).toContain('岩台县教育局局长')
+    expect(县).toContain('岩台县委组织部副部长')
+    expect(县).toContain('岩台县总工会')
+    expect(县).toContain('共青团岩台县委')
+    expect(县).toContain('岩台县人大常委会')
+    expect(县).toContain('岩台县医疗保障局')
+
+    const 市 = 政治本地职位('市级', 3, '京州市').map((p) => p.名).join('|')
+    expect(市).toContain('京州市教育局局长')
+    expect(市).toContain('京州市委宣传部副部长')
+    expect(市).toContain('京州市体育局')
+
+    const 省 = 政治本地职位('省级', 3, '京州市').map((p) => p.名).join('|')
+    expect(省).toContain('省教育厅处长')
+    expect(省).toContain('省委组织部处长')
+
+    const 镇 = 政治本地职位('乡镇级', 0, '平塘镇').map((p) => p.名).join('|')
+    expect(镇).toContain('平塘镇党政办公室副主任')
+    expect(镇).toContain('平塘镇司法所副所长')
+  })
+
+  it('岗位库包含现实常见的兼任岗位', () => {
+    const 县 = 政治本地职位('县级', 2, '岩台县').map((p) => p.名).join('|')
+    expect(县).toContain('岩台县副县长、岩台县公安局局长')
+    expect(县).toContain('岩台县委常委、组织部部长兼县委党校校长')
+
+    const 市 = 政治本地职位('市级', 4, '京州市').map((p) => p.名).join('|')
+    expect(市).toContain('京州市副市长、京州市公安局局长')
+    expect(市).toContain('京州市委常委、市委秘书长')
+
+    const 省 = 政治本地职位('省级', 6, '京州市').map((p) => p.名).join('|')
+    expect(省).toContain('副省长、省公安厅厅长')
+    expect(省).toContain('省委常委、组织部部长兼省委党校校长')
   })
 
   it('doPromote 成功后同步题库与圈子', () => {
