@@ -2,11 +2,12 @@ import type { GameState, Job } from './types'
 import { SHIXI } from '../data/shixi'
 import { SHIXI_EXTRA } from '../data/shixiExtra'
 import { SHIXI_HIGH } from '../data/shixiHigh'
+import { SHIXI_CAREER_HIGH } from '../data/shixiCareerHigh'
 import { SHIXI_COUNT } from '../data/static'
 import { shuffle } from './rng'
 import { 条线Of } from './selectors'
 
-export const ALL_SHIXI = [...SHIXI, ...SHIXI_EXTRA, ...SHIXI_HIGH]
+export const ALL_SHIXI = [...SHIXI, ...SHIXI_EXTRA, ...SHIXI_HIGH, ...SHIXI_CAREER_HIGH]
 const 公务池: Job[] = ['公务员', '事业单位', '国企']
 
 export function 可用题目(g: GameState): number[] {

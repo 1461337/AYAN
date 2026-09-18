@@ -865,6 +865,23 @@ describe('本地化晋升', () => {
     }
   })
 
+  it('各职业高职级都有对应的职级题库', () => {
+    setRandomSource(mulberry32(109))
+    for (const job of ['事业单位', '国企', '企业', '记者', '教师', '医生'] as Job[]) {
+      const g = newState({ name: '测试', sex: '男', age: 46, major: '法学', job })
+      g.rankIdx = 5
+      const 池 = 可用题目(g)
+      const 名s = 池.map((i: number) => ALL_SHIXI[i].名)
+      expect(名s.some((n: string) => n.includes('·高层')), job).toBe(true)
+      // 低职级不应出现高层题
+      const g2 = newState({ name: '测试', sex: '男', age: 24, major: '法学', job })
+      g2.rankIdx = 1
+      const 低名s = 可用题目(g2).map((i: number) => ALL_SHIXI[i].名)
+      expect(低名s.some((n: string) => n.includes('·高层')), job).toBe(false)
+      expect(低名s.length).toBeGreaterThanOrEqual(3)
+    }
+  })
+
   it('行动题库按岗位条线匹配：宣传岗出宣传题、纪检岗出纪检题', () => {
     setRandomSource(mulberry32(105))
     const mk = (岗位: string) => {
