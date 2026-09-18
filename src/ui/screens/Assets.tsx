@@ -13,6 +13,7 @@ export function Assets() {
   const buyHouse = useGame((s) => s.buyHouse)
   const buyCar = useGame((s) => s.buyCar)
   const sell = useGame((s) => s.sell)
+  const 切换 = useGame((s) => s.切换房产用途)
   const 还负债 = useGame((s) => s.还负债)
   const 结清贷款 = useGame((s) => s.结清贷款)
 
@@ -56,18 +57,20 @@ export function Assets() {
       <div className="sec-title">名下资产</div>
       {a.房产.length ? a.房产.map((x, i) => {
         const 增值 = (x.市值 || 0) - (x.购入价 || 0)
-        const 年租 = x.自住 ? 0 : Math.round((x.市值 || 0) * 0.014)
+        const 年租 = Math.round((x.市值 || 0) * 0.014)
         return (
-          <button className="btn-line" key={i} onClick={() => sell('房', i)}>
-            {x.名}{x.自住 ? <span className="tag green fr">自住</span> : <span className="tag gray fr">出租</span>}
-            <span className="cost">市值 {fmt(x.市值 || 0)}</span>
-            <small>
-              约 {x.面积 || '—'}㎡　{x.购入年 || ''} 年购入 / {fmt(x.购入价 || 0)} 元<br />
-              较购入价 {增值 >= 0 ? <b className="ok-txt">涨 {fmt(增值)}</b> : <b className="bad-txt">跌 {fmt(-增值)}</b>} 元　
-              {x.自住 ? '当前自住，无租金' : '年租金约 ' + fmt(年租) + ' 元'}<br />
-              点此出售：按市值成交，扣约 2% 中介与税费
-            </small>
-          </button>
+          <div className="box" key={i}>
+            <b>{x.名}</b>
+            {x.自住 ? <span className="tag green fr">自住</span> : <span className="tag gray fr">出租</span>}
+            <br />
+            约 {x.面积 || '—'}㎡　{x.购入年 || ''} 年购入 / {fmt(x.购入价 || 0)} 元　市值 {fmt(x.市值 || 0)} 元<br />
+            较购入价 {增值 >= 0 ? <b className="ok-txt">涨 {fmt(增值)}</b> : <b className="bad-txt">跌 {fmt(-增值)}</b>} 元　
+            {x.自住 ? '当前自住，无租金' : `年租金约 ${fmt(年租)} 元`}
+            <div className="btn-row">
+              <button className="btn-plain" onClick={() => 切换(i)}>{x.自住 ? '改为出租' : '搬入自住'}</button>
+              <button className="btn-plain" onClick={() => sell('房', i)}>出售（扣约 2% 税费）</button>
+            </div>
+          </div>
         )
       }) : (
         <div className="box">

@@ -84,6 +84,20 @@ export function 年租金收入(g: GameState): number {
   return (g.assets.房产 || []).filter((x) => !x.自住).reduce((a, x) => a + Math.round((x.市值 || x.购入价 || 0) * 0.014), 0)
 }
 
+/* 自住/出租切换：搬入某套，原自住房转为出租 */
+export function 切换房产用途(g: GameState, i: number): ActionResult {
+  const x = g.assets.房产[i]
+  if (!x) return { ok: false, msg: '该房产不存在。' }
+  if (x.自住) {
+    x.自住 = false
+    if (!g.assets.房产.some((y) => y.自住)) g.housing = '租房居住'
+    return { ok: true, msg: `已将${x.名}改为出租，预计年租金 ${fmt(Math.round((x.市值 || x.购入价 || 0) * 0.014))} 元。` }
+  }
+  g.assets.房产.forEach((y, j) => { y.自住 = j === i })
+  g.housing = '自有住房 · ' + x.名
+  return { ok: true, msg: `已搬入${x.名}，原自住房转为出租。` }
+}
+
 export function 年养车成本(g: GameState): number {
   return (g.assets.车辆 || []).reduce((a, v) => a + Math.round((v.总价 || v.市值 || 120000) * 0.03), 0)
 }

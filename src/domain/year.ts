@@ -22,6 +22,8 @@ export function yearWrapUp(g: GameState): void {
   g.flags['本年免费健康'] = false
   g.shixiOrder = makeShixiOrder(g)
   g.浪漫方式 = shuffle(浪漫方式池).slice(0, 4)
+  if (g.family.配偶) g.family.配偶.本年互动 = []
+  g.family.子女.forEach((c) => { c.本年互动 = [] })
 }
 
 export function lifeCheck(g: GameState): void {
@@ -139,8 +141,7 @@ export function endYear(g: GameState): void {
     }
   }
 
-  /* 在职学历（退休后中止） */
-  if (g.edu.在读 && g.status === '退休') g.edu.在读 = null
+  /* 学历教育（在职或退休均可继续） */
   if (g.edu.在读) {
     const u = g.edu.在读
     u.剩--

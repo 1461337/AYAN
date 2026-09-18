@@ -14,7 +14,7 @@ export function Study() {
   const inOffice = ['公务员', '事业单位', '国企'].includes(game.p.职业) && game.status !== '退休'
 
   return (
-    <Card icon="🎓" title="进修 · 在职在编在岗提升">
+    <Card icon="🎓" title="进修 · 学历与资格提升">
       <div className="kv">
         <div className="k"><span>当前学历</span><b>{cur}</b></div>
         <div className="k"><span>专业</span><b>{game.p.专业}</b></div>
@@ -35,8 +35,8 @@ export function Study() {
           <button className="btn-red gray" onClick={eduCancel}>中 途 放 弃</button>
         </>
       ) : null}
-      <div className="sec-title mt14">在职学历提升（在编在岗）</div>
-      {!inOffice ? <div className="box">不在编在岗，无法享受委托培养。</div> : null}
+      <div className="sec-title mt14">学历提升（在职或退休均可）</div>
+      {game.status === '退休' ? <div className="box">退休后仍可报考开放大学、老年大学等学历教育，圆一个当年的心愿。</div> : null}
       {EDU_UP.map((e, i) => {
         const ok = e.需.includes(cur)
         const busy = !!up

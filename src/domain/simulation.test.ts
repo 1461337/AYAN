@@ -3,7 +3,7 @@ import { resetRandomSource, setRandomSource } from './rng'
 import { newState, 刷新人脉职务 } from './newGame'
 import { endYear } from './year'
 import { applyEffect, 快照, 案件风险底 } from './effects'
-import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
+import { monthly, buyAsset, sellAsset, repayLoan, repayDebt, 切换房产用途 } from './economy'
 import { genPositions, doPromote, settlePosition, 向上社交 } from './promotion'
 import { nextRankInfo, ladder, 条线Of } from './selectors'
 import { disciplineTick, 处置结果, 生成调查事件 } from './discipline'
@@ -887,6 +887,34 @@ describe('本地化晋升', () => {
     // 高级领导通用题（巡视下级等）任何岗位都应出现
     expect(宣传).toContain('巡视巡察下级·省部')
     expect(公安).toContain('听取汇报与督查·省部')
+  })
+
+  it('住房可在自住与出租之间切换', () => {
+    const g = newState({ name: '周正', sex: '男', age: 34, major: '法学', job: '公务员' })
+    g.assets.房产 = [
+      { 名: '城南两居', 市值: 2_000_000, 购入价: 1_800_000, 自住: true },
+      { 名: '新区大三居', 市值: 1_200_000, 购入价: 1_100_000, 自住: false },
+    ]
+    const r = 切换房产用途(g, 1)
+    expect(r.ok).toBe(true)
+    expect(g.assets.房产[0].自住).toBe(false)
+    expect(g.assets.房产[1].自住).toBe(true)
+    expect(g.housing).toContain('新区大三居')
+    const r2 = 切换房产用途(g, 1)
+    expect(r2.ok).toBe(true)
+    expect(g.assets.房产.every((x) => !x.自住)).toBe(true)
+    expect(g.housing).toBe('租房居住')
+  })
+
+  it('退休后仍可继续学历教育', () => {
+    setRandomSource(mulberry32(107))
+    const g = newState({ name: '周正', sex: '男', age: 62, major: '法学', job: '公务员' })
+    g.status = '退休'
+    g.edu.在读 = { 名: '开放大学本科', 至: '本科', 年: 3, 剩: 2, 已付: 3000, 总费: 9000, 效: {} }
+    g._年初快照 = 快照(g)
+    endYear(g)
+    expect(g.edu.在读).not.toBeNull()
+    expect(g.edu.在读!.剩).toBe(1)
   })
 
   it('人大/政协正职属二线不得再提拔，兼任不算', () => {

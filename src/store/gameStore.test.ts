@@ -48,4 +48,32 @@ describe('存档与感情线动作', () => {
       expect(g1.actions).toBe(行动前 - 1)
     }
   })
+
+  it('配偶与子女有免费互动，子女成年后不再只聊学校', () => {
+    useGame.getState().start({ name: '测试', sex: '男', age: 40, major: '法学', job: '公务员' })
+    const g = useGame.getState().game!
+    g.family.配偶 = {
+      id: 'sp', 姓名: '配偶', 年龄: 38, 身份: '公务员', 职业: '公务员', 类别: '公务员',
+      月收入: 8000, 养老金: 0, 退休: false, 性格: '温和', 好感度: 40, 面: '👩',
+      信任: 50, 公开: 0, 利益: 0, memory: [], notes: '', 本年互动: [],
+    }
+    g.family.子女 = [{ id: 'c1', 姓名: '小明', 性别: '男', 年龄: 25, 好感度: 40, 性格: '独立', 备注: '已工作', 独立: true, 本年互动: [] }]
+    const 行动 = g.actions
+    useGame.getState().spouse('一起散步')
+    let g1 = useGame.getState().game!
+    expect(g1.actions).toBe(行动)
+    expect(g1.family.配偶!.好感度).toBeGreaterThan(40)
+    useGame.getState().spouse('一起散步')
+    expect(useGame.getState().game!.family.配偶!.好感度).toBe(g1.family.配偶!.好感度)
+    const 前 = g1.family.子女![0].好感度
+    useGame.getState().child('c1', '通个电话')
+    g1 = useGame.getState().game!
+    expect(g1.actions).toBe(行动)
+    expect(g1.family.子女![0].好感度).toBeGreaterThan(前)
+    const 校园 = g1.yearLog.filter((l) => /学校|功课|成绩|作业/.test(l.d))
+    expect(校园.length).toBe(0)
+    useGame.getState().child('c1', '教育')
+    const 成年语 = useGame.getState().game!.yearLog[0].d
+    expect(成年语).toMatch(/工作|生活/)
+  })
 })

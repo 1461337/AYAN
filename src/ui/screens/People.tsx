@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
 import { 子女月支出 } from '../../domain/economy'
-import { 免费互动 } from '../../data/static'
+import { 夫妻免费互动, 亲子免费互动, 子女阶段, 免费互动 } from '../../data/static'
 import { fmt } from '../../utils/format'
 
 const 约会花费: Record<string, string> = {
@@ -83,6 +83,11 @@ export function People() {
           extra={`月收入：${fmt(game.family.配偶.退休 ? (game.family.配偶.养老金 || 0) : (game.family.配偶.月收入 || 0))} 元${game.family.配偶.退休 ? '（养老金）' : '　职业：' + game.family.配偶.职业}`}
           actions={
             <>
+              {夫妻免费互动.map((f) => (
+                <button key={f.名} disabled={game.family.配偶?.本年互动?.includes(f.名)} onClick={() => spouseFn(f.名)}>
+                  {f.名}<br /><small>{game.family.配偶?.本年互动?.includes(f.名) ? '本年已做' : '不耗行动'}</small>
+                </button>
+              ))}
               <button onClick={() => spouseFn('陪伴')}>陪伴家人<br /><small>1 行动</small></button>
               <button onClick={() => spouseFn('吃饭')}>一起吃饭<br /><small>1 行动</small></button>
               <button onClick={() => spouseFn('礼物')}>送礼物<br /><small>1 行动</small></button>
@@ -96,25 +101,35 @@ export function People() {
         </div>
       )}
 
-      {game.family.子女.length ? game.family.子女.map((c) => (
+      {game.family.子女.length ? game.family.子女.map((c) => {
+        const 阶段 = 子女阶段(c)
+        return (
         <NpcCard
           key={c.id}
           face={c.性别 === '男' ? '👦' : '👧'}
           name={c.姓名}
           age={c.年龄}
-          identity="子女"
+          identity={阶段 === '成年' ? '子女（已独立）' : 阶段 === '学生' ? '子女（在读）' : '子女'}
           score={c.好感度}
           personality={c.性格}
           notes={c.备注}
           extra={`养育支出：${c.独立 ? '已独立，会补贴家里' : fmt(子女月支出(c) * 12) + ' 元 / 年'}`}
           actions={
             <>
-              <button onClick={() => childFn(c.id, '陪伴')}>陪伴孩子<br /><small>1 行动</small></button>
-              <button onClick={() => childFn(c.id, '教育')}>过问学业<br /><small>1 行动</small></button>
+              {亲子免费互动[阶段].map((f) => (
+                <button key={f.名} disabled={c.本年互动?.includes(f.名)} onClick={() => childFn(c.id, f.名)}>
+                  {f.名}<br /><small>{c.本年互动?.includes(f.名) ? '本年已做' : '不耗行动'}</small>
+                </button>
+              ))}
+              <button onClick={() => childFn(c.id, '出游')}>一起出游<br /><small>1 行动</small></button>
+              <button onClick={() => childFn(c.id, '教育')}>
+                {阶段 === '成年' ? '关心近况' : 阶段 === '学生' ? '过问学业' : '陪伴成长'}<br /><small>1 行动</small>
+              </button>
             </>
           }
         />
-      )) : game.family.配偶 ? (
+        )
+      }) : game.family.配偶 ? (
         <>
           {game.family.配偶.好感度 >= 80 ? (
             <button className="btn-line" disabled={game.actions <= 0} onClick={birth}>

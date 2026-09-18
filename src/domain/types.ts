@@ -127,6 +127,7 @@ export interface Spouse {
   notes: string
   额外?: string
   职级?: number
+  本年互动?: string[]
 }
 
 export interface Child {
@@ -139,6 +140,7 @@ export interface Child {
   备注: string
   考上大学?: boolean
   独立?: boolean
+  本年互动?: string[]
 }
 
 export interface PositionRecord {

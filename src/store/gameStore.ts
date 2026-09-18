@@ -4,12 +4,12 @@ import { newState, makeCandidates, type SetupForm } from '../domain/newGame'
 import { applyEffect, 快照, 差异, perfLabel, 同步风险底线 } from '../domain/effects'
 import { nextRankInfo } from '../domain/selectors'
 import { doPromote, settlePosition, 向上社交 as 向上社交Domain } from '../domain/promotion'
-import { buyAsset, sellAsset, repayDebt, repayLoan, netIncome } from '../domain/economy'
+import { buyAsset, sellAsset, repayDebt, repayLoan, netIncome, 切换房产用途 } from '../domain/economy'
 import { endYear as endYearDomain } from '../domain/year'
 import { 题目套 } from '../domain/quiz'
-import { EDU_UP, CERTS, 免费互动 } from '../data/static'
+import { 夫妻免费互动, 亲子免费互动, 子女阶段, EDU_UP, CERTS, 免费互动 } from '../data/static'
 import { clamp, fmt } from '../utils/format'
-import { rnd } from '../domain/rng'
+import { rnd, pick } from '../domain/rng'
 import { clearSave, exportSaveFile, loadGame, parseSave, saveGame } from '../persistence/save'
 
 export interface StoreState {
@@ -43,6 +43,7 @@ export interface StoreState {
   buyHouse: (i: number, mode: 'full' | 'loan') => void
   buyCar: (i: number, mode: 'full' | 'loan') => void
   sell: (kind: '房' | '车', i: number) => void
+  切换房产用途: (i: number) => void
   还负债: () => void
   结清贷款: (i: number) => void
   eduStart: (i: number) => void
@@ -387,15 +388,50 @@ export const useGame = create<StoreState>((set, get) => {
       if (!s.game || !s.game.family.配偶) return
       const g = { ...s.game }
       const sp = g.family.配偶!
+      // 免费互动：不耗行动，每年各一次
+      const 免费 = 夫妻免费互动.find((x) => x.名 === type)
+      if (免费) {
+        sp.本年互动 = sp.本年互动 || []
+        if (sp.本年互动.includes(type)) return finish('这项互动今年已经做过了。')
+        sp.本年互动.push(type)
+        const d = rnd(免费.加[0], 免费.加[1])
+        sp.好感度 = clamp(sp.好感度 + d, 0, 100)
+        const 文 = pick(免费.文).replace('{名}', sp.姓名)
+        sp.memory.unshift(`${g.date.y}年：${文}`)
+        if (sp.memory.length > 5) sp.memory.pop()
+        g.yearLog.unshift({ t: `${g.date.y}年`, h: '家庭 · ' + type, kind: '', d: 文 })
+        set({ game: g })
+        return finish(`${type}：配偶好感度 +${d}（当前 ${sp.好感度}）`)
+      }
       if (g.actions <= 0) return finish('本年行动额度已用完。')
       g.actions--
       g.flags['本年顾家'] = true
       let msg: string
       let d: number
-      if (type === '陪伴') { d = rnd(4, 10); msg = `你推掉了两个饭局，在家待了一整天。${sp.姓名}嘴上说你无所事事，晚上却多做了两个菜。` }
-      else if (type === '吃饭') { g.cash -= rnd(200, 600); d = rnd(3, 7); msg = '你们在外面吃了顿饭，聊了很多和单位无关的事。' }
-      else if (type === '礼物') { g.cash -= rnd(1000, 6000); d = rnd(6, 14); msg = `你给${sp.姓名}买了一件礼物。${sp.好感度 < 50 ? '对方收下了，但没说什么。' : '对方很高兴。'}` }
-      else { d = rnd(3, 8); msg = `你主动把家里的事分担了一部分。${sp.姓名}说：「难得。」` }
+      if (type === '陪伴') {
+        d = rnd(4, 10)
+        msg = pick([
+          `你推掉了两个饭局，在家待了一整天。${sp.姓名}嘴上说你无所事事，晚上却多做了两个菜。`,
+          `你把手机调成静音，陪${sp.姓名}看了一部老电影。片尾字幕出来时，对方已经靠在你肩上睡着了。`,
+        ])
+      } else if (type === '吃饭') {
+        g.cash -= rnd(200, 600)
+        d = rnd(3, 7)
+        msg = pick([
+          '你们在外面吃了顿饭，聊了很多和单位无关的事。',
+          `你们找了一家小馆子，${sp.姓名}说起年轻时的打算，你听着，没打断。`,
+        ])
+      } else if (type === '礼物') {
+        g.cash -= rnd(1000, 6000)
+        d = rnd(6, 14)
+        msg = `你给${sp.姓名}买了一件礼物。${sp.好感度 < 50 ? '对方收下了，但没说什么。' : '对方很高兴。'}`
+      } else {
+        d = rnd(3, 8)
+        msg = pick([
+          `你主动把家里的事分担了一部分。${sp.姓名}说：「难得。」`,
+          `你把拖了很久的家务做完，${sp.姓名}检查了一遍，破天荒地夸了你。`,
+        ])
+      }
       sp.好感度 = clamp(sp.好感度 + d, 0, 100)
       sp.memory.unshift(`${g.date.y}年：${msg}`)
       if (sp.memory.length > 5) sp.memory.pop()
@@ -436,13 +472,46 @@ export const useGame = create<StoreState>((set, get) => {
       const g = { ...s.game }
       const c = g.family.子女.find((x) => x.id === id)
       if (!c) return
+      const 阶段 = 子女阶段(c)
+      // 免费互动：随成长阶段变化，不耗行动，每年各一次
+      const 免费 = 亲子免费互动[阶段].find((x) => x.名 === type)
+      if (免费) {
+        c.本年互动 = c.本年互动 || []
+        if (c.本年互动.includes(type)) return finish('这项互动今年已经做过了。')
+        c.本年互动.push(type)
+        const d = rnd(免费.加[0], 免费.加[1])
+        c.好感度 = clamp(c.好感度 + d, 0, 100)
+        const 文 = pick(免费.文).replace(/\{名\}/g, c.姓名)
+        g.yearLog.unshift({ t: `${g.date.y}年`, h: `家庭 · ${c.姓名}`, kind: '', d: 文 })
+        set({ game: g })
+        return finish(`亲子好感度 +${d}（当前 ${c.好感度}）`)
+      }
       if (g.actions <= 0) return finish('本年行动额度已用完。')
       g.actions--
       g.flags['本年顾家'] = true
       let d: number
       let msg: string
-      if (type === '陪伴') { d = rnd(4, 10); msg = `你抽时间陪${c.姓名}玩了一下午，${c.年龄 < 6 ? '孩子笑得很大声' : '孩子跟你说了很多学校里的事'}。` }
-      else { d = rnd(3, 8); msg = `你过问了${c.姓名}的学业。${c.年龄 < 6 ? '孩子还小，主要是陪着' : '孩子把成绩单拿给你看'}。` }
+      if (type === '出游') {
+        g.cash -= rnd(800, 3000)
+        d = rnd(8, 15)
+        msg = 阶段 === '成年'
+          ? `你去看${c.姓名}，一起在城里转了一天。分别时对方说：「爸/妈，你回去慢点。」`
+          : `你带${c.姓名}出去玩了一天，回来的路上孩子靠在你身上睡着了。`
+      } else if (type === '教育') {
+        d = rnd(3, 8)
+        msg = 阶段 === '成年'
+          ? `你和${c.姓名}认真聊了工作与生活。有些话你没说透，但对方听懂了。`
+          : 阶段 === '学生'
+            ? `你过问了${c.姓名}的功课，没有只看分数，也问了问学校里开不开心。`
+            : `你陪${c.姓名}读了绘本，孩子指着图画问个不停。`
+      } else {
+        d = rnd(4, 10)
+        msg = 阶段 === '成年'
+          ? `你抽空陪${c.姓名}待了半天，聊的多是家常，谁都没提工作上的难处。`
+          : 阶段 === '学生'
+            ? `你抽时间陪${c.姓名}，孩子跟你说了不少学校里的事，也说了些没跟别人说过的烦恼。`
+            : `你陪${c.姓名}玩了一下午，孩子笑得很大声。`
+      }
       c.好感度 = clamp(c.好感度 + d, 0, 100)
       g.yearLog.unshift({ t: `${g.date.y}年`, h: `家庭 · ${c.姓名}`, kind: '', d: msg })
       set({ game: g })
@@ -534,6 +603,18 @@ export const useGame = create<StoreState>((set, get) => {
       if (!it) return
       if (typeof window !== 'undefined' && !window.confirm(`确定出售「${it.名}」？`)) return
       const r = sellAsset(g, kind, i)
+      set({ game: g })
+      finish(r.msg)
+    },
+
+    切换房产用途: (i) => {
+      const s = get()
+      if (!s.game) return
+      const g = { ...s.game }
+      const r = 切换房产用途(g, i)
+      if (r.ok) {
+        g.log.unshift({ t: `${g.date.y}年`, h: '住房使用调整', kind: '', d: r.msg })
+      }
       set({ game: g })
       finish(r.msg)
     },
