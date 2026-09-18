@@ -41,6 +41,8 @@ export function promoteRate(g: GameState, idx: number): number {
   if (!def) return 0
   if (g.p.健康 < 50) return 0
   if (g.p.职业 === '公务员' && g.p.年龄 > 提任年龄上限(g, idx)) return 0
+  // 前两次晋升（首个、第二个职级）必成
+  if (idx <= 2) return 1
   const need = def.门槛
   let r = 0.06
   r += networkScore(g) / 100 * 0.30
@@ -59,6 +61,11 @@ export function promoteRate(g: GameState, idx: number): number {
   r += 家庭系数(g)
   r -= g.discipline.risk / 100 * 0.45
   r -= g.p2.处分 * 0.07
+  // 晋升概率阶梯：之后 70% 起，每高一级降 10%，最低 20%；连续失败有补偿
+  const 阶梯 = Math.max(0.2, 0.7 - (idx - 3) * 0.1)
+  const 补偿 = Math.min(0.4, (g.p2.连续晋升失败 || 0) * 0.05)
+  r = Math.min(r, 阶梯) + 补偿
+  r = Math.min(r, 0.96)
   // 职业特性：不同赛道看重的条件不同
   if (g.p.职业 === '教师') r += clamp(g.p.道德 - 60, 0, 40) / 40 * 0.05
   else if (g.p.职业 === '医生') r += clamp(g.p.能力 - 60, 0, 40) / 40 * 0.05 + clamp(g.p.声望 - 50, 0, 50) / 50 * 0.03
@@ -114,6 +121,7 @@ export function doPromote(g: GameState, _manual: boolean): PromoteResult {
     return { kind: 'toast', msg: '考察中止：涉及问题线索。' }
   }
   if (Math.random() >= promoteRate(g, ni.idx)) {
+    g.p2.连续晋升失败 = (g.p2.连续晋升失败 || 0) + 1
     if (!g.p2.初次晋升) {
       const 缺: string[] = []
       if (g.zhengji < ni.def.门槛.政绩) 缺.push(`${专业Label(g)}还差 ${(ni.def.门槛.政绩 - g.zhengji).toLocaleString('zh-CN')}`)
@@ -172,6 +180,7 @@ export function doPromote(g: GameState, _manual: boolean): PromoteResult {
     })
   }
   配偶随晋(g)
+  g.p2.连续晋升失败 = 0
   // 组织考察与公示
   g.log.unshift({
     t: `${g.date.y}年`, h: '组织考察', kind: 'good',

@@ -7,7 +7,7 @@ import { nextRankInfo, ladder, rankTitle, promoteGateWhy } from './selectors'
 import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, npcTick, cityTick, retiredMini } from './events'
 import { disciplineTick, 生成调查事件 } from './discipline'
 import { 机构Of } from './positions'
-import { 浪漫方式池 } from '../data/static'
+import { 浪漫方式池, 夫妻免费互动, 亲子免费互动, 子女阶段 } from '../data/static'
 import { makeCandidates } from './newGame'
 import { makeShixiOrder } from './quiz'
 import {
@@ -22,8 +22,15 @@ export function yearWrapUp(g: GameState): void {
   g.flags['本年免费健康'] = false
   g.shixiOrder = makeShixiOrder(g)
   g.浪漫方式 = shuffle(浪漫方式池).slice(0, 4)
-  if (g.family.配偶) g.family.配偶.本年互动 = []
-  g.family.子女.forEach((c) => { c.本年互动 = [] })
+  if (g.family.配偶) {
+    g.family.配偶.本年互动 = []
+    g.family.配偶.本年免费 = shuffle(夫妻免费互动.map((x) => x.名)).slice(0, 2)
+    g.family.配偶.本年付费 = shuffle(['陪伴', '吃饭', '礼物', '家务']).slice(0, 2)
+  }
+  g.family.子女.forEach((c) => {
+    c.本年互动 = []
+    c.本年免费 = shuffle(亲子免费互动[子女阶段(c)].map((x) => x.名)).slice(0, 2)
+  })
 }
 
 export function lifeCheck(g: GameState): void {

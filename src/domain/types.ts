@@ -128,6 +128,8 @@ export interface Spouse {
   额外?: string
   职级?: number
   本年互动?: string[]
+  本年免费?: string[]
+  本年付费?: string[]
 }
 
 export interface Child {
@@ -141,6 +143,7 @@ export interface Child {
   考上大学?: boolean
   独立?: boolean
   本年互动?: string[]
+  本年免费?: string[]
 }
 
 export interface PositionRecord {
@@ -350,6 +353,7 @@ export interface CareerState {
   连续模糊: number
   累计模糊: number
   连续高配?: number
+  连续晋升失败?: number
 }
 
 export interface FamilyState {

@@ -1,4 +1,4 @@
-import type { GameEvent, GameState } from './types'
+import type { Effect, GameEvent, GameState } from './types'
 import { clamp, fmt } from '../utils/format'
 import { chance, pick, rnd } from './rng'
 import { applyEffect, 记怨 } from './effects'
@@ -434,6 +434,23 @@ export function makeEvent(g: GameState): GameEvent {
 }
 
 /* ===== 廉政事件：收与不收都在你自己 ===== */
+
+/* 统一受贿处理：金额随职级放大，按金额与职级扣道德、扣政绩（晋升所需），并记入案卷 */
+export function 记受贿(g: GameState, 事由: string, 金: number, 附加?: Effect): void {
+  const 层 = Math.max(0, g.rankIdx)
+  g.cash += 金
+  g.discipline.案件.push({ 年: g.date.y, 事由, 金额: 金 })
+  const 道德扣 = Math.min(16, Math.round(3 + (金 / 100000) * 2 + 层 * 0.5))
+  const 政绩扣 = Math.round((金 / 60000) * (1 + 层 * 0.15))
+  const 风险 = Math.round(7 + (金 / 120000) * 6)
+  const 其余: Effect = { ...(附加 || {}) }
+  delete 其余.道德
+  delete 其余.廉政风险
+  delete 其余.政绩
+  applyEffect(g, { ...其余, 道德: -道德扣, 政绩: -政绩扣, 廉政风险: 风险 })
+  g.log.unshift({ t: `${g.date.y}年`, h: '收受财物', kind: 'bad', d: `你收下了 ${fmt(金)} 元。这笔钱记在了案卷上，道德与政绩都要付出代价。` })
+}
+
 export function make腐败事件(g: GameState): GameEvent | null {
   const 官员 = (['公务员', '事业单位', '国企'] as string[]).includes(g.p.职业)
   if (!官员) return null
@@ -466,9 +483,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '收下，反正是他自愿给的', hint: '数额不小，风险也不小',
           resolve(g2) {
             const 金 = 量(80000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由, 金额: 金 })
-            applyEffect(g2, { 道德: -9, 声望: -3, 廉政风险: Math.round(7 + 金 / 120000 * 6) })
+            记受贿(g2, 事由, 金, { 声望: -3 })
             记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：${事由} ${fmt(金)} 元。`)
             return `你收下了 ${fmt(金)} 元。\n钱转进了一张不常用的卡里。你告诉自己这是行业惯例——但审计要查的，恰恰就是“惯例”。`
@@ -506,9 +521,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '收下，但心里记一笔，以后找机会还人情', hint: '钱进了抽屉，事情就不由你说了算',
           resolve(g2) {
             const 金 = 量(20000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '收受管理服务对象礼金', 金额: 金 })
-            applyEffect(g2, { 道德: -6, 声望: -2, 廉政风险: Math.round(6 + 金 / 150000 * 6) })
+            记受贿(g2, '收受管理服务对象礼金', 金, { 道德: -6, 声望: -2, 廉政风险: Math.round(6 + 金 / 150000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：收受管理服务对象礼金 ${fmt(金)} 元。`)
             return `你收下了。${fmt(金)} 元，抵得上你几个月的工资。\n你把纸袋放进抽屉最里面，告诉自己这只是人情往来。但从这一刻起，你和他的关系已经不一样了。`
           },
@@ -541,9 +554,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '收下，答应帮忙运作', hint: '这是最要命的一种钱',
           resolve(g2) {
             const 金 = 量(150000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '在干部选拔任用中收受财物', 金额: 金 })
-            applyEffect(g2, { 道德: -12, 声望: -4, 廉政风险: Math.round(9 + 金 / 100000 * 6), 人脉: 4 })
+            记受贿(g2, '在干部选拔任用中收受财物', 金, { 道德: -12, 声望: -4, 廉政风险: Math.round(9 + 金 / 100000 * 6), 人脉: 4 })
             记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：在干部选拔任用中收受财物 ${fmt(金)} 元。`)
             return `你收下了第一笔 ${fmt(金)} 元。\n这种事一旦开了口子，就不再是“帮个忙”，而是把柄。`
@@ -568,9 +579,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '接受，让配偶出面持股', hint: '以为绕了一层就安全',
           resolve(g2) {
             const 金 = 量(120000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '通过配偶持有非上市公司股份', 金额: 金 })
-            applyEffect(g2, { 道德: -8, 声望: -3, 廉政风险: Math.round(8 + 金 / 110000 * 6) })
+            记受贿(g2, '通过配偶持有非上市公司股份', 金, { 道德: -8, 声望: -3, 廉政风险: Math.round(8 + 金 / 110000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：由配偶代持企业股份。`)
             return '股份挂在家人名下，每年的“分红”打到另一个账户。\n你以为隔了一层就干净了。办案人员查的，从来都是资金来源与去向。'
           },
@@ -598,9 +607,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '让配偶自己处理，你不过问', hint: '装作不知道，就等于知道',
           resolve(g2) {
             const 金 = 量(60000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '对家属收受财物知情不报', 金额: 金 })
-            applyEffect(g2, { 道德: -5, 廉政风险: Math.round(6 + 金 / 110000 * 6) })
+            记受贿(g2, '对家属收受财物知情不报', 金, { 道德: -5, 廉政风险: Math.round(6 + 金 / 110000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：家属收受财物，本人未报告。`)
             return '你说了句“你看着办”，就再没提。\n后来办案人员找你谈话时，问的第一个问题就是：“这件事你到底知不知道？”'
           },
@@ -631,9 +638,9 @@ export function make腐败事件(g: GameState): GameEvent | null {
         {
           text: '同意处理，但金额控制在“安全范围”', hint: '小恶也是恶',
           resolve(g2) {
-            applyEffect(g2, { 道德: -5, 廉政风险: 9, cash: 量(30000) })
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '虚列支出处理项目结余', 金额: 量(30000) })
-            g2.discipline.records.unshift(`${g2.date.y}年：以虚假名目处理结余经费 ${fmt(量(30000))} 元。`)
+            const 金 = 量(30000)
+            记受贿(g2, '虚列支出处理项目结余', 金)
+            g2.discipline.records.unshift(`${g2.date.y}年：以虚假名目处理结余经费 ${fmt(金)} 元。`)
             return '钱处理得很快，账也做得像模像样。\n但审计看的是发票背后的真实业务，不看账做得漂不漂亮。'
           },
         },
@@ -660,9 +667,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '帮忙打招呼，收下“感谢费”', hint: '一笔钱，一条案卷',
           resolve(g2) {
             const 金 = 量(80000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '在招投标中收受投标人财物', 金额: 金 })
-            applyEffect(g2, { 道德: -9, 声望: -4, 廉政风险: Math.round(8 + 金 / 120000 * 6) })
+            记受贿(g2, '在招投标中收受投标人财物', 金, { 道德: -9, 声望: -4, 廉政风险: Math.round(8 + 金 / 120000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：在招投标中收受投标人财物 ${fmt(金)} 元。`)
             return `你把话递了过去，${fmt(金)} 元也到了账。\n中标结果公示当天，落标方就递交了举报材料。`
           },
@@ -686,9 +691,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '收下好处，把记录处理掉', hint: '执法权一旦变现，性质就变了',
           resolve(g2) {
             const 金 = 量(50000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '在执法检查中收受管理对象财物', 金额: 金 })
-            applyEffect(g2, { 道德: -10, 声望: -4, 廉政风险: Math.round(8 + 金 / 100000 * 6) })
+            记受贿(g2, '在执法检查中收受管理对象财物', 金, { 道德: -10, 声望: -4, 廉政风险: Math.round(8 + 金 / 100000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：执法检查中收受管理对象财物 ${fmt(金)} 元。`)
             return `你销毁了记录，钱也收下了。\n三个月后，这家企业因另一件事被查，检查记录成了重点核查对象。`
           },
@@ -712,9 +715,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '收下加急费，插队办理', hint: '审批权不是提款机',
           resolve(g2) {
             const 金 = 量(30000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '在审批服务中收受申请人财物', 金额: 金 })
-            applyEffect(g2, { 道德: -7, 声望: -3, 廉政风险: Math.round(6 + 金 / 100000 * 6) })
+            记受贿(g2, '在审批服务中收受申请人财物', 金, { 道德: -7, 声望: -3, 廉政风险: Math.round(6 + 金 / 100000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：在审批服务中收受申请人财物 ${fmt(金)} 元。`)
             return `你把他的材料排到了最前面，${fmt(金)} 元进了口袋。\n同批申请人开始比对时间，窗口前排起了队。`
           },
@@ -738,9 +739,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '拨给关系户，收下“感谢”', hint: '专项资金最经不起查',
           resolve(g2) {
             const 金 = 量(100000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '违规分配专项资金并收受财物', 金额: 金 })
-            applyEffect(g2, { 道德: -9, 声望: -4, 廉政风险: Math.round(9 + 金 / 110000 * 6) })
+            记受贿(g2, '违规分配专项资金并收受财物', 金, { 道德: -9, 声望: -4, 廉政风险: Math.round(9 + 金 / 110000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：违规分配专项资金并收受财物 ${fmt(金)} 元。`)
             return `资金落到了你熟悉的单位，回扣也到了你手上。\n半年后上级开展专项资金交叉检查，这笔钱的流向被完整调出。`
           },
@@ -764,9 +763,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '帮忙调整指标，收下重谢', hint: '土地与规划是腐败高发区',
           resolve(g2) {
             const 金 = 量(400000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '在土地规划调整中收受开发商财物', 金额: 金 })
-            applyEffect(g2, { 道德: -12, 声望: -6, 廉政风险: Math.round(12 + 金 / 200000 * 6) })
+            记受贿(g2, '在土地规划调整中收受开发商财物', 金, { 道德: -12, 声望: -6, 廉政风险: Math.round(12 + 金 / 200000 * 6) })
             记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：在土地规划调整中收受开发商财物 ${fmt(金)} 元。`)
             return `指标调了，钱也收了。\n一年后项目被卫星图斑比对出来，倒查直接追到了你的签批件。`
@@ -791,9 +788,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '收下，在推荐意见上“美言几句”', hint: '选人用人上的腐败，性质最重',
           resolve(g2) {
             const 金 = 量(200000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '在干部选拔任用中收受财物', 金额: 金 })
-            applyEffect(g2, { 道德: -13, 声望: -6, 廉政风险: Math.round(11 + 金 / 120000 * 6) })
+            记受贿(g2, '在干部选拔任用中收受财物', 金, { 道德: -13, 声望: -6, 廉政风险: Math.round(11 + 金 / 120000 * 6) })
             记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：在干部选拔任用中收受财物 ${fmt(金)} 元。`)
             return `推荐意见签了，信封也留了。\n这次调整后来被举报，倒查时第一个被调取的就是你的签批记录。`
@@ -818,9 +813,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '来者不拒，事后不报告', hint: '借办事收钱，本身就是违纪',
           resolve(g2) {
             const 金 = 量(120000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '借操办婚丧喜庆事宜收受管理服务对象礼金', 金额: 金 })
-            applyEffect(g2, { 道德: -8, 声望: -5, 廉政风险: Math.round(8 + 金 / 120000 * 6) })
+            记受贿(g2, '借操办婚丧喜庆事宜收受管理服务对象礼金', 金, { 道德: -8, 声望: -5, 廉政风险: Math.round(8 + 金 / 120000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：借操办婚丧喜庆事宜收受礼金 ${fmt(金)} 元。`)
             return `礼金收了 ${fmt(金)} 元。\n几个月后，一条匿名举报把当天的礼金名单完整送到了纪委。`
           },
@@ -844,9 +837,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '默许经营，年底分红', hint: '影子公司的账，最终都会查到人',
           resolve(g2) {
             const 金 = 量(250000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '纵容亲属利用本人职权经商并收受分红', 金额: 金 })
-            applyEffect(g2, { 道德: -11, 声望: -5, 廉政风险: Math.round(11 + 金 / 150000 * 6) })
+            记受贿(g2, '纵容亲属利用本人职权经商并收受分红', 金, { 道德: -11, 声望: -5, 廉政风险: Math.round(11 + 金 / 150000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：纵容亲属利用本人职权经商并收受分红 ${fmt(金)} 元。`)
             return `分红到账 ${fmt(金)} 元。\n专项清理开始时，公司股权穿透图成了最直接的证据。`
           },
@@ -870,9 +861,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '收下高息，反正有借条', hint: '借贷收息是近年查处重点',
           resolve(g2) {
             const 金 = 量(150000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '以借款收息名义收受管理服务对象财物', 金额: 金 })
-            applyEffect(g2, { 道德: -9, 声望: -4, 廉政风险: Math.round(10 + 金 / 130000 * 6) })
+            记受贿(g2, '以借款收息名义收受管理服务对象财物', 金, { 道德: -9, 声望: -4, 廉政风险: Math.round(10 + 金 / 130000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：以借款收息名义收受财物 ${fmt(金)} 元。`)
             return `高息按时到账。\n审查调查时，这笔没有真实用途的“借款”被单独列了出来。`
           },
@@ -896,9 +885,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '收下，反正马上就退休了', hint: '离任审计专查最后一段',
           resolve(g2) {
             const 金 = 量(300000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '临近退休收受管理服务对象财物', 金额: 金 })
-            applyEffect(g2, { 道德: -12, 声望: -6, 廉政风险: Math.round(13 + 金 / 150000 * 6) })
+            记受贿(g2, '临近退休收受管理服务对象财物', 金, { 道德: -12, 声望: -6, 廉政风险: Math.round(13 + 金 / 150000 * 6) })
             g2.discipline.records.unshift(`${g2.date.y}年：临近退休收受管理服务对象财物 ${fmt(金)} 元。`)
             return `钱到账了 ${fmt(金)} 元。\n退休手续办完的第二个月，离任审计的整改通知送到了家里。`
           },
@@ -939,9 +926,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '收下压岁钱，认为过年走动很正常', hint: '金额不小，性质更不小',
           resolve(g2) {
             const 金 = 量(120000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '收受原下属以拜年名义所送财物', 金额: 金 })
-            applyEffect(g2, { 道德: -8, 声望: -3, 廉政风险: Math.round(9 + 金 / 120000 * 6) })
+            记受贿(g2, '收受原下属以拜年名义所送财物', 金, { 道德: -8, 声望: -3, 廉政风险: Math.round(9 + 金 / 120000 * 6) })
             记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：收受原下属拜年礼金 ${fmt(金)} 元。`)
             return `信封里是 ${fmt(金)} 元。\n他的项目后来顺利通过了。再后来，办案人员把这两件事写在了同一页。`

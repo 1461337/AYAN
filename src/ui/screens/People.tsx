@@ -83,15 +83,18 @@ export function People() {
           extra={`月收入：${fmt(game.family.配偶.退休 ? (game.family.配偶.养老金 || 0) : (game.family.配偶.月收入 || 0))} 元${game.family.配偶.退休 ? '（养老金）' : '　职业：' + game.family.配偶.职业}`}
           actions={
             <>
-              {夫妻免费互动.map((f) => (
+              {夫妻免费互动.filter((f) => (game.family.配偶?.本年免费 || 夫妻免费互动.slice(0, 2).map((x) => x.名)).includes(f.名)).map((f) => (
                 <button key={f.名} disabled={game.family.配偶?.本年互动?.includes(f.名)} onClick={() => spouseFn(f.名)}>
                   {f.名}<br /><small>{game.family.配偶?.本年互动?.includes(f.名) ? '本年已做' : '不耗行动'}</small>
                 </button>
               ))}
-              <button onClick={() => spouseFn('陪伴')}>陪伴家人<br /><small>1 行动</small></button>
-              <button onClick={() => spouseFn('吃饭')}>一起吃饭<br /><small>1 行动</small></button>
-              <button onClick={() => spouseFn('礼物')}>送礼物<br /><small>1 行动</small></button>
-              <button onClick={() => spouseFn('家务')}>分担家务<br /><small>1 行动</small></button>
+              {(['陪伴', '吃饭', '礼物', '家务'] as const)
+                .filter((k) => (game.family.配偶?.本年付费 || ['陪伴', '吃饭']).includes(k))
+                .map((k) => (
+                  <button key={k} onClick={() => spouseFn(k)}>
+                    {{ 陪伴: '陪伴家人', 吃饭: '一起吃饭', 礼物: '送礼物', 家务: '分担家务' }[k]}<br /><small>1 行动</small>
+                  </button>
+                ))}
             </>
           }
         />
@@ -116,7 +119,7 @@ export function People() {
           extra={`养育支出：${c.独立 ? '已独立，会补贴家里' : fmt(子女月支出(c) * 12) + ' 元 / 年'}`}
           actions={
             <>
-              {亲子免费互动[阶段].map((f) => (
+              {(c.本年免费 ? 亲子免费互动[阶段].filter((f) => c.本年免费!.includes(f.名)) : 亲子免费互动[阶段].slice(0, 2)).map((f) => (
                 <button key={f.名} disabled={c.本年互动?.includes(f.名)} onClick={() => childFn(c.id, f.名)}>
                   {f.名}<br /><small>{c.本年互动?.includes(f.名) ? '本年已做' : '不耗行动'}</small>
                 </button>

@@ -4,10 +4,10 @@ import { newState, 刷新人脉职务 } from './newGame'
 import { endYear } from './year'
 import { applyEffect, 快照, 案件风险底 } from './effects'
 import { monthly, buyAsset, sellAsset, repayLoan, repayDebt, 切换房产用途 } from './economy'
-import { genPositions, doPromote, settlePosition, 向上社交 } from './promotion'
+import { genPositions, doPromote, settlePosition, 向上社交, promoteRate } from './promotion'
 import { nextRankInfo, ladder, 条线Of } from './selectors'
 import { disciplineTick, 处置结果, 生成调查事件 } from './discipline'
-import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, retiredMini, npcTick, cityTick, 政府事件标题 } from './events'
+import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, retiredMini, npcTick, cityTick, 政府事件标题, 记受贿 } from './events'
 import { makeShixiOrder, ALL_SHIXI, 可用题目, 题目套 } from './quiz'
 import { SHIXI } from '../data/shixi'
 import { SHIXI_EXTRA } from '../data/shixiExtra'
@@ -932,6 +932,65 @@ describe('本地化晋升', () => {
     endYear(g)
     expect(g.edu.在读).not.toBeNull()
     expect(g.edu.在读!.剩).toBe(1)
+  })
+
+  it('晋升概率阶梯：前两级必成，之后逐级递减且有失败补偿', () => {
+    setRandomSource(mulberry32(111))
+    const 造 = (idx: number) => {
+      const g = newState({ name: '周正', sex: '男', age: 30, major: '法学', job: '公务员' })
+      g.rankIdx = idx - 1
+      装备晋升条件(g)
+      return g
+    }
+    expect(promoteRate(造(1), 1)).toBe(1)
+    expect(promoteRate(造(2), 2)).toBe(1)
+    expect(promoteRate(造(3), 3)).toBeLessThanOrEqual(0.7)
+    expect(promoteRate(造(8), 8)).toBeLessThanOrEqual(0.2001)
+    const g = 造(8)
+    g.p2.连续晋升失败 = 4
+    expect(promoteRate(g, 8)).toBeGreaterThan(0.2)
+  })
+
+  it('受贿金额随职级放大，并按额扣除道德与政绩', () => {
+    setRandomSource(mulberry32(113))
+    const 造 = (rankIdx: number) => {
+      const g = newState({ name: '周正', sex: '男', age: 40, major: '法学', job: '公务员' })
+      g.rankIdx = rankIdx
+      g.zhengji = 5000
+      return g
+    }
+    const 低 = 造(0)
+    const 低前德 = 低.p.道德
+    const 低前绩 = 低.zhengji
+    记受贿(低, '测试受贿', 100000)
+    const 高 = 造(6)
+    const 高前德 = 高.p.道德
+    const 高前绩 = 高.zhengji
+    记受贿(高, '测试受贿', 100000)
+    expect(低.discipline.案件[0].金额).toBe(100000)
+    expect(低.cash).toBeGreaterThan(0)
+    expect(低.p.道德).toBeLessThan(低前德)
+    expect(低.zhengji).toBeLessThan(低前绩)
+    expect(高前德 - 高.p.道德).toBeGreaterThanOrEqual(低前德 - 低.p.道德)
+    expect(高前绩 - 高.zhengji).toBeGreaterThanOrEqual(低前绩 - 低.zhengji)
+  })
+
+  it('配偶与子女每年只有 2 项免费互动、合计 4 种方式', () => {
+    setRandomSource(mulberry32(115))
+    const g = newState({ name: '周正', sex: '男', age: 40, major: '法学', job: '公务员' })
+    g.family.配偶 = {
+      id: 'sp', 姓名: '配偶', 年龄: 38, 身份: '公务员', 职业: '公务员', 类别: '公务员',
+      月收入: 8000, 养老金: 0, 退休: false, 性格: '温和', 好感度: 60, 面: '👩',
+      信任: 50, 公开: 0, 利益: 0, memory: [], notes: '',
+    }
+    g.family.子女 = [{ id: 'c1', 姓名: '孩子', 性别: '女', 年龄: 8, 好感度: 60, 性格: '活泼', 备注: '在读' }]
+    g._年初快照 = 快照(g)
+    endYear(g)
+    expect(g.family.配偶!.本年免费!.length).toBe(2)
+    expect(g.family.配偶!.本年付费!.length).toBe(2)
+    expect(new Set(g.family.配偶!.本年免费).size).toBe(2)
+    expect(g.family.子女[0].本年免费!.length).toBe(2)
+    expect(g.family.配偶!.本年免费!.length + g.family.配偶!.本年付费!.length).toBe(4)
   })
 
   it('人大/政协正职属二线不得再提拔，兼任不算', () => {

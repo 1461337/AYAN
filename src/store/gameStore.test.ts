@@ -93,6 +93,7 @@ describe('存档与感情线动作', () => {
       id: 'sp', 姓名: '配偶', 年龄: 38, 身份: '公务员', 职业: '公务员', 类别: '公务员',
       月收入: 8000, 养老金: 0, 退休: false, 性格: '温和', 好感度: 40, 面: '👩',
       信任: 50, 公开: 0, 利益: 0, memory: [], notes: '', 本年互动: [],
+      本年免费: ['一起散步', '一起做饭'], 本年付费: ['陪伴', '吃饭'],
     }
     g.family.子女 = [{ id: 'c1', 姓名: '小明', 性别: '男', 年龄: 25, 好感度: 40, 性格: '独立', 备注: '已工作', 独立: true, 本年互动: [] }]
     const 行动 = g.actions
@@ -102,6 +103,9 @@ describe('存档与感情线动作', () => {
     expect(g1.family.配偶!.好感度).toBeGreaterThan(40)
     useGame.getState().spouse('一起散步')
     expect(useGame.getState().game!.family.配偶!.好感度).toBe(g1.family.配偶!.好感度)
+    const 不在此年 = useGame.getState().game!.family.配偶!.好感度
+    useGame.getState().spouse('翻看旧照片')
+    expect(useGame.getState().game!.family.配偶!.好感度).toBe(不在此年)
     const 前 = g1.family.子女![0].好感度
     useGame.getState().child('c1', '通个电话')
     g1 = useGame.getState().game!

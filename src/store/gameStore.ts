@@ -394,9 +394,12 @@ export const useGame = create<StoreState>((set, get) => {
       if (!s.game || !s.game.family.配偶) return
       const g = { ...s.game }
       const sp = g.family.配偶!
-      // 免费互动：不耗行动，每年各一次
+      // 免费互动：每年随机 2 项，不耗行动
+      if (!sp.本年免费) sp.本年免费 = 夫妻免费互动.slice(0, 2).map((x) => x.名)
+      if (!sp.本年付费) sp.本年付费 = ['陪伴', '吃饭']
       const 免费 = 夫妻免费互动.find((x) => x.名 === type)
       if (免费) {
+        if (!sp.本年免费.includes(type)) return finish('今年的免费安排里没有这一项。')
         sp.本年互动 = sp.本年互动 || []
         if (sp.本年互动.includes(type)) return finish('这项互动今年已经做过了。')
         sp.本年互动.push(type)
@@ -409,6 +412,7 @@ export const useGame = create<StoreState>((set, get) => {
         set({ game: g })
         return finish(`${type}：配偶好感度 +${d}（当前 ${sp.好感度}）`)
       }
+      if (!sp.本年付费.includes(type)) return finish('今年的付费安排里没有这一项。')
       if (g.actions <= 0) return finish('本年行动额度已用完。')
       g.actions--
       g.flags['本年顾家'] = true
