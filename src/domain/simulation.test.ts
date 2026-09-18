@@ -971,8 +971,14 @@ describe('本地化晋升', () => {
     expect(低.cash).toBeGreaterThan(0)
     expect(低.p.道德).toBeLessThan(低前德)
     expect(低.zhengji).toBeLessThan(低前绩)
-    expect(高前德 - 高.p.道德).toBeGreaterThanOrEqual(低前德 - 低.p.道德)
-    expect(高前绩 - 高.zhengji).toBeGreaterThanOrEqual(低前绩 - 低.zhengji)
+    // 同一笔金额：职级越高，道德与政绩的相对扣幅越小（但金额更大、案卷更重）
+    expect(高前德 - 高.p.道德).toBeLessThanOrEqual(低前德 - 低.p.道德)
+    expect(高前绩 - 高.zhengji).toBeLessThanOrEqual(低前绩 - 低.zhengji)
+    // 高职级收受更大金额，现金更多
+    const 更大 = 造(6)
+    const 现金前 = 更大.cash
+    记受贿(更大, '大额受贿', 3000000)
+    expect(更大.cash - 现金前).toBe(3000000)
   })
 
   it('配偶与子女每年只有 2 项免费互动、合计 4 种方式', () => {

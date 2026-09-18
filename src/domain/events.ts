@@ -435,20 +435,24 @@ export function makeEvent(g: GameState): GameEvent {
 
 /* ===== 廉政事件：收与不收都在你自己 ===== */
 
-/* 统一受贿处理：金额随职级放大，按金额与职级扣道德、扣政绩（晋升所需），并记入案卷 */
+/* 统一受贿处理：金额随职级放大；职级越高，道德与政绩的相对扣幅越小（大额更隐蔽），案卷照记 */
 export function 记受贿(g: GameState, 事由: string, 金: number, 附加?: Effect): void {
   const 层 = Math.max(0, g.rankIdx)
   g.cash += 金
   g.discipline.案件.push({ 年: g.date.y, 事由, 金额: 金 })
-  const 道德扣 = Math.min(16, Math.round(3 + (金 / 100000) * 2 + 层 * 0.5))
-  const 政绩扣 = Math.round((金 / 60000) * (1 + 层 * 0.15))
+  const 系数德 = Math.max(0.4, 1 - 层 * 0.06)
+  const 系数绩 = Math.max(0.4, 1 - 层 * 0.05)
+  const 道德扣 = Math.max(2, Math.min(14, Math.round((2 + 金 / 150000) * 系数德)))
+  const 政绩扣 = Math.max(1, Math.round((金 / 150000) * 系数绩))
   const 风险 = Math.round(7 + (金 / 120000) * 6)
   const 其余: Effect = { ...(附加 || {}) }
   delete 其余.道德
   delete 其余.廉政风险
   delete 其余.政绩
-  applyEffect(g, { ...其余, 道德: -道德扣, 政绩: -政绩扣, 廉政风险: 风险 })
-  g.log.unshift({ t: `${g.date.y}年`, h: '收受财物', kind: 'bad', d: `你收下了 ${fmt(金)} 元。这笔钱记在了案卷上，道德与政绩都要付出代价。` })
+  applyEffect(g, { ...其余, 道德: -道德扣, 廉政风险: 风险 })
+  // 政绩直接扣减，不乘平台产出系数（级别越高，相对扣幅越小）
+  g.zhengji = Math.max(0, g.zhengji - 政绩扣)
+  g.log.unshift({ t: `${g.date.y}年`, h: '收受财物', kind: 'bad', d: `你收下了 ${fmt(金)} 元。钱越多，案卷上的这一页就越难翻过去。` })
 }
 
 export function make腐败事件(g: GameState): GameEvent | null {
