@@ -1,7 +1,7 @@
 import type { GameState, Snapshot } from './types'
 import { clamp, fmt } from '../utils/format'
 import { chance, rnd, shuffle } from './rng'
-import { applyEffect, 快照, 差异, perfLabel, 人脉上限, 同步风险底线 } from './effects'
+import { applyEffect, 快照, 差异, perfLabel, 人脉上限, 同步风险底线, 影响期内 } from './effects'
 import { doPromote } from './promotion'
 import { nextRankInfo, ladder, rankTitle, promoteGateWhy } from './selectors'
 import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, npcTick, cityTick, retiredMini } from './events'
@@ -311,8 +311,13 @@ export function endYear(g: GameState): void {
   if (g.status === '在职') {
     const ni = nextRankInfo(g)
     if (ni.can) doPromote(g, false)
-    else if (ni.def && g.p2.任职年 >= ni.effMin && !promoteGateWhy(g, ni)) {
-      g.log.unshift({ t: `${g.date.y}年`, h: '任职年限已到', kind: '', d: `你在现职级已任职 ${g.p2.任职年} 年，达到最低任职年限，但${perfLabel(g)}等条件尚未达标，组织暂未启动考察。` })
+    else if (ni.def && g.p2.任职年 >= ni.effMin && !影响期内(g)) {
+      const 缺: string[] = []
+      if (!promoteGateWhy(g, ni)) 缺.push(`${perfLabel(g)}尚未达标`)
+      if (ni.学历不足) 缺.push('学历未达本科及以上要求')
+      if (缺.length) {
+        g.log.unshift({ t: `${g.date.y}年`, h: '任职年限已到', kind: '', d: `你在现职级已任职 ${g.p2.任职年} 年，达到最低任职年限，但${缺.join('、')}，组织暂未启动考察。` })
+      }
     }
   }
 

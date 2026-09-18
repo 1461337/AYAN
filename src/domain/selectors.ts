@@ -197,22 +197,24 @@ export interface NextRankInfo {
   effMin: number
   超龄: boolean
   年龄线: number
+  学历不足: boolean
 }
 
 export function nextRankInfo(g: GameState): NextRankInfo {
   const L = ladder(g)
   const idx = g.rankIdx + 1
   const def = L[idx]
-  if (!def) return { def: null, min: 0, served: g.p2.任职年, can: false, have: false, idx, early: 0, effMin: 0, 超龄: false, 年龄线: 0 }
+  if (!def) return { def: null, min: 0, served: g.p2.任职年, can: false, have: false, idx, early: 0, effMin: 0, 超龄: false, 年龄线: 0, 学历不足: false }
   const early = g.status === '在职' ? earlyYears(g, def) : 0
   const effMin = Math.max(1, def.最低年 - early)
   const haveZ = g.zhengji >= def.门槛.政绩
   const healthy = g.p.健康 >= 50
   const 未超龄 = g.p.年龄 <= 提任年龄上限(g, idx)
+  const 学历不足 = g.p.职业 === '公务员' && idx >= 2 && eduIdxOf(g.p.学历) < 2
   return {
     def, min: def.最低年, served: g.p2.任职年, have: haveZ, idx, early, effMin,
-    超龄: !未超龄, 年龄线: 提任年龄上限(g, idx),
-    can: g.status === '在职' && !g.flags['二线'] && !影响期内(g) && 未超龄 && g.p2.任职年 >= effMin && haveZ && healthy,
+    超龄: !未超龄, 年龄线: 提任年龄上限(g, idx), 学历不足,
+    can: g.status === '在职' && !g.flags['二线'] && !影响期内(g) && 未超龄 && g.p2.任职年 >= effMin && haveZ && healthy && !学历不足,
   }
 }
 
@@ -290,6 +292,7 @@ export function nextYearHint(g: GameState): string {
   if (g.p.能力 < ni.def.门槛.能力) 缺.push('能力还需提升')
   if (g.p.道德 < ni.def.门槛.道德) 缺.push('道德评价还需积累')
   if (g.p.上司 < ni.def.门槛.上司) 缺.push('领导评价还需提升')
+  if (ni.学历不足) 缺.push('学历需提升到本科及以上')
   if (g.p.健康 < 80) 缺.push('健康需回到 80 以上')
   if (缺.length) return `争取 ${ni.def.名}：` + 缺.join('，') + '。'
   return `条件已具备，明年有望进入 ${ni.def.名} 的考察程序。`

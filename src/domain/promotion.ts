@@ -264,6 +264,7 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
     } else {
       if (entry.本地) sc += 2
       if (g.p.专业匹配度 >= 90) { sc += 2 }
+      if (g.p.单位 && 名.startsWith(g.p.单位)) { sc += 3; 理由.push('留在原单位') }
     }
     return {
       名, sc, 高配, 党政, 二线, 实权, 平台: 岗台, 级别: def.名, 条线: 条,

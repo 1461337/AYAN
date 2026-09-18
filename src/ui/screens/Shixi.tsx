@@ -86,7 +86,7 @@ export function Shixi() {
             <div className="bar"><i style={{ width: `${game.p.健康}%` }} /></div>
             <div className="hint mt8">
               硬性条件：能力 ≥ {ni.def.门槛.能力}、道德 ≥ {ni.def.门槛.道德}、领导评价 ≥ {ni.def.门槛.上司}
-              {ni.idx >= 2 ? `；学历本科及以上（当前${game.p.学历}）` : ''}
+              {game.p.职业 === '公务员' && ni.idx >= 2 ? `；学历本科及以上（当前${game.p.学历}）` : ''}
             </div>
           </Collapse>
           <button className="btn-line" disabled={game.actions <= 0} onClick={applyPromote}>

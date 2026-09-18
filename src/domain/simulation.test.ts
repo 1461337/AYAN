@@ -5,6 +5,7 @@ import { endYear } from './year'
 import { 快照, 案件风险底 } from './effects'
 import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
 import { genPositions, doPromote, settlePosition, 向上社交 } from './promotion'
+import { nextRankInfo } from './selectors'
 import { disciplineTick } from './discipline'
 import { makeEvent, make腐败事件, makeRetiredEvent } from './events'
 import { makeShixiOrder } from './quiz'
@@ -199,6 +200,19 @@ describe('逻辑一致性', () => {
     const res = doPromote(g, true)
     expect(res.kind).toBe('toast')
     expect(res.msg || '').toContain('学历')
+  })
+
+  it('学历不足会阻止考察并写入轨迹', () => {
+    setRandomSource(mulberry32(97))
+    const g = newState({ name: '周正', sex: '男', age: 32, major: '法学', job: '公务员' })
+    g.rankIdx = 1
+    g.p.学历 = '大专'
+    装备晋升条件(g)
+    const ni = nextRankInfo(g)
+    expect(ni.学历不足).toBe(true)
+    expect(ni.can).toBe(false)
+    endYear(g)
+    expect(g.log.some((x) => x.d.includes('学历未达本科及以上要求'))).toBe(true)
   })
 
   it('非公务员在市级平台可本地上到更高职级', () => {
