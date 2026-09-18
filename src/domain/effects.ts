@@ -65,6 +65,12 @@ export function 涉案金额(g: GameState): number {
   return ((g.discipline && g.discipline.案件) || []).reduce((a, x) => a + x.金额, 0)
 }
 
+/* 收过的每一笔构成风险下限：风险不得低于案卷底线 */
+export function 同步风险底线(g: GameState): void {
+  const 底 = 案件风险底(g)
+  if (g.discipline.risk < 底) g.discipline.risk = 底
+}
+
 export function 人脉上限(g: GameState | null): number {
   if (!g) return 60
   return clamp(45 + Math.max(0, g.rankIdx + 1) * 6, 45, 100)

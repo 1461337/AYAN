@@ -2,10 +2,11 @@ import { describe, expect, it, afterEach } from 'vitest'
 import { resetRandomSource, setRandomSource } from './rng'
 import { newState } from './newGame'
 import { endYear } from './year'
-import { 快照 } from './effects'
+import { 快照, 案件风险底 } from './effects'
 import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
-import { genPositions, doPromote } from './promotion'
+import { genPositions, doPromote, settlePosition } from './promotion'
 import { disciplineTick } from './discipline'
+import { makeEvent, make腐败事件, makeRetiredEvent } from './events'
 import { makeShixiOrder } from './quiz'
 import { 政治本地职位, 平台序 } from './positions'
 import { 职务阶梯 } from '../data/static'
@@ -88,7 +89,7 @@ describe('人生模拟冒烟测试', () => {
       装备晋升条件(g)
       for (let i = 0; i < 20 && !g.over; i++) {
         if (g.pendingPositions) {
-          expect(g.pendingPositions.length).toBeGreaterThanOrEqual(7)
+          expect(g.pendingPositions.length).toBeGreaterThanOrEqual(3)
           g.pendingPositions = null
         }
         resolvePending(g)
@@ -170,6 +171,67 @@ describe('逻辑一致性', () => {
     g.usedThisYear = [first]
     const order = makeShixiOrder(g)
     expect(order[0]).not.toBe(first)
+  })
+
+  it('单身不出现家庭/配偶相关事件', () => {
+    setRandomSource(mulberry32(71))
+    const g = newState({ name: '周正', sex: '男', age: 28, major: '法学', job: '公务员' })
+    g.family.配偶 = null
+    for (let i = 0; i < 200; i++) {
+      expect(makeEvent(g).标题).not.toBe('家里的事')
+      expect(make腐败事件(g)!.标题).not.toBe('配偶收下的钱')
+    }
+  })
+
+  it('非体制内不出现政府类事件', () => {
+    setRandomSource(mulberry32(73))
+    const g = newState({ name: '周正', sex: '男', age: 26, major: '计算机科学与技术', job: '企业' })
+    const 政府事件 = ['片区改造摸底材料被退回', '群众围堵施工现场', '一份来路不明的举报信']
+    for (let i = 0; i < 200; i++) {
+      expect(政府事件).not.toContain(makeEvent(g).标题)
+    }
+  })
+
+  it('无子女无房产时不出现对应退休剧情', () => {
+    setRandomSource(mulberry32(75))
+    const g = newState({ name: '林远', sex: '男', age: 60, major: '法学', job: '公务员' })
+    g.family.子女 = []
+    g.assets.房产 = []
+    for (let i = 0; i < 200; i++) {
+      const ev = makeRetiredEvent(g)
+      expect(ev.标题).not.toBe('孩子想让你帮忙带孙辈')
+      expect(ev.标题).not.toBe('卖房还是留着')
+    }
+  })
+
+  it('案卷风险底线不被年度冲淡', () => {
+    setRandomSource(mulberry32(81))
+    const g = newState({ name: '周正', sex: '男', age: 30, major: '法学', job: '公务员' })
+    g.discipline.案件.push({ 年: g.date.y, 事由: '收受礼金', 金额: 200000 })
+    const 底 = 案件风险底(g)
+    expect(底).toBeGreaterThan(0)
+    g.discipline.risk = 底 + 6
+    g._年初快照 = 快照(g)
+    endYear(g)
+    expect(g.discipline.risk).toBeGreaterThanOrEqual(底)
+  })
+
+  it('非工程条线不出现工程结算事件', () => {
+    setRandomSource(mulberry32(83))
+    const g = newState({ name: '周正', sex: '男', age: 30, major: '法学', job: '公务员' })
+    g.rankIdx = 1
+    g.positions = [{ 年: g.date.y, 职级: '乡科级正职', 岗位: '岩台县教育局局长', 条线: '教育' }]
+    for (let i = 0; i < 200; i++) {
+      expect(make腐败事件(g)!.标题).not.toBe('项目结算后的“感谢”')
+    }
+    const g2 = newState({ name: '周正', sex: '男', age: 30, major: '土木工程', job: '公务员' })
+    g2.rankIdx = 1
+    g2.positions = [{ 年: g2.date.y, 职级: '乡科级正职', 岗位: '岩台县住房和城乡建设局局长', 条线: '住建' }]
+    let 出现 = false
+    for (let i = 0; i < 300 && !出现; i++) {
+      if (make腐败事件(g2)!.标题 === '项目结算后的“感谢”') 出现 = true
+    }
+    expect(出现).toBe(true)
   })
 })
 
@@ -296,12 +358,16 @@ describe('本地化晋升', () => {
       装备晋升条件(g)
       for (let i = 0; i < 45 && !g.over; i++) {
         if (g.pendingPositions) {
-          expect(g.pendingPositions.length).toBeGreaterThanOrEqual(7)
+          expect(g.pendingPositions.length).toBeGreaterThanOrEqual(3)
+          const 名s = g.pendingPositions.map((p) => p.名)
+          expect(new Set(名s).size).toBe(名s.length)
           const 现序 = 平台序[g.p.平台] ?? 1
           for (const p of g.pendingPositions) {
             expect(p.序号 ?? 现序).toBeLessThanOrEqual(现序 + 1)
           }
+          const 选 = g.pendingPositions[0]
           g.pendingPositions = null
+          settlePosition(g, 选)
         }
         resolvePending(g)
         if (g.quiz) g.quiz = null
@@ -352,6 +418,31 @@ describe('本地化晋升', () => {
     const 省 = 政治本地职位('省级', 6, '京州市').map((p) => p.名).join('|')
     expect(省).toContain('副省长、省公安厅厅长')
     expect(省).toContain('省委常委、组织部部长兼省委党校校长')
+  })
+
+  it('高平台岗位职级与职务严格对应', () => {
+    const 省2 = 政治本地职位('省级', 2, '京州市').map((p) => p.名).join('|')
+    expect(省2).not.toMatch(/省高级人民法院副院长|省人民检察院副检察长|省委宣传部副部长|省纪委常委/)
+    expect(省2).toMatch(/副处长/)
+
+    const 省4 = 政治本地职位('省级', 4, '京州市').map((p) => p.名).join('|')
+    expect(省4).not.toMatch(/省高级人民法院副院长|省人民检察院副检察长|省委宣传部副部长|省委政法委副书记/)
+    expect(省4).toMatch(/省公安厅副厅长/)
+
+    const 省5 = 政治本地职位('省级', 5, '京州市').map((p) => p.名).join('|')
+    expect(省5).toMatch(/省高级人民法院副院长|省委宣传部副部长/)
+
+    const 市2 = 政治本地职位('市级', 2, '京州市').map((p) => p.名).join('|')
+    expect(市2).not.toMatch(/中级人民法院副院长|人民检察院副检察长|委组织部部长/)
+
+    const 市3 = 政治本地职位('市级', 3, '京州市').map((p) => p.名).join('|')
+    expect(市3).toMatch(/中级人民法院副院长|委组织部副部长/)
+
+    const 县0 = 政治本地职位('县级', 0, '岩台县').map((p) => p.名).join('|')
+    expect(县0).not.toMatch(/人民法院副院长|人民检察院副检察长|委组织部副部长/)
+
+    const 县1 = 政治本地职位('县级', 1, '岩台县').map((p) => p.名).join('|')
+    expect(县1).toMatch(/人民法院副院长|委组织部副部长/)
   })
 
   it('doPromote 成功后同步题库与圈子', () => {

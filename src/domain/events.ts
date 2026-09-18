@@ -221,7 +221,15 @@ export function makeEvent(g: GameState): GameEvent {
     })
   }
 
-  return pick(pool)
+  // 前置条件过滤：单身不出家庭事件；政府类事件只对体制内出现
+  const 政府事件 = ['片区改造摸底材料被退回', '群众围堵施工现场', '一份来路不明的举报信', '老同学的饭局']
+  const 体制内 = (['公务员', '事业单位', '国企'] as string[]).includes(g.p.职业)
+  const 可用 = pool.filter((ev) => {
+    if (ev.标题 === '家里的事' && !g.family.配偶) return false
+    if (政府事件.includes(ev.标题) && !体制内) return false
+    return true
+  })
+  return pick(可用.length ? 可用 : pool)
 }
 
 /* ===== 廉政事件：收与不收都在你自己 ===== */
@@ -233,6 +241,46 @@ export function make腐败事件(g: GameState): GameEvent | null {
   const 量 = (w: number) => Math.max(3000, Math.round((w * 系数) / 1000) * 1000)
   const 条 = 条线Of(g.positions[0] && g.positions[0].岗位)
   const 工程口 = ['住建', '交通', '发改', '自然资源'].includes(条)
+
+  const 结算事件 = (工程: boolean): GameEvent => {
+    const 事由 = 工程 ? '在工程结算中收受承包方财物' : '在业务往来中收受合作方财物'
+    return {
+      类型: '廉政风险', 标题: 工程 ? '项目结算后的“感谢”' : '业务合作方的“感谢”',
+      描述: 工程
+        ? '工程结算完成，承包商约你吃饭。散场时他把一张卡塞进你外套口袋：“这些年多亏你关照。”'
+        : '合作项目验收后，合作方约你吃饭。散场时他把一张卡塞进你外套口袋：“这些年多亏你关照。”',
+      背景: 工程 ? '工程口历来是高风险岗位，这一单的合同额不小。' : '你手上管着合作项目，这类往来历来是高风险。',
+      选项: [
+        {
+          text: '第二天一早把卡交到单位纪检组', hint: '主动上交，留下书面记录',
+          resolve(g2) {
+            applyEffect(g2, { 道德: 5, 声望: 4, 廉政风险: -6, 上司: 1 })
+            g2.discipline.records.unshift(`${g2.date.y}年：主动上交${工程 ? '工程承包方' : '合作方'}所送财物。`)
+            return '你把卡交到纪检组，做了登记。纪检组长看了你一眼，说：“你这一步走对了。”\n这件事后来被写进了单位的廉政教育材料。'
+          },
+        },
+        {
+          text: '收下，反正是他自愿给的', hint: '数额不小，风险也不小',
+          resolve(g2) {
+            const 金 = 量(80000)
+            g2.cash += 金
+            g2.discipline.案件.push({ 年: g2.date.y, 事由, 金额: 金 })
+            applyEffect(g2, { 道德: -9, 声望: -3, 廉政风险: Math.round(7 + 金 / 120000 * 6) })
+            g2.discipline.records.unshift(`${g2.date.y}年：${事由} ${fmt(金)} 元。`)
+            return `你收下了 ${fmt(金)} 元。\n钱转进了一张不常用的卡里。你告诉自己这是行业惯例——但审计要查的，恰恰就是“惯例”。`
+          },
+        },
+        {
+          text: '不收，但答应以后多照顾他的项目', hint: '不拿钱，拿承诺',
+          resolve(g2) {
+            applyEffect(g2, { 道德: -3, 廉政风险: 5, 人脉: 3 })
+            g2.discipline.records.unshift(`${g2.date.y}年：向${工程 ? '承包方' : '合作方'}作出倾向性承诺。`)
+            return '你没有收钱，但答应了“以后有事说话”。这句话不用写进账目，却同样会被记在别人心里。'
+          },
+        },
+      ],
+    }
+  }
 
   const pool: GameEvent[] = [
     {
@@ -268,39 +316,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
         },
       ],
     },
-    {
-      类型: '廉政风险', 标题: '项目结算后的“感谢”', 描述: '工程结算完成，承包商约你吃饭。散场时他把一张卡塞进你外套口袋：“这些年多亏你关照。”',
-      背景: '工程口历来是高风险岗位，这一单的合同额不小。',
-      选项: [
-        {
-          text: '第二天一早把卡交到单位纪检组', hint: '主动上交，留下书面记录',
-          resolve(g2) {
-            applyEffect(g2, { 道德: 5, 声望: 4, 廉政风险: -6, 上司: 1 })
-            g2.discipline.records.unshift(`${g2.date.y}年：主动上交工程承包方所送财物。`)
-            return '你把卡交到纪检组，做了登记。纪检组长看了你一眼，说：“你这一步走对了。”\n这件事后来被写进了单位的廉政教育材料。'
-          },
-        },
-        {
-          text: '收下，反正是他自愿给的', hint: '数额不小，风险也不小',
-          resolve(g2) {
-            const 金 = 量(80000)
-            g2.cash += 金
-            g2.discipline.案件.push({ 年: g2.date.y, 事由: '在工程结算中收受承包方财物', 金额: 金 })
-            applyEffect(g2, { 道德: -9, 声望: -3, 廉政风险: Math.round(7 + 金 / 120000 * 6) })
-            g2.discipline.records.unshift(`${g2.date.y}年：在工程结算中收受承包方财物 ${fmt(金)} 元。`)
-            return `你收下了 ${fmt(金)} 元。\n钱转进了一张不常用的卡里。你告诉自己这是行业惯例——但审计要查的，恰恰就是“惯例”。`
-          },
-        },
-        {
-          text: '不收，但答应以后多照顾他的项目', hint: '不拿钱，拿承诺',
-          resolve(g2) {
-            applyEffect(g2, { 道德: -3, 廉政风险: 5, 人脉: 3 })
-            g2.discipline.records.unshift(`${g2.date.y}年：向承包方作出倾向性承诺。`)
-            return '你没有收钱，但答应了“以后有事说话”。这句话不用写进账目，却同样会被记在别人心里。'
-          },
-        },
-      ],
-    },
+    结算事件(工程口),
     {
       类型: '廉政风险', 标题: '为提拔送来的“心意”', 描述: '有人找到你，希望能帮他解决一个岗位。他开门见山，说已经准备好了“辛苦费”，事成之后再补一半。',
       背景: '你手上正好有向上推荐的话语权。',
@@ -417,11 +433,15 @@ export function make腐败事件(g: GameState): GameEvent | null {
     },
   ]
   void 工程口
-  return pick(pool)
+  const 可用 = pool.filter((ev) => {
+    if (ev.标题 === '配偶收下的钱' && !g.family.配偶) return false
+    return true
+  })
+  return pick(可用.length ? 可用 : pool)
 }
 
 /* ===== 退休生活事件池 ===== */
-export function makeRetiredEvent(_g: GameState): GameEvent {
+export function makeRetiredEvent(g: GameState): GameEvent {
   const pool: GameEvent[] = [
     {
       类型: '退休生活', 标题: '体检报告上的几个箭头', 描述: '今年的体检报告出来了，医生的语气比去年认真：几个指标需要长期用药控制。',
@@ -532,7 +552,12 @@ export function makeRetiredEvent(_g: GameState): GameEvent {
       ],
     },
   ]
-  return pick(pool)
+  const 可用 = pool.filter((ev) => {
+    if (ev.标题 === '孩子想让你帮忙带孙辈' && !g.family.子女.length) return false
+    if (ev.标题 === '卖房还是留着' && !g.assets.房产.length) return false
+    return true
+  })
+  return pick(可用.length ? 可用 : pool)
 }
 
 export function retiredMini(g: GameState): void {

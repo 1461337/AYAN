@@ -156,12 +156,16 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
     const 二线池 = pool.filter((p) => p.二线)
     if (二线池.length) pool = 二线池
   }
-  while (pool.length < 7) {
+  // 岗位不足时只做最低限度兜底，且保证不重名
+  const 兜底方向 = ['综合', '业务', '行政', '技术', '管理']
+  let 兜底序 = 0
+  while (pool.length < 3) {
     pool.push({
-      名: `${def.名}（${pick(['综合', '业务', '行政', '技术'])}岗）`,
+      名: `${def.名}（${兜底方向[兜底序 % 兜底方向.length]}岗）`,
       序号: 平台序[g.p.平台] ?? 1,
       本地: true,
     })
+    兜底序++
   }
 
   const 专业 = (专业偏好条线[majorGroup(g.p.专业) || ''] || []).slice()
@@ -256,12 +260,12 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
   评分.sort((a, b) => b.sc - a.sc)
 
   let 可用 = (政治 && idx >= 4) ? 评分.filter((x) => !(x.党政 && x.高配 && !有党政经历)) : 评分
-  if (可用.length < 7) 可用 = 评分
-  let list = 可用.slice(0, Math.min(9, Math.max(7, 可用.length)))
+  if (可用.length < 3) 可用 = 评分
+  let list = 可用.slice(0, 9)
   if (政治 && idx >= 1 && !list.some((x) => x.二线)) {
     const cand = 评分.find((x) => x.二线)
     if (cand) {
-      if (list.length >= 2) list = [...list.slice(0, list.length - 1), cand]
+      if (list.length >= 3) list = [...list.slice(0, list.length - 1), cand]
       else list.push(cand)
     }
   }

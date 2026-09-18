@@ -1,7 +1,7 @@
 import { useGame } from '../../store/gameStore'
 import { Card } from '../components/Card'
 import { Collapse } from '../components/Collapse'
-import { 影响期内, 涉案金额 } from '../../domain/effects'
+import { 案件风险底, 影响期内, 涉案金额 } from '../../domain/effects'
 import { luxuryCount } from '../../domain/economy'
 import { 廉政等级 } from '../../domain/discipline'
 import { fmt } from '../../utils/format'
@@ -21,6 +21,7 @@ export function Integrity() {
         <div className="k"><span>当前等级</span><b style={{ color }}>{lvl}</b></div>
         <div className="k"><span>处分记录</span><b>{game.p2.处分} 次</b></div>
         <div className="k"><span>嘉奖记录</span><b className="up">{game.p2.嘉奖} 次</b></div>
+        <div className="k"><span>案卷风险底线</span><b className={案件风险底(game) ? 'bad-txt' : 'up'}>{案件风险底(game)}</b></div>
       </div>
       {lux > 0 && isPub ? (
         <div className="box warn-box">

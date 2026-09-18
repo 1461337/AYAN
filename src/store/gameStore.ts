@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { Effect, GameState, TabId } from '../domain/types'
 import { newState, makeCandidates, type SetupForm } from '../domain/newGame'
-import { applyEffect, 快照, 差异, perfLabel } from '../domain/effects'
+import { applyEffect, 快照, 差异, perfLabel, 同步风险底线 } from '../domain/effects'
 import { nextRankInfo } from '../domain/selectors'
 import { doPromote, settlePosition, 向上社交 as 向上社交Domain } from '../domain/promotion'
 import { buyAsset, sellAsset, repayDebt, repayLoan, netIncome } from '../domain/economy'
@@ -196,6 +196,7 @@ export const useGame = create<StoreState>((set, get) => {
       if (!o) return
       const 前 = 快照(g)
       const res = o.resolve(g)
+      同步风险底线(g)
       const 后 = 快照(g)
       const 明细 = 差异(前, 后, false, perfLabel(g))
       const 好 = (后.政绩 - 前.政绩) + (后.声望 - 前.声望) + (后.道德 - 前.道德) + (后.上司 - 前.上司)
@@ -468,8 +469,12 @@ export const useGame = create<StoreState>((set, get) => {
         if (Math.random() < 0.45) {
           n.信任 = clamp(n.信任 + 8, -100, 100)
           n.利益 = clamp(n.利益 + 10, -100, 100)
-          applyEffect(g, { 声望: -2, 廉政风险: rnd(6, 14) })
-          g.discipline.records.unshift(`${g.date.y}年：应${n.姓名}之请，就${['一个审批环节', '一笔资金拨付', '一次检查安排'][Math.floor(Math.random() * 3)]}打了招呼。`)
+          if ((['公务员', '事业单位', '国企'] as string[]).includes(g.p.职业)) {
+            applyEffect(g, { 声望: -2, 廉政风险: rnd(6, 14) })
+            g.discipline.records.unshift(`${g.date.y}年：应${n.姓名}之请，就${['一个审批环节', '一笔资金拨付', '一次检查安排'][Math.floor(Math.random() * 3)]}打了招呼。`)
+          } else {
+            applyEffect(g, { 声望: -2 })
+          }
           msg = `你帮${n.姓名}办了一件事。他连声道谢，但你知道这件事不完全符合程序。`
         } else {
           n.信任 = clamp(n.信任 - 3, -100, 100)
@@ -481,8 +486,10 @@ export const useGame = create<StoreState>((set, get) => {
         n.信任 = clamp(n.信任 + 5, -100, 100)
         n.利益 = clamp(n.利益 + 12, -100, 100)
         n.好感度 = clamp(n.好感度 + 5, 0, 100)
-        applyEffect(g, { 廉政风险: rnd(8, 18) })
-        g.discipline.records.unshift(`${g.date.y}年：向${n.姓名}送去${['两条烟', '一瓶酒', '一张购物卡', '一份土特产'][Math.floor(Math.random() * 4)]}。`)
+        if ((['公务员', '事业单位', '国企'] as string[]).includes(g.p.职业)) {
+          applyEffect(g, { 廉政风险: rnd(8, 18) })
+          g.discipline.records.unshift(`${g.date.y}年：向${n.姓名}送去${['两条烟', '一瓶酒', '一张购物卡', '一份土特产'][Math.floor(Math.random() * 4)]}。`)
+        }
         msg = `你去了${n.姓名}家。东西他收下了，话也说得客气。`
       }
       n.memory.unshift(`${g.date.y}年：${msg}`)

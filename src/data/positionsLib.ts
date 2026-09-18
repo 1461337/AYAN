@@ -2,7 +2,7 @@ import type { PlatformName } from '../domain/types'
 
 /**
  * 当代岗位库（扩展）：党委工作机构、政府工作部门、人大、政协、群团、法院、检察院、公安、司法。
- * 只描述“职务名”，条线与实权/党政属性由 selectors 统一识别。
+ * 所有职务按“平台层级 × 职级”严格对应，避免低职级出现高职级职务名。
  */
 export interface LibPos {
   名: string
@@ -36,42 +36,45 @@ function 短(city: string): string {
   return city.slice(-1)
 }
 
-function 副职(d: Dept): string {
-  if (d.类别 === '党委') {
-    if (/组织部$|宣传部$|统一战线工作部$/.test(d.名)) return `${d.名}副部长`
-    if (/政法委员会$|纪律检查委员会$/.test(d.名)) return `${d.名}副书记`
-    if (/党校/.test(d.名)) return `${d.名}副校长`
-    if (/老干部局$/.test(d.名)) return `${d.名}副局长`
-    return `${d.名}副主任`
-  }
-  if (d.类别 === '群团') return /共青团/.test(d.名) ? `${d.名}副书记` : `${d.名}副主席`
-  if (d.类别 === '人大政协') return `${d.名}副主任`
+/* ============ 职务后缀（按类别） ============ */
+
+function 政府副职(d: Dept): string {
   return /委员会$/.test(d.名) ? `${d.名}副主任` : `${d.名}副局长`
 }
-
-/* 县区正科：常委部门给“副职”，非常委党委部门给正职；党校特殊 */
-function 县区正职(d: Dept): string {
-  if (d.类别 === '党委') {
-    if (/办公室$|组织部$|宣传部$|统一战线工作部$|政法委员会$|纪律检查委员会$/.test(d.名)) return 副职(d)
-    if (/党校/.test(d.名)) return `${d.名}常务副校长`
-    if (/机关工作委员会$/.test(d.名)) return `${d.名}副书记`
-    if (/老干部局$/.test(d.名)) return `${d.名}局长`
-    return `${d.名}主任`
-  }
-  return 正职(d)
+function 政府正职(d: Dept): string {
+  return /委员会$/.test(d.名) ? `${d.名}主任` : `${d.名}局长`
+}
+function 群团副职(d: Dept): string {
+  return /共青团/.test(d.名) ? `${d.名}副书记` : `${d.名}副主席`
+}
+function 群团正职(d: Dept): string {
+  return /共青团/.test(d.名) ? `${d.名}书记` : `${d.名}主席`
+}
+function 人大政协副职(d: Dept): string {
+  return `${d.名}副主任`
+}
+function 人大政协正职(d: Dept): string {
+  return `${d.名}主任`
 }
 
-function 正职(d: Dept): string {
-  if (d.类别 === '党委') {
-    if (/组织部$|宣传部$|统一战线工作部$/.test(d.名)) return `${d.名}部长`
-    if (/政法委员会$|纪律检查委员会$/.test(d.名)) return `${d.名}书记`
-    if (/党校/.test(d.名)) return `${d.名}校长`
-    if (/老干部局$/.test(d.名)) return `${d.名}局长`
-    return `${d.名}主任`
-  }
-  if (d.类别 === '群团') return /共青团/.test(d.名) ? `${d.名}书记` : `${d.名}主席`
-  if (d.类别 === '人大政协') return `${d.名}主任`
-  return /委员会$/.test(d.名) ? `${d.名}主任` : `${d.名}局长`
+/** 党委部门副职：副科/副处/副厅通用（部务委员、委员、副主任、副校长） */
+function 党委副职(d: Dept): string {
+  if (/组织部$|宣传部$|统一战线工作部$/.test(d.名)) return `${d.名}部务委员`
+  if (/政法委员会$|纪律检查委员会$/.test(d.名)) return `${d.名}委员`
+  if (/党校/.test(d.名)) return `${d.名}副校长`
+  if (/老干部局$/.test(d.名)) return `${d.名}副局长`
+  if (/机关工作委员会$/.test(d.名)) return `${d.名}副书记`
+  return `${d.名}副主任`
+}
+
+/** 党委部门正职：正科/正处/正厅通用（副部长、副书记、常务副校长、主任） */
+function 党委正职(d: Dept): string {
+  if (/组织部$|宣传部$|统一战线工作部$/.test(d.名)) return `${d.名}副部长`
+  if (/政法委员会$|纪律检查委员会$/.test(d.名)) return `${d.名}副书记`
+  if (/党校/.test(d.名)) return `${d.名}常务副校长`
+  if (/老干部局$/.test(d.名)) return `${d.名}局长`
+  if (/机关工作委员会$/.test(d.名)) return `${d.名}常务副书记`
+  return `${d.名}主任`
 }
 
 function 党委部门(平台: PlatformName, city: string): Dept[] {
@@ -114,6 +117,87 @@ function 人大政协部门(平台: PlatformName, city: string): Dept[] {
   for (const 委 of 县区人大委) out.push({ 名: `${人大}${委}`, 类别: '人大政协' })
   out.push({ 名: `${政协}办公室`, 类别: '人大政协' })
   for (const 委 of 政协专委) out.push({ 名: `${政协}${委}`, 类别: '人大政协' })
+  return out
+}
+
+/* ============ 法检公司：按平台 × 职级严格对应 ============ */
+
+function 法检公司岗位(序: number, idx: number, city: string): LibPos[] {
+  const 法 = 序 === 3 ? '省高级人民法院' : 序 === 2 ? `${city}中级人民法院` : `${city}人民法院`
+  const 检 = 序 === 3 ? '省人民检察院' : `${city}人民检察院`
+  const 公 = 序 === 3 ? '省公安厅' : `${city}公安局`
+  const 司 = 序 === 3 ? '省司法厅' : `${city}司法局`
+  const out: LibPos[] = []
+  if (序 === 1) {
+    if (idx === 0) {
+      out.push(
+        { 名: `${法}刑事审判庭副庭长` }, { 名: `${检}第一检察部副主任` },
+        { 名: `${公}刑侦大队副大队长` }, { 名: `${司}副局长` },
+      )
+    } else if (idx === 1) {
+      out.push(
+        { 名: `${法}副院长` }, { 名: `${检}副检察长` }, { 名: `${公}政委` },
+        { 名: `${司}局长` }, { 名: `${法}刑事审判庭庭长` },
+      )
+    } else if (idx === 2) {
+      out.push({ 名: `${法}院长` }, { 名: `${检}检察长` }, { 名: `${公}局长` })
+    }
+    return out
+  }
+  if (序 === 2) {
+    if (idx <= 1) {
+      const k = idx === 0 ? '副' : ''
+      out.push(
+        { 名: `${法}${k}庭长` }, { 名: `${检}第一检察部${k}主任` },
+        { 名: `${公}刑侦支队${k}支队长` }, { 名: `${司}${k}科长` },
+      )
+    } else if (idx === 2) {
+      out.push(
+        { 名: `${法}审判委员会专职委员` }, { 名: `${检}检察委员会专职委员` },
+        { 名: `${公}党委委员` }, { 名: `${司}副局长` },
+      )
+    } else if (idx === 3) {
+      out.push(
+        { 名: `${法}副院长` }, { 名: `${检}副检察长` },
+        { 名: `${公}副局长` }, { 名: `${公}常务副局长` },
+      )
+    } else if (idx === 4) {
+      out.push({ 名: `${法}院长` }, { 名: `${检}检察长` }, { 名: `${公}局长` })
+    }
+    return out
+  }
+  if (序 === 3) {
+    if (idx <= 1) {
+      const k = idx === 0 ? '副主任科员' : '主任科员'
+      out.push(
+        { 名: `${法}${k}` }, { 名: `${检}${k}` },
+        { 名: `省公安厅${idx === 0 ? '副科长' : '科长'}` }, { 名: `${司}${idx === 0 ? '副科长' : '科长'}` },
+      )
+    } else if (idx === 2) {
+      out.push(
+        { 名: `${法}副庭长` }, { 名: `${检}检察部副主任` },
+        { 名: '省公安厅副处长' }, { 名: '省司法厅副处长' },
+      )
+    } else if (idx === 3) {
+      out.push(
+        { 名: `${法}庭长` }, { 名: `${检}检察部主任` },
+        { 名: '省公安厅处长' }, { 名: '省司法厅处长' },
+      )
+    } else if (idx === 4) {
+      out.push(
+        { 名: `${法}审判委员会专职委员` }, { 名: `${检}检察委员会专职委员` },
+        { 名: '省公安厅副厅长' }, { 名: '省司法厅副厅长' },
+      )
+    } else if (idx === 5) {
+      out.push(
+        { 名: `${法}副院长` }, { 名: `${检}副检察长` },
+        { 名: '省公安厅常务副厅长' }, { 名: '省司法厅厅长' },
+      )
+    } else {
+      out.push({ 名: `${法}院长` }, { 名: `${检}检察长` })
+    }
+    return out
+  }
   return out
 }
 
@@ -168,8 +252,14 @@ function 兼任岗位(平台: PlatformName, idx: number, city: string): LibPos[]
   if (序 === 3) {
     if (idx === 4) {
       return [
-        { 名: '省公安厅厅长兼省委政法委副书记' },
         { 名: '省委组织部部务委员兼省委党校副校长' },
+        { 名: '省委宣传部部务委员兼省委网信办副主任' },
+      ]
+    }
+    if (idx === 5) {
+      return [
+        { 名: '省公安厅厅长兼省委政法委副书记' },
+        { 名: '省委宣传部副部长兼省委网信办主任' },
       ]
     }
     if (idx === 6) {
@@ -191,24 +281,7 @@ function 兼任岗位(平台: PlatformName, idx: number, city: string): LibPos[]
   return []
 }
 
-function 法检公司岗位(平台: PlatformName, idx: number, city: string): LibPos[] {
-  const 法 = 平台 === '省级' ? '省高级人民法院' : 平台 === '市级' ? `${city}中级人民法院` : `${city}人民法院`
-  const 检 = 平台 === '省级' ? '省人民检察院' : `${city}人民检察院`
-  const 公 = 平台 === '省级' ? '省公安厅' : `${city}公安局`
-  const 司 = 平台 === '省级' ? '省司法厅' : `${city}司法局`
-  const out: LibPos[] = []
-  if (idx <= 1) {
-    out.push({ 名: `${法}${idx === 0 ? '刑事审判庭副庭长' : '刑事审判庭庭长'}` })
-    out.push({ 名: `${检}${idx === 0 ? '第一检察部副主任' : '第一检察部主任'}` })
-    out.push({ 名: `${公}${idx === 0 ? '刑侦大队副大队长' : '刑侦大队大队长'}` })
-  } else if (idx === 2) {
-    out.push({ 名: `${法}副院长` }, { 名: `${检}副检察长` }, { 名: `${公}副局长` }, { 名: `${司}副局长` })
-  } else {
-    out.push({ 名: `${法}院长` }, { 名: `${检}检察长` }, { 名: `${公}局长` })
-    if (平台 !== '省级') out.push({ 名: `${司}局长` })
-  }
-  return out
-}
+/* ============ 扩展职位总入口 ============ */
 
 export function 政治扩展职位(平台: PlatformName, idx: number, city: string): LibPos[] {
   const out: LibPos[] = []
@@ -237,28 +310,28 @@ export function 政治扩展职位(平台: PlatformName, idx: number, city: stri
   const 政府 = 政府部门(平台, city)
   const 群团s = 群团部门(平台, city)
   const 人大政协 = 人大政协部门(平台, city)
-  const 全部 = [...党委, ...政府, ...群团s]
-  const 人大政协组 = 人大政协.map((d) => ({ 名: 副职(d), 二线: true }))
-  const 人大政协正 = 人大政协.map((d) => ({ 名: 正职(d), 二线: true }))
-  out.push(...兼任岗位(平台, idx, city))
+  const 人大政协组 = 人大政协.map((d) => ({ 名: 人大政协副职(d), 二线: true }))
+  const 人大政协正 = 人大政协.map((d) => ({ 名: 人大政协正职(d), 二线: true }))
   const 厅级后缀 = (名: string, 正: boolean): string => {
     if (/委员会$/.test(名)) return `${名}${正 ? '主任' : '副主任'}`
     if (/厅$/.test(名)) return `${名}${正 ? '厅长' : '副厅长'}`
     return `${名}${正 ? '局长' : '副局长'}`
   }
-
   const 序 = 平台 === '县级' || 平台 === '区级' ? 1 : 平台 === '市级' ? 2 : 3
+  out.push(...法检公司岗位(序, idx, city))
+  out.push(...兼任岗位(平台, idx, city))
 
   if (序 === 1) {
     if (idx === 0) {
-      out.push(...全部.map((d) => ({ 名: 副职(d) })), ...人大政协组.map((p) => p))
-      out.push(...法检公司岗位(平台, 0, city))
+      out.push(...党委.map((d) => ({ 名: 党委副职(d) })))
+      out.push(...政府.map((d) => ({ 名: 政府副职(d) })))
+      out.push(...群团s.map((d) => ({ 名: 群团副职(d) })))
+      out.push(...人大政协组)
     } else if (idx === 1) {
-      out.push(...政府.map((d) => ({ 名: 正职(d) })))
-      out.push(...党委.map((d) => ({ 名: 县区正职(d) })))
-      out.push(...群团s.map((d) => ({ 名: 正职(d) })))
+      out.push(...党委.map((d) => ({ 名: 党委正职(d) })))
+      out.push(...政府.map((d) => ({ 名: 政府正职(d) })))
+      out.push(...群团s.map((d) => ({ 名: 群团正职(d) })))
       out.push(...人大政协正)
-      out.push(...法检公司岗位(平台, 1, city))
     } else if (idx === 2) {
       out.push(
         { 名: `${city}委副书记` },
@@ -288,14 +361,18 @@ export function 政治扩展职位(平台: PlatformName, idx: number, city: stri
   if (序 === 2) {
     if (idx <= 1) {
       const 科 = idx === 0 ? '副科长' : '科长'
-      out.push(...全部.slice(0, 48).map((d) => ({ 名: `${d.名}${科}` })))
+      out.push(...[...党委, ...政府, ...群团s].slice(0, 48).map((d) => ({ 名: `${d.名}${科}` })))
+      out.push({ 名: `${city}人大常委会办公室${科}`, 二线: true })
+      out.push({ 名: `${city}政协办公室${科}`, 二线: true })
     } else if (idx === 2) {
-      out.push(...全部.map((d) => ({ 名: 副职(d) })))
-      out.push(...法检公司岗位(平台, 2, city))
+      out.push(...党委.map((d) => ({ 名: 党委副职(d) })))
+      out.push(...政府.map((d) => ({ 名: 政府副职(d) })))
+      out.push(...群团s.map((d) => ({ 名: 群团副职(d) })))
+      out.push(...人大政协组)
     } else if (idx === 3) {
-      out.push(...政府.map((d) => ({ 名: 正职(d) })))
-      out.push(...党委.map((d) => ({ 名: 正职(d) })))
-      out.push(...群团s.map((d) => ({ 名: 正职(d) })))
+      out.push(...党委.map((d) => ({ 名: 党委正职(d) })))
+      out.push(...政府.map((d) => ({ 名: 政府正职(d) })))
+      out.push(...群团s.map((d) => ({ 名: 群团正职(d) })))
       out.push(...人大政协正)
     } else if (idx === 4) {
       out.push(
@@ -327,22 +404,20 @@ export function 政治扩展职位(平台: PlatformName, idx: number, city: stri
   /* 省级 */
   if (idx <= 1) {
     const 科 = idx === 0 ? '副主任科员' : '主任科员'
-    out.push(...全部.slice(0, 45).map((d) => ({ 名: `${d.名}${科}` })))
+    out.push(...[...党委, ...政府, ...群团s].slice(0, 45).map((d) => ({ 名: `${d.名}${科}` })))
   } else if (idx === 2) {
-    out.push(...全部.slice(0, 45).map((d) => ({ 名: `${d.名}副处长` })))
-    out.push({ 名: '省高级人民法院副院长' }, { 名: '省人民检察院副检察长' })
+    out.push(...[...党委, ...政府].slice(0, 45).map((d) => ({ 名: `${d.名}副处长` })))
   } else if (idx === 3) {
-    out.push(...全部.slice(0, 45).map((d) => ({ 名: `${d.名}处长` })))
+    out.push(...[...党委, ...政府].slice(0, 45).map((d) => ({ 名: `${d.名}处长` })))
   } else if (idx === 4) {
+    out.push(...党委.map((d) => ({ 名: 党委副职(d) })))
     out.push(...政府.map((d) => ({ 名: 厅级后缀(d.名, false) })))
-    out.push(...党委.slice(0, 8).map((d) => ({ 名: /组织部$/.test(d.名) ? `${d.名}部务委员` : `${d.名}副主任` })))
-    out.push({ 名: '省高级人民法院副院长' }, { 名: '省人民检察院副检察长' })
-    out.push({ 名: '省公安厅副厅长' }, { 名: '省司法厅副厅长' })
-    out.push(...群团s.map((d) => ({ 名: /共青团/.test(d.名) ? `${d.名}副书记` : `${d.名}副主席` })))
+    out.push(...群团s.map((d) => ({ 名: 群团副职(d) })))
+    out.push(...人大政协组)
   } else if (idx === 5) {
+    out.push(...党委.map((d) => ({ 名: 党委正职(d) })))
     out.push(...政府.map((d) => ({ 名: 厅级后缀(d.名, true) })))
-    out.push(...党委.slice(0, 8).map((d) => ({ 名: /组织部$|宣传部$|统一战线工作部$/.test(d.名) ? `${d.名}副部长` : `${d.名}主任` })))
-    out.push(...群团s.map((d) => ({ 名: /共青团/.test(d.名) ? `${d.名}书记` : `${d.名}主席` })))
+    out.push(...群团s.map((d) => ({ 名: 群团正职(d) })))
     out.push(...人大政协正)
   } else if (idx === 6) {
     out.push(
@@ -351,6 +426,7 @@ export function 政治扩展职位(平台: PlatformName, idx: number, city: stri
       { 名: '省委常委、宣传部部长' },
       { 名: '省委常委、统战部部长' },
       { 名: '省委常委、政法委书记' },
+      { 名: '省委常委、省委秘书长' },
       { 名: '省委副书记' },
       { 名: '省纪委书记、省监委主任' },
       { 名: '省高级人民法院院长' },

@@ -1,7 +1,7 @@
 import type { GameEvent, GameState } from './types'
 import { clamp, fmt } from '../utils/format'
 import { chance, pick } from './rng'
-import { applyEffect, 涉案金额 } from './effects'
+import { applyEffect, 涉案金额, 同步风险底线 } from './effects'
 
 export function 处置结果(g: GameState, 从轻: -1 | 0 | 1): string {
   const risk = g.discipline.risk
@@ -110,6 +110,7 @@ export function disciplineTick(g: GameState): void {
     } else {
       g.discipline.records.unshift(`${g.date.y}年：接受谈话提醒一次。`)
       g.discipline.risk = clamp(r - 10, 0, 100)
+      同步风险底线(g)
       g.p.上司 = clamp(g.p.上司 - 3, 0, 100)
       g.log.unshift({ t: `${g.date.y}年`, h: '谈话提醒', kind: 'bad', d: '一位老领导把你叫到办公室，说了半小时，没提具体的事。你听懂了一半。' })
     }

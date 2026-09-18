@@ -1,7 +1,7 @@
 import type { GameState, Snapshot } from './types'
 import { clamp, fmt } from '../utils/format'
 import { chance, rnd, shuffle } from './rng'
-import { applyEffect, 快照, 差异, perfLabel, 人脉上限 } from './effects'
+import { applyEffect, 快照, 差异, perfLabel, 人脉上限, 同步风险底线 } from './effects'
 import { doPromote } from './promotion'
 import { nextRankInfo, ladder, rankTitle, promoteGateWhy } from './selectors'
 import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, npcTick, cityTick, retiredMini } from './events'
@@ -251,6 +251,7 @@ export function endYear(g: GameState): void {
   cityTick(g)
   disciplineTick(g)
   g.discipline.risk = clamp(g.discipline.risk - 6, 0, 100)
+  同步风险底线(g)
 
   /* 超标资产 */
   const lux = luxuryCount(g)
