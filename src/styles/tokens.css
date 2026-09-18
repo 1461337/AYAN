@@ -319,6 +319,26 @@ select {
   .toast { bottom: calc(110px + var(--safe-b)); }
 }
 
+/* ============ 设备自适应（由 TS 写入 data-os / data-device） ============ */
+html[data-os="ios"] body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+html[data-os="android"] body, html[data-os="harmony"] body {
+  font-family: "HarmonyOS Sans SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", Roboto, sans-serif;
+}
+/* 部分安卓 WebView 毛玻璃支持差，降级为纯色 */
+html[data-os="android"] .nav, html[data-os="android"] .modal-mask {
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+html[data-os="android"] .nav { background: rgba(255, 253, 247, .99); }
+/* PWA / 微信内嵌：底部多留安全距离，避免被系统栏遮挡 */
+html[data-standalone="1"] .view { padding-bottom: calc(128px + var(--safe-b)); }
+html[data-wechat="1"] .view { padding-bottom: calc(140px + var(--safe-b)); }
+html[data-wechat="1"] .nav { padding-bottom: calc(8px + var(--safe-b)); }
+@media (min-width: 1024px) {
+  html[data-standalone="1"] .view, html[data-wechat="1"] .view { padding-bottom: 0; }
+}
+
 /* ============ 桌面悬停增强 ============ */
 @media (hover: hover) and (pointer: fine) {
   .card:hover { box-shadow: var(--shadow-lift); }

@@ -3,7 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './styles/tokens.css'
 import App from './App.tsx'
 import { useGame } from './store/gameStore'
+import { installDeviceWatch } from './ui/device'
 import type { TabId } from './domain/types'
+
+installDeviceWatch()
 
 // 本地验收入口：?demo=1 快速进入一局游戏，可加 &tab=生活 指定页签
 const params = new URLSearchParams(location.search)
