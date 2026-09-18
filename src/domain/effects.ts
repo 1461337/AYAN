@@ -55,10 +55,21 @@ export function applyEffect(g: GameState, e: Effect | undefined | null): void {
   }
 }
 
-/* 收过的每一笔都会留在档案里，构成风险的下限 */
+/* 收过的每一笔都会留在档案里，构成风险的下限；退出现职后旧案逐年降温 */
 export function 案件风险底(g: GameState): number {
   const c = (g.discipline && g.discipline.案件) || []
-  return Math.min(92, c.reduce((a, x) => a + Math.min(16, Math.round(x.金额 / 120000 * 6) + 4), 0))
+  let 底 = Math.min(92, c.reduce((a, x) => a + Math.min(16, Math.round(x.金额 / 120000 * 6) + 4), 0))
+  const 离 = g.discipline && g.discipline.离职年
+  if (离) {
+    const 年数 = Math.max(0, g.date.y - 离)
+    底 = Math.round(底 * Math.max(0.15, 1 - 年数 * 0.15))
+  }
+  return 底
+}
+
+/* 得罪人：被拒绝、被查处、被承诺落空的人会记着你 */
+export function 记怨(g: GameState, n = 1): void {
+  g.discipline.结怨 = (g.discipline.结怨 || 0) + n
 }
 
 export function 涉案金额(g: GameState): number {

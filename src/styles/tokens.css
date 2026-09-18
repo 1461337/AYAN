@@ -5,31 +5,51 @@
   --ink: #3b3129; --ink-2: #5d5147; --muted: #8d8175;
   --green: #2f7a4f; --blue: #5b8fd0; --blue-bg: #eef4fb;
   --line: #e6dcc8; --shadow: 0 2px 10px rgba(90, 60, 20, .08);
+  --shadow-lift: 0 8px 24px rgba(90, 60, 20, .14);
   --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
 html, body, #root { margin: 0; padding: 0; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC", sans-serif;
-  background: #efe7d7; color: var(--ink); font-size: 15px; line-height: 1.65;
+  background:
+    radial-gradient(1100px 560px at 90% -12%, rgba(232, 197, 106, .18), transparent 60%),
+    radial-gradient(860px 520px at -8% 108%, rgba(165, 28, 28, .08), transparent 62%),
+    #efe7d7;
+  background-attachment: fixed;
+  color: var(--ink); font-size: 15px; line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 .hidden { display: none !important; }
-button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; transition: transform .12s ease, box-shadow .15s ease, background .15s ease, color .15s ease, opacity .15s ease; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--gold-dim); outline-offset: 2px; }
+::selection { background: rgba(232, 197, 106, .45); color: #4a2110; }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #cbbfa5; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #b8a988; }
 
 /* ============ 通用卡片 ============ */
 .card {
   background: var(--card); border: 1px solid var(--line); border-radius: 14px;
   box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden;
+  transition: box-shadow .2s ease;
 }
 .card-hd {
   padding: 14px 14px 12px; border-bottom: 1px solid #f0e7d4;
   display: flex; align-items: center; gap: 9px; background: linear-gradient(180deg, #fffdf6, #fbf5e7);
 }
 .card-hd .ic { font-size: 19px; }
-.card-hd h2 { margin: 0; font-size: 16.5px; font-weight: 800; color: var(--red-700); letter-spacing: 1px; }
+.card-hd h2 {
+  margin: 0; font-size: 16.5px; font-weight: 800; color: var(--red-700); letter-spacing: 1px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-hd h2::before {
+  content: ""; width: 4px; height: 16px; border-radius: 3px;
+  background: linear-gradient(180deg, #e8c56a, #a51c1c); flex-shrink: 0;
+}
 .card-bd { padding: 15px 15px 16px; }
 .card-bd > .sec-title:first-child { margin-top: 0; }
 .sec-title + .box { margin-top: 0; }
@@ -280,5 +300,28 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .btn-line .cost { margin-left: 6px; }
   .ap-row { gap: 6px; }
   .log-item { padding-left: 10px; }
-  .modal-mask { padding: 12px 10px calc(12px + var(--safe-b)); }
+  .modal-mask { padding: 12px 10px calc(12px + var(--safe-b)); align-items: flex-start; }
+  .modal-box { max-height: 92vh; }
+  input, select, textarea { font-size: 16px; }
+  .btn-main { padding: 15px; }
+}
+
+/* ============ 桌面悬停增强 ============ */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { box-shadow: var(--shadow-lift); }
+  .btn-line:hover { background: #f9f2e2; border-color: #dccfae; }
+  .btn-main:hover { filter: brightness(1.06); }
+  .btn-red:hover { filter: brightness(1.06); }
+  .btn-plain:hover { background: #f8f1e0; }
+  .btn-ghost:hover { background: rgba(255, 255, 255, .14); }
+  .npc:hover { border-color: #dccfae; }
+  .tab:hover { color: var(--red-700); }
+  .collapse-head:hover { background: #faf5e9; }
+  .nameRow button:hover { filter: brightness(1.07); }
+}
+
+/* ============ 平板优化 ============ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .card { border-radius: 15px; }
+  .modal-box { max-height: 86vh; }
 }

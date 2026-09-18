@@ -106,7 +106,7 @@ export function newState(f: SetupForm): GameState {
     quiz: null,
     family: { 婚姻: '单身', 配偶: null, 子女: [] },
     candidates: [],
-    discipline: { risk: 0, level: '平稳', records: [], 案件: [] },
+    discipline: { risk: 0, level: '平稳', records: [], 案件: [], 结怨: 0 },
     riskSnapshot: 0,
     city: { 财政收入: 62, 就业: 58, 房地产: 55, 产业: 54, 公共服务: 60, 交通: 52, 舆论: 60, 矛盾: 38 },
     npcs: [], log: [], flags: {}, over: false,

@@ -42,6 +42,7 @@ function retireAgeOf(g: GameState): number {
 }
 
 export function retire(g: GameState, why: string): void {
+  if (!g.discipline.离职年) g.discipline.离职年 = g.date.y
   if (isPublicJob(g) && g.discipline.risk >= 35 && chance(g.discipline.risk / 300)) {
     g.pendingEvent = 生成调查事件(g, '你在办理退休手续前，组织上对你进行离任审计')
     g.pendingEvent.月 = rnd(1, 12)
@@ -238,7 +239,9 @@ export function endYear(g: GameState): void {
       g.pendingEvent.月 = rnd(1, 12)
     } else if (chance(0.5)) retiredMini(g)
   } else {
-    const 廉政机会 = (isPublicJob(g) && g.rankIdx >= 0 && chance(0.6)) ? make腐败事件(g) : null
+    // 退二线后不再掌握实权，围猎的人明显少了
+    const 实权在握 = !g.flags['二线'] && g.status === '在职'
+    const 廉政机会 = (isPublicJob(g) && g.rankIdx >= 0 && chance(实权在握 ? 0.6 : 0.18)) ? make腐败事件(g) : null
     if (廉政机会) {
       g.pendingEvent = 廉政机会
       g.pendingEvent.月 = rnd(1, 12)
@@ -297,6 +300,7 @@ export function endYear(g: GameState): void {
       g.positions.unshift({ 年: g.date.y, 职级: 级别名, 岗位: 二线名, 条线: '综合' })
       g.p.单位 = 机构Of(二线名, g.p.城市, g.p.平台, g.p.职业)
       g.flags['二线'] = true
+      if (!g.discipline.离职年) g.discipline.离职年 = g.date.y
       g.p.声望 = clamp(g.p.声望 + 3, 0, 100)
       g.p.健康 = clamp(g.p.健康 + 4, 0, 100)
       g.log.unshift({ t: `${g.date.y}年`, h: '转任二线', kind: '', d: `年满 ${g.p.年龄} 岁，组织上安排你转任${二线名}（${级别名}）。\n不再分管一线事务，但级别与待遇不变。办公室的人来得少了，会开得也少了。` })

@@ -36,8 +36,11 @@ export function Setup() {
   return (
     <div className={styles.overlay}>
       <div className={styles.wrap}>
-        <div className={styles.title}>人民的名义</div>
-        <div className={styles.sub}>高 自 由 度 人 生 模 拟 器 · 汉 东 省</div>
+        <div className={styles.brand}>
+          <div className={styles.emblem}>民</div>
+          <div className={styles.title}>人民的名义</div>
+          <div className={styles.sub}>高 自 由 度 人 生 模 拟 器 · 汉 东 省</div>
+        </div>
         <div className={styles.setupCard}>
           <div className={styles.gridForm}>
             <div className={`${styles.field} ${styles.fieldName}`}>
@@ -95,6 +98,13 @@ export function Setup() {
             出生地、家庭背景随机；是否成为<span className="hl">选调生</span>（仅公务员）入职当天揭晓。
           </div>
           <button className="btn-main" onClick={onStart}>开 始 人 生</button>
+          <div className={styles.author}>
+            <span className={styles.rule} />
+            <span>作者 <b>啊言</b></span>
+            <span className={styles.dot}>·</span>
+            <span>QQ <b>1461337</b></span>
+            <span className={styles.rule} />
+          </div>
         </div>
       </div>
     </div>

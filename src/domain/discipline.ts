@@ -1,6 +1,6 @@
 import type { GameEvent, GameState } from './types'
 import { clamp, fmt } from '../utils/format'
-import { chance, pick } from './rng'
+import { chance, pick, rnd } from './rng'
 import { applyEffect, 涉案金额, 同步风险底线 } from './effects'
 
 export function 处置结果(g: GameState, 从轻: -1 | 0 | 1): string {
@@ -103,10 +103,45 @@ export function 生成调查事件(g: GameState, 触发点: string): GameEvent {
 
 export function disciplineTick(g: GameState): void {
   const 体制内 = (['公务员', '事业单位', '国企'] as string[]).includes(g.p.职业)
-  if (!体制内) return
+  if (!体制内 || g.pendingEvent) return
+  const 怨 = g.discipline.结怨 || 0
+  const 二线 = !!g.flags['二线'] || g.status === '退休'
+  const 活跃案件 = (g.discipline.案件 || []).filter((c) => g.date.y - c.年 <= 10)
+  const 活跃金额 = 活跃案件.reduce((a, c) => a + c.金额, 0)
+
+  /* 意外落马：同案人被查、行贿人供述、旧账被翻出来 */
+  if (活跃案件.length) {
+    const p = Math.min(0.22, 活跃案件.length * 0.015 + 活跃金额 / 25000000) * (二线 ? 0.45 : 1)
+    if (chance(p)) {
+      g.pendingEvent = 生成调查事件(g, pick([
+        '你当年的一位同案人先被带走，供述里出现了你的名字',
+        '一名行贿人因别的案子被查，交代了当年送给你的那一笔',
+        '审计部门复核旧账时，发现了当年那笔钱的去向',
+        '你经手过的一个项目出了事，调查组顺着合同摸到了你',
+      ]))
+      g.pendingEvent.月 = rnd(1, 12)
+      g.log.unshift({ t: `${g.date.y}年`, h: '意外', kind: 'bad', d: '你以为早就翻篇的事，被别人翻了出来。' })
+      return
+    }
+  }
+
+  /* 得罪人：被拒绝、被查处、承诺落空的人实名举报 */
+  if (怨 > 0) {
+    const p = Math.min(0.18, 0.02 + 怨 * 0.015) * (二线 ? 0.5 : 1)
+    if (chance(p)) {
+      g.pendingEvent = 生成调查事件(g, `${pick(['被你拒绝过的人', '你查处过的对象', '和你结过怨的商人', '你得罪过的老同事'])}向纪委实名举报了你`)
+      g.pendingEvent.月 = rnd(1, 12)
+      g.log.unshift({ t: `${g.date.y}年`, h: '被举报', kind: 'bad', d: '你得罪过的人，在你最不想出事的时候动了手。' })
+      return
+    }
+  }
+
   const r = g.discipline.risk
-  if (r <= 0) return
-  if (r >= 45 && chance(r / 500) && !g.pendingEvent) {
+  if (r <= 0) {
+    if (怨 > 0 && chance(0.35)) g.discipline.结怨 = 怨 - 1
+    return
+  }
+  if (r >= 45 && chance(r / 650)) {
     g.pendingEvent = 生成调查事件(g, '你在任上，纪委收到了关于你的问题线索')
     g.pendingEvent.月 = Math.floor(Math.random() * 12) + 1
     return
@@ -125,6 +160,7 @@ export function disciplineTick(g: GameState): void {
       g.log.unshift({ t: `${g.date.y}年`, h: '谈话提醒', kind: 'bad', d: '一位老领导把你叫到办公室，说了半小时，没提具体的事。你听懂了一半。' })
     }
   }
+  if (怨 > 0 && chance(0.35)) g.discipline.结怨 = 怨 - 1
 }
 
 export function 廉政等级(r: number): string {

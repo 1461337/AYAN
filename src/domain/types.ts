@@ -231,6 +231,8 @@ export interface DisciplineState {
   影响期?: number
   移送?: boolean
   已查金额?: number
+  结怨?: number
+  离职年?: number
 }
 
 export interface CityState {

@@ -620,6 +620,39 @@ describe('本地化晋升', () => {
     expect(g.cash).toBe(2_000_000)
   })
 
+  it('得罪人会招来实名举报，风险为零也会被查', () => {
+    setRandomSource(() => 0.0001)
+    const g = newState({ name: '周正', sex: '男', age: 45, major: '法学', job: '公务员' })
+    g.discipline.risk = 0
+    g.discipline.结怨 = 5
+    disciplineTick(g)
+    expect(g.pendingEvent?.标题).toBe('纪委监委找你谈话')
+    expect(g.log.some((x) => x.h === '被举报')).toBe(true)
+  })
+
+  it('旧案可能被同案人牵出来（意外落马）', () => {
+    setRandomSource(() => 0.0001)
+    const g = newState({ name: '周正', sex: '男', age: 45, major: '法学', job: '公务员' })
+    g.discipline.risk = 5
+    g.discipline.案件 = [{ 年: g.date.y - 2, 事由: '受贿', 金额: 2_000_000 }]
+    disciplineTick(g)
+    expect(g.pendingEvent?.标题).toBe('纪委监委找你谈话')
+    expect(g.log.some((x) => x.h === '意外')).toBe(true)
+  })
+
+  it('退出现职后旧案风险逐年降温，存在平安着陆空间', () => {
+    setRandomSource(mulberry32(11))
+    const g = newState({ name: '周正', sex: '男', age: 58, major: '法学', job: '公务员' })
+    g.discipline.案件 = [{ 年: g.date.y, 事由: '受贿', 金额: 2_000_000 }]
+    const 在职底 = 案件风险底(g)
+    expect(在职底).toBeGreaterThan(10)
+    g.flags['二线'] = true
+    g.discipline.离职年 = g.date.y
+    g.date.y += 5
+    expect(案件风险底(g)).toBeLessThan(在职底 * 0.5)
+    expect(案件风险底(g)).toBeGreaterThanOrEqual(1)
+  })
+
   it('doPromote 成功后同步题库与圈子', () => {
     setRandomSource(mulberry32(77))
     const g = newState({ name: '程亦然', sex: '男', age: 28, major: '法学', job: '公务员' })

@@ -19,7 +19,9 @@ function mulberry32(seed: number) {
   }
 }
 
-type 策略 = '清廉' | '贪腐'
+type 策略 = '清廉' | '贪腐' | '贪后收手'
+
+const 该收手了 = (g: GameState) => g.p.年龄 >= 55 || g.discipline.risk >= 60
 
 /* 清廉：综合收益最优 */
 function 事件最优(g: GameState, ev: GameEvent): number {
@@ -64,7 +66,11 @@ function 贪腐最优(g: GameState, ev: GameEvent): number {
 }
 
 function 选事件(g: GameState, ev: GameEvent, 策略: 策略): number {
-  if (策略 === '贪腐' && ev.标题 === '纪委监委找你谈话') return 2
+  if (策略 === '贪后收手' && 该收手了(g)) {
+    if (ev.标题 === '纪委监委找你谈话') return 0
+    return 事件最优(g, ev)
+  }
+  if (策略 !== '清廉' && ev.标题 === '纪委监委找你谈话') return 2
   return 策略 === '清廉' ? 事件最优(g, ev) : 贪腐最优(g, ev)
 }
 
@@ -72,7 +78,7 @@ function 选事件(g: GameState, ev: GameEvent, 策略: 策略): number {
 function 选岗(g: GameState, 策略: 策略): number {
   const list = g.pendingPositions || []
   if (!list.length) return 0
-  if (策略 === '贪腐') {
+  if (策略 !== '清廉' && !(策略 === '贪后收手' && 该收手了(g))) {
     const k = list.findIndex((p) => /住建|交通|发改|自然资源|规划|城建|城管|财政|市场监管/.test(p.名))
     if (k >= 0) return k
   }
@@ -239,6 +245,8 @@ it('全部职业人生模拟（含公务员贪腐打法）', () => {
   const 配置s: 模拟配置[] = [
     { 姓名: '陆承宇', 职业: '公务员', 专业: '法学', 种子: 2026, 策略: '清廉' },
     { 姓名: '周明远', 职业: '公务员', 专业: '土木工程', 种子: 2027, 策略: '贪腐' },
+    { 姓名: '孙世坤', 职业: '公务员', 专业: '经济学', 种子: 2034, 策略: '贪腐' },
+    { 姓名: '曹得志', 职业: '公务员', 专业: '工程管理', 种子: 2035, 策略: '贪后收手' },
     { 姓名: '许砚舟', 职业: '事业单位', 专业: '土木工程', 种子: 2028, 策略: '清廉' },
     { 姓名: '林北辰', 职业: '国企', 专业: '会计学', 种子: 2029, 策略: '清廉' },
     { 姓名: '沈亦寒', 职业: '企业', 专业: '工商管理', 种子: 2030, 策略: '清廉' },
@@ -275,6 +283,7 @@ it('全部职业人生模拟（含公务员贪腐打法）', () => {
     expect(r.结局.length).toBeGreaterThan(2)
     expect(r.详情.length).toBeGreaterThan(12)
   }
-  const 贪腐 = 结果s.find((r) => r.配置.策略 === '贪腐')!
-  expect(贪腐.结局).toContain('落马')
+  const 贪官s = 结果s.filter((r) => r.配置.策略 !== '清廉')
+  expect(贪官s.length).toBeGreaterThanOrEqual(3)
+  expect(贪官s.some((r) => r.结局.includes('落马'))).toBe(true)
 }, 120000)

@@ -1,7 +1,7 @@
 import type { GameEvent, GameState } from './types'
 import { clamp, fmt } from '../utils/format'
 import { chance, pick, rnd } from './rng'
-import { applyEffect } from './effects'
+import { applyEffect, 记怨 } from './effects'
 import { 条线Of, retireAge } from './selectors'
 import { makeNpc } from './newGame'
 
@@ -55,7 +55,7 @@ export function makeEvent(g: GameState): GameEvent {
     选项: [
       {
         text: '当场拒绝，并把话说明白', hint: '关系会冷，但界线清楚',
-        resolve(g2) { applyEffect(g2, { rel: { oldclass: { 信任: -6, 好感度: 10, 利益: -5 } }, 道德: 5, 声望: 2 }); return '你把话说得很直。蔡成功脸上挂不住，散场时只拍了拍你的肩：“行，我懂了。”\n此后半年，他没主动联系过你。' },
+        resolve(g2) { applyEffect(g2, { rel: { oldclass: { 信任: -6, 好感度: 10, 利益: -5 } }, 道德: 5, 声望: 2 }); 记怨(g2); return '你把话说得很直。蔡成功脸上挂不住，散场时只拍了拍你的肩：“行，我懂了。”\n此后半年，他没主动联系过你。' },
       },
       {
         text: '不置可否，只说“我不分管这块”', hint: '模糊处理，谁也不得罪',
@@ -273,6 +273,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '第二天一早把卡交到单位纪检组', hint: '主动上交，留下书面记录',
           resolve(g2) {
             applyEffect(g2, { 道德: 5, 声望: 4, 廉政风险: -6, 上司: 1 })
+            记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：主动上交${工程 ? '工程承包方' : '合作方'}所送财物。`)
             return '你把卡交到纪检组，做了登记。纪检组长看了你一眼，说：“你这一步走对了。”\n这件事后来被写进了单位的廉政教育材料。'
           },
@@ -284,6 +285,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
             g2.cash += 金
             g2.discipline.案件.push({ 年: g2.date.y, 事由, 金额: 金 })
             applyEffect(g2, { 道德: -9, 声望: -3, 廉政风险: Math.round(7 + 金 / 120000 * 6) })
+            记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：${事由} ${fmt(金)} 元。`)
             return `你收下了 ${fmt(金)} 元。\n钱转进了一张不常用的卡里。你告诉自己这是行业惯例——但审计要查的，恰恰就是“惯例”。`
           },
@@ -292,6 +294,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '不收，但答应以后多照顾他的项目', hint: '不拿钱，拿承诺',
           resolve(g2) {
             applyEffect(g2, { 道德: -3, 廉政风险: 5, 人脉: 3 })
+            记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：向${工程 ? '承包方' : '合作方'}作出倾向性承诺。`)
             return '你没有收钱，但答应了“以后有事说话”。这句话不用写进账目，却同样会被记在别人心里。'
           },
@@ -310,6 +313,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
           text: '当场退回去，并且把这件事记进廉政记录', hint: '把钱推回去，也把人推远了',
           resolve(g2) {
             applyEffect(g2, { 道德: 4, 声望: 3, 人脉: -3, 廉政风险: -4 })
+            记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：主动退还管理服务对象所送礼金 ${fmt(量(20000))} 元，并登记报告。`)
             return '你把纸袋塞回他手里，话说得很客气，态度很硬。他脸上挂不住，此后逢年过节再没来过。\n你在廉政记录上写了这件事——将来若有人问起，这是你的清白。'
           },
@@ -356,6 +360,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
             g2.cash += 金
             g2.discipline.案件.push({ 年: g2.date.y, 事由: '在干部选拔任用中收受财物', 金额: 金 })
             applyEffect(g2, { 道德: -12, 声望: -4, 廉政风险: Math.round(9 + 金 / 100000 * 6), 人脉: 4 })
+            记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：在干部选拔任用中收受财物 ${fmt(金)} 元。`)
             return `你收下了第一笔 ${fmt(金)} 元。\n这种事一旦开了口子，就不再是“帮个忙”，而是把柄。`
           },
@@ -373,7 +378,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
       选项: [
         {
           text: '拒绝，并提醒对方这属于利益输送', hint: '法律风险最大的诱惑之一',
-          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 3, 廉政风险: -4 }); return '你直接告诉他：这种“干股”一旦出问题，双方都要担责。他一愣，说“那就算了”。' },
+          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 3, 廉政风险: -4 }); 记怨(g2); return '你直接告诉他：这种“干股”一旦出问题，双方都要担责。他一愣，说“那就算了”。' },
         },
         {
           text: '接受，让配偶出面持股', hint: '以为绕了一层就安全',
@@ -461,7 +466,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
       选项: [
         {
           text: '当场拒绝，并向组织报备这条招呼', hint: '把话挑明，留下记录',
-          resolve(g2) { applyEffect(g2, { 道德: 4, 声望: 3, 廉政风险: -4 }); g2.discipline.records.unshift(`${g2.date.y}年：拒绝并报备招投标请托。`); return '你回绝得很干脆，并把情况作了报备。评标照常进行，没人再敢递话。' },
+          resolve(g2) { applyEffect(g2, { 道德: 4, 声望: 3, 廉政风险: -4 }); 记怨(g2); g2.discipline.records.unshift(`${g2.date.y}年：拒绝并报备招投标请托。`); return '你回绝得很干脆，并把情况作了报备。评标照常进行，没人再敢递话。' },
         },
         {
           text: '不表态，评标时“按规矩办”', hint: '看似中立，实则留下悬念',
@@ -487,7 +492,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
       选项: [
         {
           text: '依法依规处理，该罚的罚、该改的改', hint: '得罪人，但案卷干净',
-          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 3, 廉政风险: -3 }); return '你按条款下了整改通知。企业负责人脸色不好看，但没人再说你什么。' },
+          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 3, 廉政风险: -3 }); 记怨(g2); return '你按条款下了整改通知。企业负责人脸色不好看，但没人再说你什么。' },
         },
         {
           text: '以整改为主，暂不处罚', hint: '执法温度与规则的边界',
@@ -517,7 +522,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
         },
         {
           text: '口头答应优先办，等他“表示”', hint: '窗口一旦议价，就是寻租',
-          resolve(g2) { applyEffect(g2, { 道德: -3, 廉政风险: 5 }); return '你没有明说，但对方读懂了暗示。事情办得很快，风声也传得很快。' },
+          resolve(g2) { applyEffect(g2, { 道德: -3, 廉政风险: 5 }); 记怨(g2); return '你没有明说，但对方读懂了暗示。事情办得很快，风声也传得很快。' },
         },
         {
           text: '收下加急费，插队办理', hint: '审批权不是提款机',
@@ -565,7 +570,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
       选项: [
         {
           text: '明确拒绝，并说明红线不可触碰', hint: '这一条线一旦破了就是大事',
-          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 4, 廉政风险: -5 }); return '你把政策文件摊在桌上，逐条讲清。对方悻悻而去，此后再没提过。' },
+          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 4, 廉政风险: -5 }); 记怨(g2); return '你把政策文件摊在桌上，逐条讲清。对方悻悻而去，此后再没提过。' },
         },
         {
           text: '不上会，先以“研究”名义拖着', hint: '拖也是一种表态',
@@ -578,6 +583,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
             g2.cash += 金
             g2.discipline.案件.push({ 年: g2.date.y, 事由: '在土地规划调整中收受开发商财物', 金额: 金 })
             applyEffect(g2, { 道德: -12, 声望: -6, 廉政风险: Math.round(12 + 金 / 200000 * 6) })
+            记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：在土地规划调整中收受开发商财物 ${fmt(金)} 元。`)
             return `指标调了，钱也收了。\n一年后项目被卫星图斑比对出来，倒查直接追到了你的签批件。`
           },
@@ -591,7 +597,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
       选项: [
         {
           text: '当面退回，并如实登记报告', hint: '干部工作最忌留下口子',
-          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 4, 廉政风险: -4 }); g2.discipline.records.unshift(`${g2.date.y}年：退回干部调整请托财物并登记。`); return '你追出去把信封还了回去，并在记录里写清了经过。' },
+          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 4, 廉政风险: -4 }); 记怨(g2); g2.discipline.records.unshift(`${g2.date.y}年：退回干部调整请托财物并登记。`); return '你追出去把信封还了回去，并在记录里写清了经过。' },
         },
         {
           text: '退回去，但不留记录', hint: '退了钱，未必退了人情',
@@ -604,6 +610,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
             g2.cash += 金
             g2.discipline.案件.push({ 年: g2.date.y, 事由: '在干部选拔任用中收受财物', 金额: 金 })
             applyEffect(g2, { 道德: -13, 声望: -6, 廉政风险: Math.round(11 + 金 / 120000 * 6) })
+            记怨(g2)
             g2.discipline.records.unshift(`${g2.date.y}年：在干部选拔任用中收受财物 ${fmt(金)} 元。`)
             return `推荐意见签了，信封也留了。\n这次调整后来被举报，倒查时第一个被调取的就是你的签批记录。`
           },
@@ -617,7 +624,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
       选项: [
         {
           text: '只收亲友礼金，其余逐笔退回并报告', hint: '办事也要守规矩',
-          resolve(g2) { applyEffect(g2, { 道德: 4, 声望: 3, 廉政风险: -3, rel: { family: { 好感度: -3 } } }); g2.discipline.records.unshift(`${g2.date.y}年：清退管理和服务对象礼金并报告。`); return '你把不该收的一笔笔退了回去，也得罪了一些人。账本上留了底。' },
+          resolve(g2) { applyEffect(g2, { 道德: 4, 声望: 3, 廉政风险: -3, rel: { family: { 好感度: -3 } } }); 记怨(g2); g2.discipline.records.unshift(`${g2.date.y}年：清退管理和服务对象礼金并报告。`); return '你把不该收的一笔笔退了回去，也得罪了一些人。账本上留了底。' },
         },
         {
           text: '先收下，以后再还人情', hint: '人情账最难还',
@@ -643,7 +650,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
       选项: [
         {
           text: '明确制止，并向组织如实报告', hint: '配偶经商办企业有明确要求',
-          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 3, 廉政风险: -5, rel: { family: { 好感度: -5 } } }); g2.discipline.records.unshift(`${g2.date.y}年：制止亲属利用本人影响经商并报告。`); return '你把利害关系讲透，也按程序作了报告。家里为此冷了一阵。' },
+          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 3, 廉政风险: -5, rel: { family: { 好感度: -5 } } }); 记怨(g2); g2.discipline.records.unshift(`${g2.date.y}年：制止亲属利用本人影响经商并报告。`); return '你把利害关系讲透，也按程序作了报告。家里为此冷了一阵。' },
         },
         {
           text: '不参与、不过问，当作不知道', hint: '默许就是同意',
@@ -669,7 +676,7 @@ export function make腐败事件(g: GameState): GameEvent | null {
       选项: [
         {
           text: '拒绝这种“借款”，保持正常往来边界', hint: '形式合法不代表实质干净',
-          resolve(g2) { applyEffect(g2, { 道德: 4, 声望: 3, 廉政风险: -3 }); return '你没有收这笔钱。对方笑了笑，说“懂规矩”。' },
+          resolve(g2) { applyEffect(g2, { 道德: 4, 声望: 3, 廉政风险: -3 }); 记怨(g2); return '你没有收这笔钱。对方笑了笑，说“懂规矩”。' },
         },
         {
           text: '按银行贷款利率收息，写借条', hint: '压低利息也改变不了性质',
@@ -695,11 +702,11 @@ export function make腐败事件(g: GameState): GameEvent | null {
       选项: [
         {
           text: '拒绝，站好最后一班岗', hint: '平稳落地比什么都重要',
-          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 4, 廉政风险: -5 }); return '你婉拒了，也把交接清单整理得清清楚楚。' },
+          resolve(g2) { applyEffect(g2, { 道德: 5, 声望: 4, 廉政风险: -5 }); 记怨(g2); return '你婉拒了，也把交接清单整理得清清楚楚。' },
         },
         {
           text: '不答应也不拒绝，拖到退休', hint: '拖不等于安全',
-          resolve(g2) { applyEffect(g2, { 道德: -2, 廉政风险: 4 }); return '你没有签字，也没有明确回绝。对方把这份“暧昧”记了下来。' },
+          resolve(g2) { applyEffect(g2, { 道德: -2, 廉政风险: 4 }); 记怨(g2); return '你没有签字，也没有明确回绝。对方把这份“暧昧”记了下来。' },
         },
         {
           text: '收下，反正马上就退休了', hint: '离任审计专查最后一段',
