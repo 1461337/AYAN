@@ -1060,7 +1060,13 @@ export function makeRetiredEvent(g: GameState): GameEvent {
         },
         {
           text: '由老部下操办，礼金照收', hint: '热闹背后，账还没结',
-          resolve(g2) { applyEffect(g2, { cash: rnd(20000, 60000), 道德: -5, 声望: -6, 廉政风险: rnd(10, 18) }); return '寿宴办得很风光。第二年，一位老部下被查，纪委顺着礼金名单找到了你。' },
+          resolve(g2) {
+            const 公职 = (['公务员', '事业单位', '国企'] as string[]).includes(g2.p.职业)
+            applyEffect(g2, { cash: rnd(20000, 60000), 道德: -5, 声望: -6, 廉政风险: 公职 ? rnd(10, 18) : 0 })
+            return 公职
+              ? '寿宴办得很风光。第二年，一位老部下被查，纪委顺着礼金名单找到了你。'
+              : '寿宴办得很风光。后来有人把当年收礼的事传了出去，老同事看你的眼神变了。'
+          },
         },
       ],
     },

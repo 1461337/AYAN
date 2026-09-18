@@ -458,7 +458,7 @@ export function 晋升职位池(g: GameState, idx: number): PoolPos[] {
 /* 由岗位名推断所属机构（用于晋升后同步单位） */
 export function 机构Of(名: string, 城市: string, 平台: PlatformName, 职业: Job): string {
   if (职业 !== '公务员') {
-    const m = 名.match(/^(.+?(?:中心|学院|学校|中学|小学|医院|卫生院|日报社|电视台|记者站|融媒体中心|集团|公司|企业|研究院|设计院|图书馆|博物馆|文化馆|服务中心|站))/)
+    const m = 名.match(/^(.+?(?:医院|卫生院|融媒体中心|服务中心|疾控中心|中心(?!医院)|学院|学校|中学|小学|日报社|电视台|记者站|集团|公司|企业|研究院|设计院|图书馆|博物馆|文化馆|站))/)
     return m ? m[1] : 名
   }
   const 条 = 条线OfLocal(名)

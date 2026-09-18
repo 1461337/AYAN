@@ -13,7 +13,7 @@ import { SHIXI } from '../data/shixi'
 import { SHIXI_EXTRA } from '../data/shixiExtra'
 import { 政治本地职位, 平台序, 机构Of } from './positions'
 import { 职务阶梯 } from '../data/static'
-import type { GameState, Job } from './types'
+import type { AdvicePosition, GameState, Job } from './types'
 
 function mulberry32(seed: number) {
   let a = seed
@@ -681,6 +681,28 @@ describe('本地化晋升', () => {
     g.date.y += 5
     expect(案件风险底(g)).toBeLessThan(在职底 * 0.5)
     expect(案件风险底(g)).toBeGreaterThanOrEqual(1)
+  })
+
+  it('非公务员机构识别优先匹配完整后缀（市中心医院）', () => {
+    expect(机构Of('市中心医院儿科主任', '京州市', '市级', '医生')).toBe('市中心医院')
+    expect(机构Of('市融媒体中心摄影部副主任', '京州市', '市级', '记者')).toBe('市融媒体中心')
+    expect(机构Of('乡镇综合服务中心业务科科员', '岩台县', '乡镇级', '事业单位')).toBe('乡镇综合服务中心')
+    expect(机构Of('市第二人民医院外科主任', '林城市', '市级', '医生')).toBe('市第二人民医院')
+  })
+
+  it('人大/政协正职属二线不得再提拔，兼任不算', () => {
+    setRandomSource(mulberry32(83))
+    const mk = (名: string, 二线: boolean): AdvicePosition => ({
+      名, sc: 0, 高配: false, 党政: false, 二线, 实权: false, 平台: '县级', 级别: '县处级正职', 条线: '人大政协', 理由: [],
+    })
+    const g1 = newState({ name: '周正', sex: '男', age: 45, major: '法学', job: '公务员' })
+    g1.rankIdx = 2
+    settlePosition(g1, mk('县委书记兼县人大常委会主任', false))
+    expect(g1.flags['二线']).toBeFalsy()
+    const g2 = newState({ name: '周正', sex: '男', age: 52, major: '法学', job: '公务员' })
+    g2.rankIdx = 3
+    settlePosition(g2, mk('县人大常委会主任', true))
+    expect(g2.flags['二线']).toBe(true)
   })
 
   it('doPromote 成功后同步题库与圈子', () => {

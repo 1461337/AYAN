@@ -393,7 +393,9 @@ export function settlePosition(g: GameState, pos: AdvicePosition): void {
       }
     }
   }
-  if (政治 && 是二线(名) && !g.flags['二线']) {
+  // 兼任岗位（如「县委书记兼县人大常委会主任」）不算转二线
+  const 兼任 = /[、]|兼/.test(名)
+  if (政治 && !兼任 && 是二线(名) && !g.flags['二线']) {
     g.flags['二线'] = true
     g.p.声望 = clamp(g.p.声望 + 3, 0, 100)
     g.p.健康 = clamp(g.p.健康 + 4, 0, 100)
