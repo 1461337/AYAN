@@ -287,9 +287,11 @@ export function endYear(g: GameState): void {
     } else if (chance(0.35 + 超龄 * 0.12)) {
       const 现任 = g.positions[0]
       const 前缀 = g.p.平台 === '省级' ? '省' : g.p.城市
-      const 二线候选 = g.rankIdx >= 6
-        ? ['全国人大常委会委员', '全国政协常委', '全国人大专门委员会副主任委员', '全国政协专门委员会副主任']
-        : ['人大常委会副主任', '政协副主席', '政协秘书长', '政府参事'].map((n) => `${前缀}${n}`)
+      const 二线候选 = g.rankIdx >= 8
+        ? ['全国人大常委会副委员长', '全国政协副主席']
+        : g.rankIdx >= 7
+          ? ['全国人大常委会委员', '全国政协常委', '全国人大专门委员会副主任委员', '全国政协专门委员会副主任']
+          : ['人大常委会副主任', '政协副主席', '政协秘书长', '政府参事'].map((n) => `${前缀}${n}`)
       const 二线名 = 二线候选[Math.floor(Math.random() * 二线候选.length)]
       const 级别名 = 现任 ? 现任.职级 : rankTitle(g)
       g.positions.unshift({ 年: g.date.y, 职级: 级别名, 岗位: 二线名, 条线: '综合' })

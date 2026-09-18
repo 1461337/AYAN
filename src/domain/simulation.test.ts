@@ -6,7 +6,7 @@ import { 快照, 案件风险底 } from './effects'
 import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
 import { genPositions, doPromote, settlePosition, 向上社交 } from './promotion'
 import { nextRankInfo } from './selectors'
-import { disciplineTick } from './discipline'
+import { disciplineTick, 处置结果 } from './discipline'
 import { makeEvent, make腐败事件, makeRetiredEvent, npcTick } from './events'
 import { makeShixiOrder } from './quiz'
 import { 政治本地职位, 平台序, 机构Of } from './positions'
@@ -239,6 +239,10 @@ describe('逻辑一致性', () => {
     }
     const 名s = g.npcs.map((n) => n.姓名)
     expect(new Set(名s).size).toBe(名s.length)
+    for (const l of g.log.filter((x) => x.h === '人脉更替')) {
+      const m = l.d.match(/^(.+?)到龄退居二线，(.+?)接替/)
+      if (m) expect(m[1]).not.toBe(m[2])
+    }
   })
 
   it('学历不足会阻止考察并写入轨迹', () => {
@@ -583,6 +587,37 @@ describe('本地化晋升', () => {
       const names = 政治本地职位(平台, idx, '京州市').map((p) => p.名).join('|')
       expect(names).not.toContain(禁)
     }
+  })
+
+  it('医生职称晋升有年资硬杠杠，不能被破格压成一年一级', () => {
+    setRandomSource(mulberry32(5))
+    const g = newState({ name: '裴景行', sex: '男', age: 30, major: '临床医学', job: '医生' })
+    g.rankIdx = 1
+    g.positions = [{ 年: g.date.y, 职级: '主治医师', 岗位: '县人民医院内科主治医师', 条线: '卫健' }]
+    g.zhengji = 999999
+    g.p.能力 = 100
+    g.p.道德 = 100
+    g.p.上司 = 100
+    g.p.人脉 = 100
+    g.p.健康 = 95
+    g.p2.任职年 = 1
+    expect(nextRankInfo(g).can).toBe(false)
+    expect(nextRankInfo(g).min).toBeGreaterThanOrEqual(5)
+    g.p2.任职年 = 4
+    expect(nextRankInfo(g).can).toBe(true)
+  })
+
+  it('移送司法的贪官会被追缴违法所得', () => {
+    setRandomSource(() => 0.5)
+    const g = newState({ name: '周明远', sex: '男', age: 45, major: '土木工程', job: '公务员' })
+    g.rankIdx = 5
+    g.cash = 5_000_000
+    g.discipline.risk = 90
+    g.discipline.案件 = [{ 年: g.date.y, 事由: '受贿', 金额: 3_000_000 }]
+    处置结果(g, 1)
+    expect(g.discipline.移送).toBe(true)
+    expect(g.over).toBe(true)
+    expect(g.cash).toBe(2_000_000)
   })
 
   it('doPromote 成功后同步题库与圈子', () => {

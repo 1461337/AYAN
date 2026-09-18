@@ -18,6 +18,22 @@ export interface PromoteResult {
   msg?: string
 }
 
+/* 判断两个单位名是否属于同一系统（医院/学校/科研/文化/媒体/企业），用于非公务员调岗 */
+function 系统(名: string): string {
+  if (/医院|卫生院|疾控|妇幼|中医/.test(名)) return '医院'
+  if (/学校|中学|小学|大学|学院|幼儿园/.test(名)) return '学校'
+  if (/设计院|研究院|科学院|研究所/.test(名)) return '科研'
+  if (/博物馆|图书馆|文化馆|美术馆/.test(名)) return '文化'
+  if (/日报|晚报|电视台|通讯社|媒体|记者站|融媒体/.test(名)) return '媒体'
+  if (/集团|公司|企业/.test(名)) return '企业'
+  return ''
+}
+
+function 同系统(a: string, b: string): boolean {
+  const ka = 系统(a)
+  return !!ka && ka === 系统(b)
+}
+
 export function promoteRate(g: GameState, idx: number): number {
   const L = ladder(g)
   const def = L[idx]
@@ -265,6 +281,7 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
       if (entry.本地) sc += 2
       if (g.p.专业匹配度 >= 90) { sc += 2 }
       if (g.p.单位 && 名.startsWith(g.p.单位)) { sc += 3; 理由.push('留在原单位') }
+      else if (同系统(g.p.单位, 名)) { sc += 5; 理由.push('留在本系统') }
     }
     return {
       名, sc, 高配, 党政, 二线, 实权, 平台: 岗台, 级别: def.名, 条线: 条,

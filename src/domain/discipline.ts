@@ -23,33 +23,43 @@ export function 处置结果(g: GameState, 从轻: -1 | 0 | 1): string {
   } else if (档 === 2) {
     g.p2.处分++
     g.discipline.已查金额 = (g.discipline.已查金额 || 0) + 金额
+    const 追缴 = Math.min(g.cash, 金额)
+    g.cash -= 追缴
     g.discipline.案件 = []
     g.discipline.risk = Math.min(g.discipline.risk, 18)
     g.discipline.影响期 = g.date.y + 2
     applyEffect(g, { 声望: -14, 上司: -12, 廉政风险: -20, 道德: -3 })
     const 处 = pick(['党内警告', '党内严重警告', '记过', '记大过'])
-    g.discipline.records.unshift(`${g.date.y}年：受到${处}处分。`)
+    g.discipline.records.unshift(`${g.date.y}年：受到${处}处分${追缴 > 0 ? `，收缴违纪所得 ${fmt(追缴)} 元` : ''}。`)
     文本 = `经市纪委常委会会议研究并报市委批准，决定给予你${处}处分。\n处分决定在单位全体干部大会上宣读。你坐在第一排，从头到尾没有抬头。`
+    if (追缴 > 0) 文本 += `\n违规所得 ${fmt(追缴)} 元被收缴。`
   } else if (档 === 3) {
     g.p2.处分++
     g.discipline.已查金额 = (g.discipline.已查金额 || 0) + 金额
+    const 追缴 = Math.min(g.cash, 金额)
+    g.cash -= 追缴
     g.discipline.案件 = []
     g.discipline.risk = Math.min(g.discipline.risk, 12)
     g.rankIdx = Math.max(-1, g.rankIdx - 2)
     g.p2.任职年 = 0
     const 处 = pick(['撤销党内职务', '开除党籍、政务撤职'])
-    g.discipline.records.unshift(`${g.date.y}年：被立案审查调查，给予${处}处分，免去现职。`)
+    g.discipline.records.unshift(`${g.date.y}年：被立案审查调查，给予${处}处分，免去现职${追缴 > 0 ? `，追缴违纪所得 ${fmt(追缴)} 元` : ''}。`)
     applyEffect(g, { 声望: -30, 上司: -25, 健康: -10, 道德: -4 })
     文本 = `经省纪委监委立案审查调查，决定给予你${处}处分，并免去现任职务。\n通报在省里发了通稿——严重违纪违法。你从办公室搬走的时候，只带走了两个纸箱。`
+    if (追缴 > 0) 文本 += `\n你收过的钱，一笔一笔被追缴，合计 ${fmt(追缴)} 元。`
   } else {
     g.p2.处分++
+    g.discipline.已查金额 = (g.discipline.已查金额 || 0) + 金额
+    const 追缴 = Math.min(g.cash, 金额)
+    g.cash -= 追缴
     g.discipline.移送 = true
     g.over = true
     g.status = '死亡'
     g.endYear = g.date.y
     applyEffect(g, { 声望: -45, 上司: -30, 健康: -20 })
-    g.discipline.records.unshift(`${g.date.y}年：严重违纪违法，被开除党籍、开除公职，涉嫌犯罪问题移送检察机关依法审查起诉。`)
+    g.discipline.records.unshift(`${g.date.y}年：严重违纪违法，被开除党籍、开除公职，涉嫌犯罪问题移送检察机关依法审查起诉，没收违法所得 ${fmt(追缴)} 元。`)
     文本 = '经省纪委监委立案审查调查，查明你利用职务便利为他人谋取利益，非法收受财物数额特别巨大。\n决定给予你开除党籍、开除公职处分，涉嫌犯罪问题移送检察机关依法审查起诉。\n\n你被带走的那天，办公室的灯还亮着。'
+    if (追缴 > 0) 文本 += `\n违法所得 ${fmt(追缴)} 元被依法没收。半生经营，一纸清单。`
   }
   g.log.unshift({ t: `${g.date.y}年`, h: '纪律审查', kind: 'bad', d: 文本 })
   return 文本

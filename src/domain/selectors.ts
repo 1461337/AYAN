@@ -20,8 +20,19 @@ export function fitOf(major: string, job: string): number {
 export function ladder(g: GameState): RankDef[] {
   if (g.p.职业 === '公务员') return 职务阶梯
   const L = LADDERS[g.p.职业]
-  if (L) return mkLadder(L.map((x) => x[0]), L[0][1])
-  return mkLadder(LADDERS['事业单位'].map((x) => x[0]), LADDERS['事业单位'][0][1])
+  const base = L || LADDERS['事业单位']
+  const 基础 = mkLadder(base.map((x) => x[0]), base[0][1])
+  const 年资 = 职业最低年[g.p.职业]
+  if (!年资) return 基础
+  return 基础.map((d, i) => (年资[i] ? { ...d, 最低年: 年资[i] } : d))
+}
+
+/* 职称/职务年资下限：医生、教师等专业序列不该两三年一级 */
+const 职业最低年: Record<string, number[]> = {
+  '医生': [3, 5, 5, 5, 3, 4],
+  '教师': [3, 4, 5, 3, 3, 4],
+  '记者': [3, 2, 3, 3, 3, 4, 4],
+  '事业单位': [3, 2, 3, 4, 4, 4],
 }
 
 export function 条线Of(名: string | undefined | null): string {
@@ -181,8 +192,12 @@ export function earlyYears(g: GameState, def: RankDef | null | undefined): numbe
     if (x.已达60) c60++
     if (x.已达20) c20++
   })
-  if (c60 >= 4) return 4
-  if (c20 >= 4) return 2
+  // 破格幅度：职称序列（教师/医生）与事业单位年资是硬杠杠，管理/企业序列可略快
+  const 上限 = g.p.职业 === '教师' || g.p.职业 === '医生' || g.p.职业 === '事业单位'
+    ? 1
+    : g.p.职业 === '公务员' ? 4 : 2
+  if (c60 >= 4) return Math.min(上限, 4)
+  if (c20 >= 4) return Math.min(上限, 2)
   return 0
 }
 

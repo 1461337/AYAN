@@ -499,7 +499,10 @@ export function 机构Of(名: string, 城市: string, 平台: PlatformName, 职�
       if (省) return 党 ? '省委' : '省政府'
       return 党 ? `${城市}委` : `${城市}政府`
     }
-    default: return 省 ? '省政府办公厅' : `${城市}政府办公室`
+    default:
+      // 党委系统的综合职务（副书记、常委、秘书长等）归党委，而非政府办
+      if (/书记|常委|秘书长|党委/.test(名)) return 党委前缀
+      return 省 ? '省政府办公厅' : `${城市}政府办公室`
   }
 }
 

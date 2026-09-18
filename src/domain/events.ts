@@ -866,7 +866,12 @@ export function npcTick(g: GameState): void {
     n.年龄++
     if (n.年龄 >= 62 && chance(0.22)) {
       const 旧名 = n.姓名
-      Object.assign(n, makeNpc(g, n.id))
+      let npc = makeNpc(g, n.id)
+      let guard = 0
+      while (guard++ < 20 && (npc.姓名 === 旧名 || g.npcs.some((o) => o.id !== n.id && o.姓名 === npc.姓名))) {
+        npc = makeNpc(g, n.id)
+      }
+      Object.assign(n, npc)
       g.log.unshift({ t: `${g.date.y}年`, h: '人脉更替', kind: '', d: `${旧名}到龄退居二线，${n.姓名}接替了他的位置。关系网总要跟着年份更新。` })
       continue
     }
