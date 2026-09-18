@@ -246,6 +246,11 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
       } else sc -= 11
     } else if (d >= 2) sc -= 14
     else sc -= 4
+    // 下派基层补主官经历
+    if (entry.下派) {
+      if (!有基层经历) { sc += 9; 理由.push('组织安排下派基层，补主官经历') }
+      else sc -= 10
+    }
 
     if (entry.本地) { sc += 3 }
     if (政治) {
@@ -295,7 +300,7 @@ export function genPositions(g: GameState, idx: number): AdvicePosition[] {
     }
     return {
       名, sc, 高配, 党政, 二线, 实权, 平台: 岗台, 级别: def.名, 条线: 条,
-      序号: 序, 城市: entry.城市, 本地: entry.本地,
+      序号: 序, 城市: entry.城市, 本地: entry.本地, 下派: entry.下派,
       理由: 理由.length ? Array.from(new Set(理由)).slice(0, 1) : ['组织统一安排'],
     }
   })
@@ -397,12 +402,21 @@ export function settlePosition(g: GameState, pos: AdvicePosition): void {
     })
   }
   if (新序 !== 旧序) {
+    const 上行 = 新序 > 旧序
     g.p.平台 = 平台FromCity(新序, g.p.城市)
-    g.p.上调次数 = (g.p.上调次数 || 0) + 1
-    g.log.unshift({
-      t: `${g.date.y}年`, h: '平台调整', kind: 'good',
-      d: `你从${序平台名(旧序)}机关调到${序平台名(新序)}机关任职，站到了更高的平台上。`,
-    })
+    if (上行) {
+      g.p.上调次数 = (g.p.上调次数 || 0) + 1
+      g.log.unshift({
+        t: `${g.date.y}年`, h: '平台调整', kind: 'good',
+        d: `你从${序平台名(旧序)}机关调到${序平台名(新序)}机关任职，站到了更高的平台上。`,
+      })
+    } else {
+      g.flags['下派'] = true
+      g.log.unshift({
+        t: `${g.date.y}年`, h: '下派基层', kind: 'good',
+        d: `组织安排你从${序平台名(旧序)}机关下派到${序平台名(新序)}任职，补基层主官经历。这一级台阶，迟早要补。`,
+      })
+    }
     if (!政治) {
       const 城市s = 平台表[序平台名(新序) as keyof typeof 平台表]?.城市
       if (城市s && 城市s.length) {

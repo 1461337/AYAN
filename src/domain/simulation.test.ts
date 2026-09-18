@@ -726,6 +726,43 @@ describe('本地化晋升', () => {
     expect(越层岗).toMatch(/三甲|二甲/)
   })
 
+  it('机构映射区分党委宣传与政府文旅、组织与人社', () => {
+    expect(机构Of('省委宣传部副部长', '京州市', '省级', '公务员')).toBe('省委宣传部')
+    expect(机构Of('省委常委、宣传部部长兼省委网信办主任', '京州市', '省级', '公务员')).toBe('省委宣传部')
+    expect(机构Of('省文化和旅游厅厅长', '京州市', '省级', '公务员')).toBe('省文化和旅游厅')
+    expect(机构Of('市文化和旅游局局长', '林城市', '市级', '公务员')).toBe('林城市文化和旅游局')
+    expect(机构Of('市人力资源和社会保障局局长', '林城市', '市级', '公务员')).toBe('林城市人力资源和社会保障局')
+    expect(机构Of('省委组织部副部长', '京州市', '省级', '公务员')).toBe('省委组织部')
+  })
+
+  it('高平台干部缺基层经历会出现下派县区主官岗位', () => {
+    setRandomSource(mulberry32(89))
+    const g = newState({ name: '周正', sex: '男', age: 34, major: '法学', job: '公务员' })
+    g.p.平台 = '省级'
+    g.p.城市 = '京州市'
+    g.rankIdx = 2
+    g.positions = [{ 年: g.date.y, 职级: '县处级副职', 岗位: '省公安厅副处长', 条线: '公安' }]
+    const pool = genPositions(g, 3)
+    const 下派 = pool.filter((p) => p.下派)
+    expect(下派.length).toBeGreaterThan(0)
+    expect(下派.some((p) => /县委书记|县长/.test(p.名))).toBe(true)
+    expect(下派[0].理由.join()).toContain('下派')
+    g.flags['基层经历'] = true
+    expect(genPositions(g, 3).some((p) => p.下派)).toBe(false)
+  })
+
+  it('年度总结能识别平级调整', () => {
+    setRandomSource(mulberry32(91))
+    const g = newState({ name: '周正', sex: '男', age: 40, major: '法学', job: '公务员' })
+    g.rankIdx = 3
+    g.positions = [{ 年: g.date.y - 1, 职级: '县处级正职', 岗位: '林城市财政局局长', 条线: '财政' }]
+    g._年初快照 = 快照(g)
+    g.positions.unshift({ 年: g.date.y, 职级: '县处级正职', 岗位: '岩台县委书记', 条线: '主官' })
+    endYear(g)
+    expect(g.yearSummary?.职务变化).toContain('平级调整')
+    expect(g.yearSummary?.职务变化).toContain('岩台县委书记')
+  })
+
   it('人大/政协正职属二线不得再提拔，兼任不算', () => {
     setRandomSource(mulberry32(83))
     const mk = (名: string, 二线: boolean): AdvicePosition => ({

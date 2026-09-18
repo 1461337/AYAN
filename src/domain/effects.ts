@@ -91,11 +91,12 @@ export function 快照(g: GameState): Snapshot {
   return {
     政绩: g.zhengji, 能力: g.p.能力, 道德: g.p.道德, 健康: g.p.健康, 人脉: g.p.人脉,
     上司: g.p.上司, 声望: g.p.声望, 现金: g.cash, 风险: g.discipline.risk, 职级: g.zhijiIdx, 职务: g.rankIdx,
+    岗位: g.positions[0]?.岗位,
   }
 }
 
 export function 差异(前: Snapshot, 后: Snapshot, 简称?: boolean, 业绩标签 = '政绩点'): string {
-  const 项: [string, keyof Snapshot][] = [
+  const 项: [string, '政绩' | '能力' | '道德' | '健康' | '人脉' | '声望' | '上司' | '风险'][] = [
     ['政绩', '政绩'], ['能力', '能力'], ['道德', '道德'], ['健康', '健康'],
     ['人脉', '人脉'], ['声望', '声望'], ['领导评价', '上司'], ['廉政风险', '风险'],
   ]

@@ -22,10 +22,19 @@ body {
   color: var(--ink); font-size: 15px; line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
 }
 .hidden { display: none !important; }
-button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; transition: transform .12s ease, box-shadow .15s ease, background .15s ease, color .15s ease, opacity .15s ease; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; transition: transform .12s ease, box-shadow .15s ease, background .15s ease, color .15s ease, opacity .15s ease; touch-action: manipulation; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--gold-dim); outline-offset: 2px; }
+input, textarea { -webkit-appearance: none; appearance: none; }
+select {
+  -webkit-appearance: none; appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #9a8b70 50%), linear-gradient(135deg, #9a8b70 50%, transparent 50%);
+  background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+  padding-right: 32px !important;
+}
 ::selection { background: rgba(232, 197, 106, .45); color: #4a2110; }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #cbbfa5; border-radius: 8px; }
@@ -33,9 +42,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 /* ============ 通用卡片 ============ */
 .card {
-  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-  box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden;
-  transition: box-shadow .2s ease;
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(90, 60, 20, .05), var(--shadow); margin-bottom: 12px; overflow: hidden;
+  transition: box-shadow .2s ease, border-color .2s ease;
 }
 .card-hd {
   padding: 14px 14px 12px; border-bottom: 1px solid #f0e7d4;
@@ -89,7 +98,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .dots i.on { background: linear-gradient(180deg, #c02623, #8f1414); }
 
 .btn-main {
-  width: 100%; padding: 14px; border-radius: 11px; font-size: 16px; font-weight: 800; letter-spacing: 2px;
+  width: 100%; min-height: 52px; padding: 14px; border-radius: 13px; font-size: 16px; font-weight: 800; letter-spacing: 2px;
   color: #fff6dd; background: linear-gradient(180deg, #c02623, #8f1414);
   box-shadow: 0 6px 0 #5e0b0c, 0 8px 18px rgba(0, 0, 0, .3);
 }
@@ -113,7 +122,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .btn-red.gray { background: linear-gradient(180deg, #9c9184, #6f665c); box-shadow: 0 7px 0 #4e463e; }
 .btn-red:disabled { opacity: .45; box-shadow: 0 4px 0 #5e0b0c; transform: none; }
 .btn-line {
-  display: block; width: 100%; text-align: left; padding: 12px 13px; border-radius: 11px;
+  display: block; width: 100%; min-height: 48px; text-align: left; padding: 12px 13px; border-radius: 12px;
   border: 1px solid var(--line); background: var(--paper); margin-bottom: 9px; font-size: 14.5px;
   color: var(--ink); font-weight: 600; line-height: 1.5; overflow-wrap: anywhere;
 }
@@ -185,7 +194,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .rel span.pos { background: #eff8f2; color: #2f7a4f; border-color: #bfe0cb; }
 .rel span.neg { background: #fdf0f0; color: #a51c1c; border-color: #eec3c3; }
 .npc-act { display: flex; gap: 7px; flex-wrap: wrap; }
-.npc-act button { flex: 1; min-width: 74px; padding: 8px 6px; border-radius: 9px; border: 1px solid var(--line); background: #fbf6ea; font-size: 12.5px; font-weight: 700; color: #5d5147; }
+.npc-act button { flex: 1; min-width: 74px; min-height: 40px; padding: 8px 6px; border-radius: 10px; border: 1px solid var(--line); background: #fbf6ea; font-size: 12.5px; font-weight: 700; color: #5d5147; }
 .npc-act button:active { background: #f0e7d4; }
 .npc-act button:disabled { opacity: .45; }
 .npc-act button:disabled { opacity: .45; }
@@ -200,14 +209,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .log-item.bad::before { border-color: var(--red-700); }
 
 /* ============ 弹窗 ============ */
-.modal { position: fixed; inset: 0; z-index: 150; overflow: auto; }
+.modal { position: fixed; inset: 0; z-index: 150; overflow: auto; overscroll-behavior: contain; }
 .modal-mask {
   min-height: 100%; background: rgba(40, 20, 10, .55); backdrop-filter: blur(3px);
   display: flex; align-items: center; justify-content: center; padding: 18px 12px calc(18px + var(--safe-b));
 }
 .modal-box {
-  background: var(--card); border: 1px solid #d8c9a6; border-radius: 15px; width: 100%; max-width: 560px;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, .45); overflow: hidden; max-height: 88vh; overflow-y: auto;
+  background: var(--card); border: 1px solid #d8c9a6; border-radius: 16px; width: 100%; max-width: 560px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .45); overflow: hidden; max-height: 88vh; max-height: 88dvh; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .modal-box .card-hd { margin: 0; }
 .modal-box.wide { max-width: 760px; }
@@ -280,6 +290,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 /* ============ 手机端对齐 ============ */
 @media (max-width: 640px) {
+  .card { margin-bottom: 10px; border-radius: 14px; }
   .card-bd { padding: 13px 12px 14px; }
   .card-hd { padding: 12px 12px 10px; }
   .card-hd h2 { font-size: 15.5px; }
@@ -296,14 +307,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .npc-act button { min-width: 0; flex: none; }
   .rel { gap: 4px; }
   .rel span { font-size: 10.5px; padding: 2px 7px; }
-  .btn-line { padding: 11px 11px; }
+  .btn-line { padding: 11px 11px; border-radius: 11px; }
   .btn-line .cost { margin-left: 6px; }
   .ap-row { gap: 6px; }
   .log-item { padding-left: 10px; }
   .modal-mask { padding: 12px 10px calc(12px + var(--safe-b)); align-items: flex-start; }
-  .modal-box { max-height: 92vh; }
+  .modal-box { max-height: 92vh; max-height: 92dvh; border-radius: 14px; }
   input, select, textarea { font-size: 16px; }
   .btn-main { padding: 15px; }
+  .btn-line:active, .tab:active, .npc-act button:active { background: #f4ecda; }
+  .toast { bottom: calc(110px + var(--safe-b)); }
 }
 
 /* ============ 桌面悬停增强 ============ */

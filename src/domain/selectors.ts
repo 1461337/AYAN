@@ -91,7 +91,7 @@ export function 是党政班子(名: string | undefined | null): boolean {
 
 export function 是基层岗位(名: string | undefined | null): boolean {
   if (!名) return false
-  return /副乡长|副镇长|乡长|镇长|[乡镇]党委书记|[乡镇]党委副书记|[乡镇]纪委书记|[乡镇]人大主席|乡人民政府|镇人民政府|街道办|街道党工委/.test(名)
+  return /副乡长|副镇长|乡长|镇长|[乡镇]党委书记|[乡镇]党委副书记|[乡镇]纪委书记|[乡镇]人大主席|乡人民政府|镇人民政府|街道办|街道党工委|县委书记|县长|区委书记|区长/.test(名)
 }
 
 export function 是二线(名: string | undefined | null): boolean {

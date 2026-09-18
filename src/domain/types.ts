@@ -174,6 +174,7 @@ export interface AdvicePosition {
   序号?: number
   城市?: string
   本地?: boolean
+  下派?: boolean
 }
 
 export interface HouseAsset {
@@ -363,6 +364,7 @@ export interface Snapshot {
   风险: number
   职级: number
   职务: number
+  岗位?: string
 }
 
 export interface GameState {
