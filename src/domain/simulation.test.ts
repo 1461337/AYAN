@@ -2,18 +2,18 @@ import { describe, expect, it, afterEach } from 'vitest'
 import { resetRandomSource, setRandomSource } from './rng'
 import { newState, 刷新人脉职务 } from './newGame'
 import { endYear } from './year'
-import { 快照, 案件风险底 } from './effects'
+import { applyEffect, 快照, 案件风险底 } from './effects'
 import { monthly, buyAsset, sellAsset, repayLoan, repayDebt } from './economy'
 import { genPositions, doPromote, settlePosition, 向上社交 } from './promotion'
 import { nextRankInfo } from './selectors'
-import { disciplineTick, 处置结果 } from './discipline'
-import { makeEvent, make腐败事件, makeRetiredEvent, npcTick, 政府事件标题 } from './events'
-import { makeShixiOrder } from './quiz'
+import { disciplineTick, 处置结果, 生成调查事件 } from './discipline'
+import { makeEvent, make腐败事件, makeRetiredEvent, miniEvent, retiredMini, npcTick, cityTick, 政府事件标题 } from './events'
+import { makeShixiOrder, ALL_SHIXI } from './quiz'
 import { SHIXI } from '../data/shixi'
 import { SHIXI_EXTRA } from '../data/shixiExtra'
 import { 政治本地职位, 平台序, 机构Of } from './positions'
-import { 职务阶梯 } from '../data/static'
-import type { AdvicePosition, GameState, Job } from './types'
+import { ALL_JOBS, 职务阶梯 } from '../data/static'
+import type { AdvicePosition, GameEvent, GameState, Job } from './types'
 
 function mulberry32(seed: number) {
   let a = seed
@@ -703,6 +703,71 @@ describe('本地化晋升', () => {
     g2.rankIdx = 3
     settlePosition(g2, mk('县人大常委会主任', true))
     expect(g2.flags['二线']).toBe(true)
+  })
+
+  it('所有事件选项与题库全量结算不报错、不产生非法数值', () => {
+    setRandomSource(mulberry32(201))
+    const 完备 = (job: Job): GameState => {
+      const g = newState({ name: '测试', sex: '男', age: 52, major: '法学', job })
+      g.rankIdx = 6
+      g.zhijiIdx = 10
+      g.positions = [{ 年: g.date.y, 职级: '省部级副职', 岗位: '副省长', 条线: '综合' }]
+      g.p.年龄 = 52
+      g.family.婚姻 = '已婚'
+      g.family.配偶 = {
+        id: 'sp', 姓名: '配偶', 年龄: 50, 身份: '公务员', 职业: '公务员', 类别: '公务员',
+        月收入: 9000, 养老金: 0, 退休: false, 性格: '温和', 好感度: 60, 面: '👩',
+        信任: 60, 公开: 0, 利益: 0, memory: [], notes: '',
+      }
+      g.family.子女 = [{ id: 'c1', 姓名: '孩子', 性别: '女', 年龄: 12, 好感度: 60, 性格: '活泼', 备注: '' }]
+      g.assets.房产 = [{ 名: '自住房', 面积: 100, 购入价: 1000000, 购入年: g.date.y - 5, 市值: 1200000, 自住: true }]
+      g.discipline.risk = 30
+      return g
+    }
+    const 检查 = (g: GameState) => {
+      expect(Number.isFinite(g.cash)).toBe(true)
+      expect(Number.isFinite(g.zhengji)).toBe(true)
+      expect(g.p.能力).toBeGreaterThanOrEqual(0)
+      expect(g.p.道德).toBeGreaterThanOrEqual(0)
+      expect(g.p.健康).toBeLessThanOrEqual(100)
+    }
+
+    const 全部事件: GameEvent[] = []
+    for (const job of ALL_JOBS) {
+      const g = 完备(job)
+      for (let i = 0; i < 250; i++) {
+        全部事件.push(makeEvent(g), makeRetiredEvent(g), 生成调查事件(g, '测试'))
+      }
+      for (let i = 0; i < 300; i++) {
+        const e = make腐败事件(g)
+        if (e) 全部事件.push(e)
+      }
+      miniEvent(g)
+      retiredMini(g)
+      npcTick(g)
+      cityTick(g)
+      disciplineTick(g)
+      检查(g)
+    }
+    for (const ev of 全部事件) {
+      for (const opt of ev.选项) {
+        const copy = 完备('公务员')
+        expect(() => opt.resolve(copy), `${ev.标题} / ${opt.text}`).not.toThrow()
+        检查(copy)
+      }
+    }
+    for (const item of ALL_SHIXI) {
+      for (const tier of item.asks) {
+        for (const variant of tier) {
+          expect(variant.a.length).toBeGreaterThanOrEqual(2)
+          for (const ans of variant.a) {
+            const copy = 完备('公务员')
+            expect(() => applyEffect(copy, ans.e), `${item.名} / ${ans.文}`).not.toThrow()
+            检查(copy)
+          }
+        }
+      }
+    }
   })
 
   it('doPromote 成功后同步题库与圈子', () => {
