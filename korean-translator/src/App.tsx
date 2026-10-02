@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslator } from './store/useTranslator'
 import {
   exportTxt,
@@ -10,6 +10,9 @@ import {
 import type { Direction, EngineId } from './types'
 
 type ExportFormat = 'txt' | 'word' | 'srt' | 'csv'
+type MicState = 'unknown' | 'granted' | 'denied' | 'prompt'
+
+const PERM_SEEN_KEY = 'kt_perm_seen_v1'
 
 const DIRECTION_LABELS: Record<Direction, string> = {
   ko2zh: '韩语 → 中文',
@@ -20,6 +23,33 @@ export default function App() {
   const t = useTranslator()
   const [exportFormat, setExportFormat] = useState<ExportFormat>('txt')
   const [exportContent, setExportContent] = useState<ExportContent>('both')
+  const [permOpen, setPermOpen] = useState(false)
+  const [permSeen, setPermSeen] = useState(() => {
+    try {
+      return localStorage.getItem(PERM_SEEN_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+  const [micState, setMicState] = useState<MicState>('unknown')
+
+  useEffect(() => {
+    let cancelled = false
+    const query = (navigator.permissions?.query as unknown as
+      | undefined
+      | ((d: { name: string }) => Promise<{ state: string }>))
+    if (!query) return
+    query({ name: 'microphone' })
+      .then((s) => {
+        if (!cancelled) setMicState(s.state as MicState)
+      })
+      .catch(() => {
+        /* ignore */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const directionLabel = DIRECTION_LABELS[t.settings.direction]
 
@@ -27,6 +57,26 @@ export default function App() {
     t.setSettings({ ...t.settings, direction })
   const setEngineId = (engineId: EngineId) =>
     t.setSettings({ ...t.settings, engineId })
+
+  const markPermSeen = () => {
+    try {
+      localStorage.setItem(PERM_SEEN_KEY, '1')
+    } catch {
+      /* ignore */
+    }
+    setPermSeen(true)
+  }
+
+  const onStartClick = () => {
+    if (permSeen) void t.start()
+    else setPermOpen(true)
+  }
+
+  const confirmPerm = () => {
+    markPermSeen()
+    setPermOpen(false)
+    void t.start()
+  }
 
   const handleExport = (content: ExportContent = exportContent) => {
     if (t.segments.length === 0) {
@@ -143,6 +193,16 @@ export default function App() {
             ? '免费模式：浏览器语音识别 + MyMemory 免费翻译，无需密钥，识别需 Chrome/Edge 并联网；收音增益仅 API 模式有效。'
             : 'API 模式：OpenAI Whisper 识别 + GPT 翻译，质量更佳，按量计费，需自备 API Key；收音增益可实时调整（越大越响，过高会破音）。'}
         </p>
+        <p className="mic-status">
+          麦克风：
+          {micState === 'granted'
+            ? '已允许'
+            : micState === 'denied'
+              ? '已拒绝（请在浏览器设置中允许）'
+              : micState === 'prompt'
+                ? '待授权'
+                : '未知'}
+        </p>
       </section>
 
       {t.error && (
@@ -158,7 +218,7 @@ export default function App() {
         <button
           type="button"
           className={`btn-start ${t.listening ? 'stopping' : ''}`}
-          onClick={t.listening ? t.stop : t.start}
+          onClick={t.listening ? t.stop : onStartClick}
           disabled={t.starting}
         >
           {t.starting ? '启动中…' : t.listening ? '■ 停止' : '● 开始'}
@@ -256,6 +316,31 @@ export default function App() {
         说明：免费模式依赖浏览器语音识别与 MyMemory，网络与浏览器支持会影响识别质量；API
         密钥仅保存在本机浏览器 localStorage，不经过任何第三方服务器。
       </footer>
+
+      {permOpen && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>需要麦克风权限</h3>
+            <p>
+              本工具通过麦克风进行语音识别。点击「允许并开始」后，浏览器会弹出授权提示，请点击
+              <strong>「允许」</strong>。
+            </p>
+            <ul className="modal-steps">
+              <li>误点「拒绝」：手机 Chrome 点地址栏锁图标 → 网站设置 → 麦克风 → 允许。</li>
+              <li>iPhone Safari：系统「设置 → Safari → 相机与麦克风」中允许。</li>
+              <li>桌面 Chrome/Edge：点地址栏左侧的锁/相机图标 → 麦克风 → 允许。</li>
+            </ul>
+            <div className="modal-actions">
+              <button type="button" className="btn-ghost" onClick={() => setPermOpen(false)}>
+                取消
+              </button>
+              <button type="button" className="btn-export" onClick={confirmPerm}>
+                允许并开始
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

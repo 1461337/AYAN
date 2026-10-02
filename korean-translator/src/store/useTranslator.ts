@@ -50,6 +50,22 @@ function joinFragments(a: string, b: string, direction: Direction): string {
   return a + b
 }
 
+function friendlyError(e: unknown): string {
+  if (e && typeof e === 'object' && 'name' in e) {
+    const name = (e as { name?: string }).name ?? ''
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      return '麦克风权限被拒绝。请在浏览器「网站设置 / 锁图标」里允许麦克风后重试。'
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      return '未检测到麦克风设备，请确认设备已连接。'
+    }
+    if (name === 'NotReadableError') {
+      return '麦克风被其他应用占用，请关闭占用麦克风的程序后重试。'
+    }
+  }
+  return e instanceof Error ? e.message : String(e)
+}
+
 export function useTranslator() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [segments, setSegments] = useState<Segment[]>(loadSession)
@@ -225,7 +241,7 @@ export function useTranslator() {
       engineRef.current = engine
       setListening(true)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(friendlyError(e))
     } finally {
       setStarting(false)
     }
