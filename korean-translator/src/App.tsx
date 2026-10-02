@@ -124,10 +124,24 @@ export default function App() {
           </div>
         )}
 
+        <div className="row">
+          <span className="label">收音增益</span>
+          <input
+            type="range"
+            className="gain-slider"
+            min="1"
+            max="10"
+            step="0.5"
+            value={t.settings.gain}
+            onChange={(e) => t.setGain(Number(e.target.value))}
+          />
+          <span className="gain-value">{t.settings.gain}x</span>
+        </div>
+
         <p className="hint">
           {t.settings.engineId === 'free'
-            ? '免费模式：浏览器语音识别 + MyMemory 免费翻译，无需密钥，识别需 Chrome/Edge 并联网。'
-            : 'API 模式：OpenAI Whisper 识别 + GPT 翻译，质量更佳，按量计费，需自备 API Key。'}
+            ? '免费模式：浏览器语音识别 + MyMemory 免费翻译，无需密钥，识别需 Chrome/Edge 并联网；收音增益仅 API 模式有效。'
+            : 'API 模式：OpenAI Whisper 识别 + GPT 翻译，质量更佳，按量计费，需自备 API Key；收音增益可实时调整（越大越响，过高会破音）。'}
         </p>
       </section>
 

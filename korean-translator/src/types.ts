@@ -20,4 +20,5 @@ export interface SpeechEngine {
   id: EngineId
   start(lang: string, handlers: SpeechHandlers): Promise<void>
   stop(): void
+  setGain?(value: number): void
 }

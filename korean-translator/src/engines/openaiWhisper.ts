@@ -1,12 +1,15 @@
 import type { SpeechEngine, SpeechHandlers } from '../types'
 
 const CHUNK_SECONDS = 4000
-const MIC_GAIN = 3.0
 
-export function createOpenAIWhisperEngine(getKey: () => string): SpeechEngine {
+export function createOpenAIWhisperEngine(
+  getKey: () => string,
+  getGain: () => number,
+): SpeechEngine {
   let mediaRecorder: MediaRecorder | null = null
   let stream: MediaStream | null = null
   let audioCtx: AudioContext | null = null
+  let gainNode: GainNode | null = null
   let chunks: Blob[] = []
   let handlers: SpeechHandlers | null = null
   let lang = ''
@@ -61,14 +64,15 @@ export function createOpenAIWhisperEngine(getKey: () => string): SpeechEngine {
       try {
         audioCtx = new AudioContext()
         const source = audioCtx.createMediaStreamSource(stream)
-        const gain = audioCtx.createGain()
-        gain.gain.value = MIC_GAIN
+        gainNode = audioCtx.createGain()
+        gainNode.gain.value = getGain()
         const dest = audioCtx.createMediaStreamDestination()
-        source.connect(gain)
-        gain.connect(dest)
+        source.connect(gainNode)
+        gainNode.connect(dest)
         audioStream = dest.stream
       } catch {
         audioCtx = null
+        gainNode = null
         /* 环境不支持 WebAudio 增益时回退原始麦克风流 */
       }
 
@@ -96,6 +100,9 @@ export function createOpenAIWhisperEngine(getKey: () => string): SpeechEngine {
         stream?.getTracks().forEach((t) => t.stop())
         void audioCtx?.close()
       }
+    },
+    setGain(value) {
+      if (gainNode) gainNode.gain.value = value
     },
   }
 }

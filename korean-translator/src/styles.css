@@ -126,6 +126,21 @@ body {
   font-size: 13px;
 }
 
+.gain-slider {
+  flex: 1;
+  min-width: 180px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.gain-value {
+  min-width: 44px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent);
+  text-align: right;
+}
+
 .banner {
   display: flex;
   align-items: center;

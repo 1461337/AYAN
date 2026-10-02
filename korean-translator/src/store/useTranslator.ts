@@ -12,12 +12,14 @@ export interface Settings {
   engineId: EngineId
   direction: Direction
   apiKey: string
+  gain: number
 }
 
 const DEFAULT_SETTINGS: Settings = {
   engineId: 'free',
   direction: 'ko2zh',
   apiKey: '',
+  gain: 6,
 }
 
 function loadSettings(): Settings {
@@ -208,7 +210,10 @@ export function useTranslator() {
       const whisperLang = direction === 'ko2zh' ? 'ko' : 'zh'
       const engine =
         engineId === 'openai'
-          ? createOpenAIWhisperEngine(() => settingsRef.current.apiKey)
+          ? createOpenAIWhisperEngine(
+              () => settingsRef.current.apiKey,
+              () => settingsRef.current.gain,
+            )
           : createWebSpeechEngine()
       const speechLang = engineId === 'openai' ? whisperLang : lang
       await engine.start(speechLang, {
@@ -253,6 +258,11 @@ export function useTranslator() {
     setSegments((prev) => prev.filter((s) => s.id !== id))
   }, [])
 
+  const setGain = useCallback((value: number) => {
+    setSettings((prev) => ({ ...prev, gain: value }))
+    engineRef.current?.setGain?.(value)
+  }, [])
+
   return {
     settings,
     setSettings,
@@ -268,5 +278,6 @@ export function useTranslator() {
     stop,
     clear,
     removeSegment,
+    setGain,
   }
 }
