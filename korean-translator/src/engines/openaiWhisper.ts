@@ -1,10 +1,12 @@
 import type { SpeechEngine, SpeechHandlers } from '../types'
 
-const CHUNK_SECONDS = 6000
+const CHUNK_SECONDS = 4000
+const MIC_GAIN = 3.0
 
 export function createOpenAIWhisperEngine(getKey: () => string): SpeechEngine {
   let mediaRecorder: MediaRecorder | null = null
   let stream: MediaStream | null = null
+  let audioCtx: AudioContext | null = null
   let chunks: Blob[] = []
   let handlers: SpeechHandlers | null = null
   let lang = ''
@@ -47,8 +49,30 @@ export function createOpenAIWhisperEngine(getKey: () => string): SpeechEngine {
       handlers = h
       lang = l
       chunks = []
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      mediaRecorder = new MediaRecorder(stream)
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      })
+
+      let audioStream: MediaStream = stream
+      try {
+        audioCtx = new AudioContext()
+        const source = audioCtx.createMediaStreamSource(stream)
+        const gain = audioCtx.createGain()
+        gain.gain.value = MIC_GAIN
+        const dest = audioCtx.createMediaStreamDestination()
+        source.connect(gain)
+        gain.connect(dest)
+        audioStream = dest.stream
+      } catch {
+        audioCtx = null
+        /* 环境不支持 WebAudio 增益时回退原始麦克风流 */
+      }
+
+      mediaRecorder = new MediaRecorder(audioStream)
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data)
       }
@@ -64,11 +88,13 @@ export function createOpenAIWhisperEngine(getKey: () => string): SpeechEngine {
         mediaRecorder.onstop = () => {
           void send()
           stream?.getTracks().forEach((t) => t.stop())
+          void audioCtx?.close()
         }
         mediaRecorder.stop()
       } else {
         void send()
         stream?.getTracks().forEach((t) => t.stop())
+        void audioCtx?.close()
       }
     },
   }

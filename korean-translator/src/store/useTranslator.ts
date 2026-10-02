@@ -54,6 +54,7 @@ export function useTranslator() {
 
   const engineRef = useRef<SpeechEngine | null>(null)
   const settingsRef = useRef(settings)
+  const interimTimer = useRef<number | null>(null)
   settingsRef.current = settings
 
   useEffect(() => {
@@ -81,10 +82,31 @@ export function useTranslator() {
     return freeTranslate(text, direction)
   }, [])
 
+  const handleInterim = useCallback(
+    (text: string) => {
+      setInterim(text)
+      const clean = text.trim()
+      if (!clean) return
+      if (interimTimer.current !== null) clearTimeout(interimTimer.current)
+      interimTimer.current = window.setTimeout(() => {
+        translate(clean)
+          .then((t) => setLatest(t))
+          .catch(() => {
+            /* 忽略临时翻译错误，避免频繁弹错 */
+          })
+      }, 800)
+    },
+    [translate],
+  )
+
   const handleFinal = useCallback(
     (text: string) => {
       const clean = text.trim()
       if (!clean) return
+      if (interimTimer.current !== null) {
+        clearTimeout(interimTimer.current)
+        interimTimer.current = null
+      }
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
       const seg: Segment = { id, timestampMs: Date.now(), original: clean, translation: '' }
       setSegments((prev) => [...prev, seg])
@@ -125,7 +147,7 @@ export function useTranslator() {
           : createWebSpeechEngine()
       const speechLang = engineId === 'openai' ? whisperLang : lang
       await engine.start(speechLang, {
-        onInterim: setInterim,
+        onInterim: handleInterim,
         onFinal: handleFinal,
         onError: setError,
         onEnd: () => setListening(false),
@@ -137,13 +159,17 @@ export function useTranslator() {
     } finally {
       setStarting(false)
     }
-  }, [handleFinal])
+  }, [handleFinal, handleInterim])
 
   const stop = useCallback(() => {
     engineRef.current?.stop()
     engineRef.current = null
     setListening(false)
     setInterim('')
+    if (interimTimer.current !== null) {
+      clearTimeout(interimTimer.current)
+      interimTimer.current = null
+    }
   }, [])
 
   const clear = useCallback(() => {
