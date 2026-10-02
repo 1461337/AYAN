@@ -43,6 +43,11 @@ function loadSession(): Segment[] {
   return []
 }
 
+function joinFragments(a: string, b: string, direction: Direction): string {
+  if (direction === 'ko2zh') return a.endsWith(' ') ? a + b : a + ' ' + b
+  return a + b
+}
+
 export function useTranslator() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [segments, setSegments] = useState<Segment[]>(loadSession)
@@ -55,6 +60,9 @@ export function useTranslator() {
   const engineRef = useRef<SpeechEngine | null>(null)
   const settingsRef = useRef(settings)
   const interimTimer = useRef<number | null>(null)
+  const bufferRef = useRef('')
+  const bufferTimer = useRef<number | null>(null)
+  const translateCache = useRef<Map<string, string>>(new Map())
   settingsRef.current = settings
 
   useEffect(() => {
@@ -74,12 +82,18 @@ export function useTranslator() {
   }, [segments])
 
   const translate = useCallback(async (text: string): Promise<string> => {
+    const cached = translateCache.current.get(text)
+    if (cached) return cached
     const { engineId, apiKey, direction } = settingsRef.current
+    let result: string
     if (engineId === 'openai') {
       if (!apiKey.trim()) throw new Error('请先在设置中填写 OpenAI API Key')
-      return openaiTranslate(apiKey.trim(), text, direction)
+      result = await openaiTranslate(apiKey.trim(), text, direction)
+    } else {
+      result = await freeTranslate(text, direction)
     }
-    return freeTranslate(text, direction)
+    translateCache.current.set(text, result)
+    return result
   }, [])
 
   const handleInterim = useCallback(
@@ -99,18 +113,11 @@ export function useTranslator() {
     [translate],
   )
 
-  const handleFinal = useCallback(
-    (text: string) => {
-      const clean = text.trim()
-      if (!clean) return
-      if (interimTimer.current !== null) {
-        clearTimeout(interimTimer.current)
-        interimTimer.current = null
-      }
+  const createSegment = useCallback(
+    (clean: string) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
       const seg: Segment = { id, timestampMs: Date.now(), original: clean, translation: '' }
       setSegments((prev) => [...prev, seg])
-      setInterim('')
       setLatest('翻译中…')
       translate(clean)
         .then((t) => {
@@ -132,10 +139,68 @@ export function useTranslator() {
     [translate],
   )
 
+  const flushBuffer = useCallback(() => {
+    if (bufferTimer.current !== null) {
+      clearTimeout(bufferTimer.current)
+      bufferTimer.current = null
+    }
+    const text = bufferRef.current.trim()
+    bufferRef.current = ''
+    if (text) createSegment(text)
+  }, [createSegment])
+
+  const handleFinal = useCallback(
+    (raw: string) => {
+      const clean = raw.trim()
+      if (!clean) return
+      setInterim('')
+
+      const buf = bufferRef.current.trim()
+      let next: string
+      if (!buf) {
+        next = clean
+      } else if (clean === buf) {
+        next = buf
+      } else if (clean.startsWith(buf)) {
+        next = clean
+      } else if (buf.endsWith(clean)) {
+        next = buf
+      } else {
+        next = joinFragments(buf, clean, settingsRef.current.direction)
+      }
+      bufferRef.current = next
+
+      if (interimTimer.current !== null) {
+        clearTimeout(interimTimer.current)
+        interimTimer.current = null
+      }
+      interimTimer.current = window.setTimeout(() => {
+        translate(next)
+          .then((t) => setLatest(t))
+          .catch(() => {
+            /* 忽略临时翻译错误 */
+          })
+      }, 500)
+
+      if (/[。！？!?.]$/.test(next) || next.length > 150) {
+        flushBuffer()
+        return
+      }
+      if (bufferTimer.current !== null) clearTimeout(bufferTimer.current)
+      bufferTimer.current = window.setTimeout(() => flushBuffer(), 1500)
+    },
+    [translate, flushBuffer],
+  )
+
   const start = useCallback(async () => {
     setError('')
     setInterim('')
     setLatest('')
+    bufferRef.current = ''
+    if (bufferTimer.current !== null) {
+      clearTimeout(bufferTimer.current)
+      bufferTimer.current = null
+    }
     setStarting(true)
     try {
       const { engineId, direction } = settingsRef.current
@@ -162,6 +227,7 @@ export function useTranslator() {
   }, [handleFinal, handleInterim])
 
   const stop = useCallback(() => {
+    flushBuffer()
     engineRef.current?.stop()
     engineRef.current = null
     setListening(false)
@@ -170,12 +236,17 @@ export function useTranslator() {
       clearTimeout(interimTimer.current)
       interimTimer.current = null
     }
-  }, [])
+  }, [flushBuffer])
 
   const clear = useCallback(() => {
     setSegments([])
     setLatest('')
     setInterim('')
+    bufferRef.current = ''
+    if (bufferTimer.current !== null) {
+      clearTimeout(bufferTimer.current)
+      bufferTimer.current = null
+    }
   }, [])
 
   const removeSegment = useCallback((id: string) => {
