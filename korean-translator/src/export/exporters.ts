@@ -1,4 +1,6 @@
-import type { Segment } from '../types'
+import type { Direction, Segment } from '../types'
+
+export type ExportContent = 'both' | 'ko' | 'zh'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -42,55 +44,113 @@ function triggerDownload(
   URL.revokeObjectURL(url)
 }
 
-export function exportTxt(segments: Segment[]) {
+interface Pair {
+  ko: string
+  zh: string
+}
+
+function pairOf(seg: Segment, direction: Direction): Pair {
+  if (direction === 'ko2zh') return { ko: seg.original, zh: seg.translation }
+  return { ko: seg.translation, zh: seg.original }
+}
+
+function labelOf(content: ExportContent): string {
+  if (content === 'ko') return '韩文'
+  if (content === 'zh') return '中文'
+  return '双语'
+}
+
+export function exportTxt(
+  segments: Segment[],
+  direction: Direction,
+  content: ExportContent,
+) {
   const body = segments
-    .map(
-      (s) =>
-        `[${clock(s.timestampMs)}]\n${s.original}\n${s.translation || '（未翻译）'}\n`,
-    )
+    .map((s) => {
+      const { ko, zh } = pairOf(s, direction)
+      if (content === 'ko') return `[${clock(s.timestampMs)}]\n${ko || '（未识别）'}\n`
+      if (content === 'zh') return `[${clock(s.timestampMs)}]\n${zh || '（未翻译）'}\n`
+      return `[${clock(s.timestampMs)}]\n韩文：${ko}\n中文：${zh || '（未翻译）'}\n`
+    })
     .join('\n')
   triggerDownload(
-    '同声翻译记录.txt',
+    `同声翻译记录_${labelOf(content)}.txt`,
     body,
     'text/plain;charset=utf-8',
     true,
   )
 }
 
-export function exportWord(segments: Segment[]) {
+export function exportWord(
+  segments: Segment[],
+  direction: Direction,
+  content: ExportContent,
+) {
+  const header =
+    content === 'both'
+      ? '<th>时间</th><th>韩文</th><th>中文</th>'
+      : content === 'ko'
+        ? '<th>时间</th><th>韩文</th>'
+        : '<th>时间</th><th>中文</th>'
   const rows = segments
-    .map(
-      (s) => `
-      <tr>
-        <td>${clock(s.timestampMs)}</td>
-        <td>${escapeHtml(s.original)}</td>
-        <td>${escapeHtml(s.translation)}</td>
-      </tr>`,
-    )
+    .map((s) => {
+      const { ko, zh } = pairOf(s, direction)
+      const time = `<td>${clock(s.timestampMs)}</td>`
+      if (content === 'both')
+        return `<tr>${time}<td>${escapeHtml(ko)}</td><td>${escapeHtml(zh)}</td></tr>`
+      if (content === 'ko')
+        return `<tr>${time}<td>${escapeHtml(ko)}</td></tr>`
+      return `<tr>${time}<td>${escapeHtml(zh)}</td></tr>`
+    })
     .join('')
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>同声翻译记录</title></head><body><h2>韩语同声翻译记录</h2><table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse"><tr><th>时间</th><th>原文</th><th>译文</th></tr>${rows}</table></body></html>`
-  triggerDownload('同声翻译记录.doc', html, 'application/msword;charset=utf-8')
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>同声翻译记录</title></head><body><h2>韩语同声翻译记录</h2><table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse"><tr>${header}</tr>${rows}</table></body></html>`
+  triggerDownload(
+    `同声翻译记录_${labelOf(content)}.doc`,
+    html,
+    'application/msword;charset=utf-8',
+  )
 }
 
-export function exportSrt(segments: Segment[]) {
+export function exportSrt(
+  segments: Segment[],
+  direction: Direction,
+  content: ExportContent,
+) {
   const blocks = segments.map((s, i) => {
     const start = s.timestampMs
     const end = segments[i + 1]?.timestampMs ?? start + 5000
-    return `${i + 1}\n${srtTime(start)} --> ${srtTime(end)}\n${s.original}\n${
-      s.translation || ''
-    }`
+    const { ko, zh } = pairOf(s, direction)
+    const text =
+      content === 'both' ? `${ko}\n${zh}` : content === 'ko' ? ko : zh
+    return `${i + 1}\n${srtTime(start)} --> ${srtTime(end)}\n${text}`
   })
-  triggerDownload('同声翻译记录.srt', blocks.join('\n\n'), 'text/plain;charset=utf-8')
+  triggerDownload(
+    `同声翻译记录_${labelOf(content)}.srt`,
+    blocks.join('\n\n'),
+    'text/plain;charset=utf-8',
+  )
 }
 
-export function exportCsv(segments: Segment[]) {
-  const header = '时间,原文,译文'
-  const rows = segments.map(
-    (s) =>
-      `${clock(s.timestampMs)},${csvEscape(s.original)},${csvEscape(s.translation)}`,
-  )
+export function exportCsv(
+  segments: Segment[],
+  direction: Direction,
+  content: ExportContent,
+) {
+  const header =
+    content === 'both'
+      ? '时间,韩文,中文'
+      : content === 'ko'
+        ? '时间,韩文'
+        : '时间,中文'
+  const rows = segments.map((s) => {
+    const { ko, zh } = pairOf(s, direction)
+    const time = clock(s.timestampMs)
+    if (content === 'both') return `${time},${csvEscape(ko)},${csvEscape(zh)}`
+    if (content === 'ko') return `${time},${csvEscape(ko)}`
+    return `${time},${csvEscape(zh)}`
+  })
   triggerDownload(
-    '同声翻译记录.csv',
+    `同声翻译记录_${labelOf(content)}.csv`,
     [header, ...rows].join('\n'),
     'text/csv;charset=utf-8',
     true,

@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { useTranslator } from './store/useTranslator'
-import { exportTxt, exportWord, exportSrt, exportCsv } from './export/exporters'
+import {
+  exportTxt,
+  exportWord,
+  exportSrt,
+  exportCsv,
+  type ExportContent,
+} from './export/exporters'
 import type { Direction, EngineId } from './types'
 
 type ExportFormat = 'txt' | 'word' | 'srt' | 'csv'
@@ -13,6 +19,7 @@ const DIRECTION_LABELS: Record<Direction, string> = {
 export default function App() {
   const t = useTranslator()
   const [exportFormat, setExportFormat] = useState<ExportFormat>('txt')
+  const [exportContent, setExportContent] = useState<ExportContent>('both')
 
   const directionLabel = DIRECTION_LABELS[t.settings.direction]
 
@@ -21,25 +28,35 @@ export default function App() {
   const setEngineId = (engineId: EngineId) =>
     t.setSettings({ ...t.settings, engineId })
 
-  const handleExport = () => {
+  const handleExport = (content: ExportContent = exportContent) => {
     if (t.segments.length === 0) {
       t.setError('暂无记录可导出，请先开始听写')
       return
     }
+    const direction = t.settings.direction
     switch (exportFormat) {
       case 'txt':
-        exportTxt(t.segments)
+        exportTxt(t.segments, direction, content)
         break
       case 'word':
-        exportWord(t.segments)
+        exportWord(t.segments, direction, content)
         break
       case 'srt':
-        exportSrt(t.segments)
+        exportSrt(t.segments, direction, content)
         break
       case 'csv':
-        exportCsv(t.segments)
+        exportCsv(t.segments, direction, content)
         break
     }
+  }
+
+  const handleExportSplit = () => {
+    if (t.segments.length === 0) {
+      t.setError('暂无记录可导出，请先开始听写')
+      return
+    }
+    handleExport('ko')
+    handleExport('zh')
   }
 
   const translatedCount = t.segments.filter(
@@ -137,6 +154,14 @@ export default function App() {
         </button>
         <div className="export-group">
           <select
+            value={exportContent}
+            onChange={(e) => setExportContent(e.target.value as ExportContent)}
+          >
+            <option value="both">双语对照</option>
+            <option value="ko">仅韩文</option>
+            <option value="zh">仅中文</option>
+          </select>
+          <select
             value={exportFormat}
             onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
           >
@@ -145,8 +170,11 @@ export default function App() {
             <option value="srt">SRT 字幕</option>
             <option value="csv">CSV 表格</option>
           </select>
-          <button type="button" className="btn-export" onClick={handleExport}>
+          <button type="button" className="btn-export" onClick={() => handleExport()}>
             导出
+          </button>
+          <button type="button" className="btn-ghost" onClick={handleExportSplit}>
+            分别导出韩/中
           </button>
         </div>
       </section>
