@@ -9,9 +9,10 @@
 :root{color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#081226}
-body{font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center}
-#stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 45%,#16305a 0%,#081226 70%)}
+body{font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#stage{position:relative;width:100vw;height:100vh;height:100dvh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 45%,#16305a 0%,#081226 70%)}
 #cv{display:block;width:min(100vw,177.7778vh);height:min(56.25vw,100vh);background:#8bd8ff;box-shadow:0 24px 80px rgba(0,0,0,.45)}
+@supports (height:100dvh){#cv{width:min(100vw,177.7778dvh);height:min(56.25vw,100dvh)}}
 #overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 42%,rgba(37,75,120,.84),rgba(6,14,30,.94));backdrop-filter:blur(12px);transition:opacity .25s ease,visibility .25s ease}
 #overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
 .card{position:relative;width:min(560px,88vw);padding:44px 46px 38px;border-radius:34px;background:linear-gradient(160deg,#fff8e7 0%,#ffe9c7 58%,#ffd6b0 100%);border:5px solid #26354f;box-shadow:0 20px 0 rgba(24,42,72,.35),0 35px 80px rgba(0,0,0,.45);transform:rotate(-.6deg);text-align:center;color:#26354f;overflow:hidden}
@@ -21,13 +22,39 @@ body{font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;display:f
 .badge i{width:11px;height:11px;border-radius:50%;background:#ff6b5e;box-shadow:0 0 0 4px rgba(255,107,94,.18)}
 h1{position:relative;margin:24px 0 10px;font-size:70px;line-height:1;letter-spacing:.06em;color:#ff6b4a;text-shadow:4px 4px 0 #26354f,0 10px 24px rgba(255,107,74,.22);transform:rotate(-1.4deg)}
 .sub{position:relative;margin:0 0 28px;font-size:19px;font-weight:600;color:#54617a;letter-spacing:.08em}
-button{position:relative;appearance:none;border:4px solid #26354f;border-radius:999px;padding:18px 42px;background:linear-gradient(180deg,#ffcf5a,#ff9f43);color:#24324b;font:800 24px/1 "Microsoft YaHei","PingFang SC",sans-serif;letter-spacing:.12em;cursor:pointer;box-shadow:0 8px 0 #26354f,0 16px 30px rgba(255,159,67,.28);transition:transform .15s ease,box-shadow .15s ease}
-button:hover{transform:translateY(-2px) rotate(-.6deg);box-shadow:0 10px 0 #26354f,0 20px 36px rgba(255,159,67,.32)}
-button:active{transform:translateY(5px);box-shadow:0 3px 0 #26354f,0 8px 18px rgba(255,159,67,.25)}
-button svg{vertical-align:-3px;margin-right:10px}
+#start{position:relative;appearance:none;border:4px solid #26354f;border-radius:999px;padding:18px 42px;background:linear-gradient(180deg,#ffcf5a,#ff9f43);color:#24324b;font:800 24px/1 "Microsoft YaHei","PingFang SC",sans-serif;letter-spacing:.12em;cursor:pointer;box-shadow:0 8px 0 #26354f,0 16px 30px rgba(255,159,67,.28);transition:transform .15s ease,box-shadow .15s ease}
+#start:hover{transform:translateY(-2px) rotate(-.6deg);box-shadow:0 10px 0 #26354f,0 20px 36px rgba(255,159,67,.32)}
+#start:active{transform:translateY(5px);box-shadow:0 3px 0 #26354f,0 8px 18px rgba(255,159,67,.25)}
+#start svg{vertical-align:-3px;margin-right:10px}
 .tip{position:relative;margin:22px 0 0;font-size:13px;font-weight:600;color:#7d8798;letter-spacing:.1em}
 .spark{position:absolute;font-size:28px;color:#ff9f43;text-shadow:2px 2px 0 #26354f;transform:rotate(-12deg)}
 .spark.a{left:34px;top:120px}.spark.b{right:48px;top:158px;transform:rotate(18deg);font-size:20px}.spark.c{right:82px;bottom:94px;transform:rotate(-8deg);font-size:16px}
+#fsBtn{position:fixed;right:calc(14px + env(safe-area-inset-right));top:calc(14px + env(safe-area-inset-top));z-index:8;display:none;appearance:none;padding:9px 13px;border:2px solid rgba(255,255,255,.45);border-radius:12px;background:rgba(12,28,55,.62);color:#fff;font:700 12px/1 "Microsoft YaHei","PingFang SC",sans-serif;letter-spacing:.08em;backdrop-filter:blur(8px);cursor:pointer}
+#fsBtn:active{transform:scale(.95)}
+#rotateHint{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9;display:none;align-items:center;gap:9px;padding:9px 15px;border:2px solid rgba(255,255,255,.38);border-radius:999px;background:rgba(12,28,55,.72);color:#fff;font-size:13px;font-weight:700;letter-spacing:.06em;backdrop-filter:blur(8px);pointer-events:none}
+.phoneIcon{display:inline-block;width:13px;height:21px;border:2px solid #fff;border-radius:3px;position:relative;transform:rotate(90deg)}
+.phoneIcon:after{content:"";position:absolute;left:50%;bottom:2px;width:3px;height:3px;border-radius:50%;background:#fff;transform:translateX(-50%)}
+@media (pointer:coarse){#fsBtn{display:block}}
+@media (max-width:680px),(max-height:560px){
+  .card{width:min(92vw,460px);padding:26px 24px 22px;border-radius:28px}
+  .badge{font-size:12px;padding:6px 12px;white-space:nowrap;letter-spacing:.03em}
+  h1{font-size:clamp(42px,12vw,62px);white-space:nowrap;margin:18px 0 8px;text-shadow:3px 3px 0 #26354f,0 8px 20px rgba(255,107,74,.18)}
+  .sub{font-size:15px;line-height:1.5;margin-bottom:18px;letter-spacing:.04em}
+  #start{font-size:20px;padding:15px 30px;border-width:3px}
+  #start svg{width:20px;height:20px;margin-right:8px}
+  .tip{font-size:11px;margin-top:16px;letter-spacing:.06em}
+  .spark.a{left:18px;top:84px}.spark.b{right:26px;top:118px}.spark.c{right:42px;bottom:64px}
+}
+@media (max-height:560px){
+  .card{width:min(88vw,460px);padding:15px 28px 13px}
+  .badge{font-size:10px;padding:4px 10px}
+  h1{font-size:38px;margin:9px 0 3px}
+  .sub{font-size:12px;margin-bottom:9px}
+  #start{font-size:17px;padding:10px 24px;box-shadow:0 5px 0 #26354f,0 10px 20px rgba(255,159,67,.22)}
+  .tip{font-size:9px;margin-top:7px}
+  .spark{display:none}
+}
+@media (orientation:portrait) and (pointer:coarse){#rotateHint{display:flex}}
 #err{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:20;padding:12px 20px;border-radius:14px;background:rgba(20,30,50,.9);color:#fff;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
 </style>
 </head>
@@ -39,10 +66,12 @@ button svg{vertical-align:-3px;margin-right:10px}
     <h1>开心往前飞</h1>
     <p class="sub">戴上耳机，和小飞行员一起出发</p>
     <button id="start"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12 8 5.2z" fill="currentColor"/></svg>点击播放</button>
-    <p class="tip">全长约 33 秒 · 建议全屏观看</p>
+    <p class="tip">全长约 33 秒 · 建议横屏全屏观看</p>
     <span class="spark a">✦</span><span class="spark b">✦</span><span class="spark c">✦</span>
   </div>
 </div>
+<div id="rotateHint"><span class="phoneIcon"></span>横屏观看更清晰</div>
+<button id="fsBtn" type="button" aria-label="全屏播放">全屏</button>
 <div id="err"></div>
 <audio id="audio" src="song.wav" preload="auto"></audio>
 <script>
@@ -54,6 +83,7 @@ const ctx=cv.getContext("2d",{alpha:false});
 const audio=document.getElementById("audio");
 const overlay=document.getElementById("overlay");
 const errBox=document.getElementById("err");
+const fsBtn=document.getElementById("fsBtn");
 const TAU=Math.PI*2;
 const BEATS=[-0.0004,0.406,0.8123,1.2303,1.6134,2.0546,2.4726,2.8789,3.3085,3.7148,4.1328,4.5391,4.9571,5.3634,5.7814,6.1994,6.6173,7.0237,7.4416,7.8596,8.2659,8.6723,9.1019,9.5082,9.9262,10.3209,10.7505,11.1684,11.5864,11.9811,12.4107,12.8054,13.2234,13.6414,14.0593,14.4773,14.8836,15.3016,15.7195,16.1143,16.5439,16.9502,17.3682,17.7745,18.1925,18.6104,19.0284,19.4347,19.8411,20.259,20.6886,21.095,21.5129,21.9193,22.3372,22.7436,23.1732,23.5679,23.9975,24.4038,24.8102,25.2281,25.6345,26.0524,26.4704,26.8883,27.2947,27.7243,28.1306,28.5486,28.9665,29.3729,29.7908,30.1972,30.6035,31.0215,31.4395,31.8574,32.2754,32.6817,33.0997,33.506];
 const LYRICS=[
@@ -1066,7 +1096,19 @@ function loop(){
   if(t>=DURATION-.005){t=DURATION;playing=false;drawAt(t);return}
   drawAt(t);raf=requestAnimationFrame(loop);
 }
+function enterFullscreen(){
+  if(!matchMedia("(pointer:coarse)").matches)return;
+  const el=document.documentElement;
+  if(document.fullscreenElement){document.exitFullscreen&&document.exitFullscreen().catch(()=>{});return}
+  const req=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(!req)return;
+  try{
+    const p=req.call(el,{navigationUI:"hide"});
+    if(p&&p.then)p.then(()=>{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock("landscape").catch(()=>{})}).catch(()=>{});
+  }catch(e){}
+}
 function start(){
+  enterFullscreen();
   overlay.classList.add("hidden");
   audio.pause();audio.currentTime=0;
   const pr=audio.play();
@@ -1074,6 +1116,9 @@ function start(){
   playing=true;cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
 }
 document.getElementById("start").addEventListener("click",start);
+fsBtn.addEventListener("click",enterFullscreen);
+document.addEventListener("fullscreenchange",()=>{fsBtn.textContent=document.fullscreenElement?"退出":"全屏"});
+if(!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen))fsBtn.style.display="none";
 audio.addEventListener("ended",()=>{playing=false;drawAt(DURATION)});
 window.seek=function(sec){overlay.classList.add("hidden");overlay.style.display="none";playing=false;cancelAnimationFrame(raf);try{audio.pause()}catch(e){}drawAt(clamp(Number(sec)||0,0,DURATION));};
 window.MV={seek:window.seek,duration:DURATION,freeze:FREEZE};
